@@ -65,7 +65,9 @@ class CandidateProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
-    final isMobile = context.media.width < 800;
+    final width = context.media.width;
+    final isMobile = width < 800;
+    final isTablet = width >= 800 && width <= 1100;
 
     if (!state.isInitialized) {
       return const Center(child: CircularProgressIndicator());
@@ -96,86 +98,146 @@ class CandidateProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (isMobile)
-              Column(
-                children: [
-                  _buildProfileHeader(candidate, isDark),
-                  const SizedBox(height: 16),
-                  _buildTopActions(context, state, candidate),
-                  const SizedBox(height: 24),
-                  if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
-                  else _buildPipelineIndicator(candidate, isDark),
-                  const SizedBox(height: 24),
-                  _buildPersonalDetails(candidate, isDark),
-                  const SizedBox(height: 16),
-                  _buildLanguages(candidate, isDark),
-                  const SizedBox(height: 16),
-                  _buildVerificationStatus(candidate, isDark),
-                  const SizedBox(height: 16),
-                  _buildDocuments(candidate, isDark),
-                  const SizedBox(height: 16),
-                  if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
-                  if (candidate.remarks != null) ...[
-                    const SizedBox(height: 16),
-                    _buildRemarks(candidate, isDark),
-                  ],
-                  const SizedBox(height: 24),
-                  if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin)
-                    _buildActionBar(context, candidate, isDark),
-                  const SizedBox(height: 32),
-                  AuditLogWidget(logs: relevantLogs, title: 'Candidate Activity History'),
-                ],
-              )
+              _buildMobileLayout(context, candidate, state, isDark, relevantLogs)
+            else if (isTablet)
+              _buildTabletLayout(context, candidate, state, isDark, relevantLogs)
             else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // LEFT COLUMN (1/3 Width) - The Identity Pane
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildProfileHeader(candidate, isDark),
-                        const SizedBox(height: 16),
-                        _buildTopActions(context, state, candidate),
-                        const SizedBox(height: 16),
-                        _buildPersonalDetails(candidate, isDark),
-                        const SizedBox(height: 16),
-                        _buildLanguages(candidate, isDark),
-                        const SizedBox(height: 16),
-                        _buildVerificationStatus(candidate, isDark),
-                        const SizedBox(height: 16),
-                        _buildDocuments(candidate, isDark),
-                        const SizedBox(height: 24),
-                        if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin)
-                          _buildActionBar(context, candidate, isDark),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  // RIGHT COLUMN (2/3 Width) - The Action Pane
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
-                        else _buildPipelineIndicator(candidate, isDark),
-                        const SizedBox(height: 24),
-                        if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
-                        if (candidate.remarks != null) ...[
-                          _buildRemarks(candidate, isDark),
-                          const SizedBox(height: 24),
-                        ],
-                        AuditLogWidget(logs: relevantLogs, title: 'Candidate Activity History'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              _buildDesktopLayout(context, candidate, state, isDark, relevantLogs),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+    return Column(
+      children: [
+        _buildProfileHeader(candidate, isDark),
+        const SizedBox(height: 16),
+        _buildTopActions(context, state, candidate),
+        const SizedBox(height: 24),
+        if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
+        else _buildPipelineIndicator(candidate, isDark),
+        const SizedBox(height: 24),
+        _buildPersonalDetails(candidate, isDark),
+        const SizedBox(height: 16),
+        _buildLanguages(candidate, isDark),
+        const SizedBox(height: 16),
+        _buildVerificationStatus(candidate, isDark),
+        const SizedBox(height: 16),
+        _buildDocuments(candidate, isDark),
+        const SizedBox(height: 16),
+        if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
+        if (candidate.remarks != null) ...[
+          const SizedBox(height: 16),
+          _buildRemarks(candidate, isDark),
+        ],
+        const SizedBox(height: 24),
+        if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin)
+          _buildActionBar(context, candidate, isDark),
+        const SizedBox(height: 32),
+        AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+      ],
+    );
+  }
+
+  Widget _buildTabletLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildProfileHeader(candidate, isDark),
+        const SizedBox(height: 16),
+        _buildTopActions(context, state, candidate),
+        const SizedBox(height: 24),
+        if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
+        else _buildPipelineIndicator(candidate, isDark),
+        const SizedBox(height: 24),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _buildPersonalDetails(candidate, isDark)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildVerificationStatus(candidate, isDark)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildDocuments(candidate, isDark),
+        const SizedBox(height: 16),
+        if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
+        if (candidate.remarks != null) ...[
+          const SizedBox(height: 16),
+          _buildRemarks(candidate, isDark),
+        ],
+        const SizedBox(height: 24),
+        if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin) ...[
+          _buildActionBar(context, candidate, isDark),
+          const SizedBox(height: 16),
+        ],
+        _buildLanguages(candidate, isDark),
+        const SizedBox(height: 32),
+        AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProfileHeader(candidate, isDark),
+              const SizedBox(height: 16),
+              _buildTopActions(context, state, candidate),
+              const SizedBox(height: 16),
+              _buildPersonalDetails(candidate, isDark),
+              const SizedBox(height: 24),
+              if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin) ...[
+                _buildActionBar(context, candidate, isDark),
+                const SizedBox(height: 16),
+              ],
+              _buildLanguages(candidate, isDark),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
+              else _buildPipelineIndicator(candidate, isDark),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildVerificationStatus(candidate, isDark),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildDocuments(candidate, isDark),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (candidate.currentPlacementId != null) ...[
+                _buildCurrentPlacement(candidate, isDark),
+                const SizedBox(height: 24),
+              ],
+              if (candidate.remarks != null) ...[
+                _buildRemarks(candidate, isDark),
+                const SizedBox(height: 24),
+              ],
+              AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -504,7 +566,9 @@ class CandidateProfileScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 36,
-              backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
+              backgroundColor: isDark 
+                  ? AppColors.white.withValues(alpha: 0.1)
+                  : AppColors.navyBlue.withValues(alpha: 0.1),
               child: Text(
                 candidate.fullName.isNotEmpty
                     ? candidate.fullName
@@ -516,7 +580,7 @@ class CandidateProfileScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.navyBlue,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
                 ),
               ),
             ),
@@ -534,10 +598,11 @@ class CandidateProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       _buildBadge(candidate.category, AppColors.gold),
-                      const SizedBox(width: 8),
                       _buildBadge(
                         candidate.status.displayName,
                         _candidateStatusColor(candidate.status),
@@ -617,7 +682,14 @@ class CandidateProfileScreen extends StatelessWidget {
                   );
                 }
                 final stepIndex = i ~/ 2;
-                final isComplete = stepIndex < progress;
+                bool isComplete = stepIndex < progress;
+                bool isSkipped = false;
+                
+                if (stepIndex == 2 && progress > 2 && !candidate.isMedicalCleared) {
+                  isComplete = false;
+                  isSkipped = true;
+                }
+
                 return Column(
                   children: [
                     Container(
@@ -625,38 +697,41 @@ class CandidateProfileScreen extends StatelessWidget {
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color:
-                            isComplete
+                        color: isSkipped 
+                            ? (isDark ? AppColors.grey700 : AppColors.grey200)
+                            : (isComplete
                                 ? colors[stepIndex]
                                 : (isDark
                                     ? AppColors.grey700
-                                    : AppColors.grey300),
+                                    : AppColors.grey300)),
+                        border: isSkipped ? Border.all(color: AppColors.grey400, width: 2) : null,
                       ),
                       child: Icon(
-                        isComplete ? Icons.check : Icons.circle,
-                        size: isComplete ? 18 : 8,
-                        color: AppColors.white,
+                        isSkipped ? Icons.double_arrow : (isComplete ? Icons.check : Icons.circle),
+                        size: isSkipped ? 16 : (isComplete ? 18 : 8),
+                        color: isSkipped ? AppColors.grey500 : AppColors.white,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      steps[stepIndex],
+                      isSkipped ? 'Skipped' : steps[stepIndex],
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight:
-                            isComplete ? FontWeight.w600 : FontWeight.w400,
-                        color:
-                            isComplete
+                            (isComplete || isSkipped) ? FontWeight.w600 : FontWeight.w400,
+                        color: isSkipped 
+                            ? AppColors.grey500
+                            : (isComplete
                                 ? colors[stepIndex]
                                 : (isDark
                                     ? AppColors.grey500
-                                    : AppColors.grey600),
+                                    : AppColors.grey600)),
                       ),
                     ),
                     if (dates[stepIndex] != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        DateFormat('MMM dd').format(dates[stepIndex]!),
+                        DateFormat('dd MMM yyyy').format(dates[stepIndex]!),
                         style: GoogleFonts.poppins(
                           fontSize: 9,
                           color: isDark ? AppColors.grey500 : AppColors.grey600,

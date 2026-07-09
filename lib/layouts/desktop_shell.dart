@@ -160,16 +160,16 @@ class _DesktopShellState extends State<DesktopShell> {
             route: '/sourcing/candidates/hired',
           ),
           _SidebarItem(
-            icon: Icons.block_outlined,
-            activeIcon: Icons.block,
-            label: 'Blacklisted',
-            route: '/sourcing/candidates/blacklisted',
-          ),
-          _SidebarItem(
             icon: Icons.school_outlined,
             activeIcon: Icons.school,
             label: 'Learning',
             route: '/sourcing/learning',
+          ),
+          _SidebarItem(
+            icon: Icons.block_outlined,
+            activeIcon: Icons.block,
+            label: 'Blacklisted',
+            route: '/sourcing/candidates/blacklisted',
           ),
         ];
       case UserRole.executive:

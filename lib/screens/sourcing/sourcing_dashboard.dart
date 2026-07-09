@@ -90,90 +90,136 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
             // Stat cards
             LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount =
-                    constraints.maxWidth > 1200
-                        ? 5
-                        : constraints.maxWidth > 900
-                        ? 3
-                        : constraints.maxWidth > 600
-                        ? 2
-                        : 1;
+                final isDesktop = constraints.maxWidth > 900;
+                final isTablet = constraints.maxWidth > 600 && !isDesktop;
+
+                final monthlyGoalCard = _buildStatCard(
+                  icon: Icons.person_add_alt_1,
+                  iconColor: AppColors.stageMedicalCheck,
+                  title: 'Added This Month',
+                  value: _indianFormat.format(_stats['addedThisMonth'] as int),
+                  isDark: isDark,
+                  progress: (_stats['addedThisMonth'] as int) /
+                      (_stats['targetThisMonth'] as int),
+                  progressText:
+                      '${_indianFormat.format(_stats['addedThisMonth'] as int)} / ${_indianFormat.format(_stats['targetThisMonth'] as int)} Goal',
+                );
+
+                final statGrid = GridView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isDesktop ? 2 : (isTablet ? 2 : 1),
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    mainAxisExtent: 90,
+                  ),
+                  children: [
+                    _buildStatCard(
+                      icon: Icons.person_add,
+                      iconColor: AppColors.successGreen,
+                      title: 'Added Last Month',
+                      value: _indianFormat.format(_stats['addedLastMonth'] as int),
+                      isDark: isDark,
+                      compact: true,
+                    ),
+                    _buildStatCard(
+                      icon: Icons.check_circle_outline,
+                      iconColor: AppColors.stageVerified,
+                      title: 'Ready (No Medical)',
+                      value:
+                          _indianFormat.format(_stats['readyToPlaceNoMedical'] as int),
+                      isDark: isDark,
+                      compact: true,
+                    ),
+                    _buildStatCard(
+                      icon: Icons.medical_services,
+                      iconColor: AppColors.successGreen,
+                      title: 'Ready (Medical Verified)',
+                      value:
+                          _indianFormat.format(_stats['readyToPlaceMedical'] as int),
+                      isDark: isDark,
+                      compact: true,
+                    ),
+                    _buildStatCard(
+                      icon: Icons.people_outline,
+                      iconColor: AppColors.navyBlue,
+                      title: 'Total Candidates',
+                      value: _indianFormat.format(_stats['totalCandidates'] as int),
+                      isDark: isDark,
+                      compact: true,
+                    ),
+                  ],
+                );
+
+                if (isDesktop) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Monthly Sourcing Goal',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 12),
+                            monthlyGoalCard,
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Performance Overview',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 12),
+                            statGrid,
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Monthly Sourcing Goal',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 12),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 400),
-                      child: _buildStatCard(
-                        icon: Icons.person_add_alt_1,
-                        iconColor: AppColors.stageMedicalCheck,
-                        title: 'Added This Month',
-                        value: _indianFormat.format(
-                          _stats['addedThisMonth'] as int,
-                        ),
-                        isDark: isDark,
-                        progress:
-                            (_stats['addedThisMonth'] as int) /
-                            (_stats['targetThisMonth'] as int),
-                        progressText:
-                            '${_indianFormat.format(_stats['addedThisMonth'] as int)} / ${_indianFormat.format(_stats['targetThisMonth'] as int)} Goal',
-                      ),
+                      child: monthlyGoalCard,
                     ),
                     const SizedBox(height: 24),
-                    GridView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        mainAxisExtent: 135,
-                      ),
-                      children: [
-                        _buildStatCard(
-                          icon: Icons.person_add,
-                          iconColor: AppColors.successGreen,
-                          title: 'Added Last Month',
-                          value: _indianFormat.format(
-                            _stats['addedLastMonth'] as int,
-                          ),
-                          isDark: isDark,
-                        ),
-                        _buildStatCard(
-                          icon: Icons.check_circle_outline,
-                          iconColor: AppColors.stageVerified,
-                          title: 'Ready (No Medical)',
-                          value: _indianFormat.format(
-                            _stats['readyToPlaceNoMedical'] as int,
-                          ),
-                          isDark: isDark,
-                        ),
-                        _buildStatCard(
-                          icon: Icons.medical_services,
-                          iconColor: AppColors.successGreen,
-                          title: 'Ready (Medical Verified)',
-                          value: _indianFormat.format(
-                            _stats['readyToPlaceMedical'] as int,
-                          ),
-                          isDark: isDark,
-                        ),
-                        _buildStatCard(
-                          icon: Icons.people_outline,
-                          iconColor: AppColors.navyBlue,
-                          title: 'Total Candidates',
-                          value: _indianFormat.format(
-                            _stats['totalCandidates'] as int,
-                          ),
-                          isDark: isDark,
-                        ),
-                      ],
+                    Text(
+                      'Performance Overview',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
+                    const SizedBox(height: 12),
+                    statGrid,
                   ],
                 );
               },
@@ -309,6 +355,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
     required bool isDark,
     double? progress,
     String? progressText,
+    bool compact = false,
   }) {
     return Card(
       elevation: 0,
@@ -320,58 +367,100 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
       ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 22, color: iconColor),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isDark ? AppColors.grey400 : AppColors.grey600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
-              ),
-            ),
-            if (progress != null) ...[
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor:
-                    isDark ? AppColors.darkSurfaceVariant : AppColors.grey200,
-                valueColor: AlwaysStoppedAnimation<Color>(iconColor),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              if (progressText != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  progressText,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: isDark ? AppColors.grey400 : AppColors.grey500,
+        padding: EdgeInsets.all(compact ? 12 : 16),
+        child: compact
+            ? Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 20, color: iconColor),
                   ),
-                ),
-              ],
-            ],
-          ],
-        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? AppColors.grey400 : AppColors.grey600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          value,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, size: 22, color: iconColor),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.grey400 : AppColors.grey600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                  ),
+                  if (progress != null) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: isDark
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.grey200,
+                      valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    if (progressText != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        progressText,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: isDark ? AppColors.grey400 : AppColors.grey500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
       ),
     );
   }

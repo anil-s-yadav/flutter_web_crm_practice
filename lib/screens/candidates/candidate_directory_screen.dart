@@ -42,6 +42,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   String? _selectedLanguage;
   String? _selectedExperience;
   String? _selectedLocation;
+  String? _selectedCategory;
 
   void _onRowTap(CandidateModel candidate) {
     if (!widget.readOnly) {
@@ -208,6 +209,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           }
           if (_selectedLocation != null && _selectedLocation != 'All') {
             if (m.city.toLowerCase() != _selectedLocation!.toLowerCase())
+              return false;
+          }
+          if (_selectedCategory != null && _selectedCategory != 'All') {
+            if (m.category.toLowerCase() != _selectedCategory!.toLowerCase())
               return false;
           }
           return true;
@@ -407,6 +412,20 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             ),
           ),
           const Spacer(),
+          _buildFilterDropdown(
+            value: _selectedCategory,
+            hint: 'Category',
+            items: [
+              'All',
+              'Maid',
+              'Cook',
+              'Nanny',
+              'Caretaker',
+            ],
+            onChanged: (val) => setState(() => _selectedCategory = val),
+            isDark: isDark,
+          ),
+          const SizedBox(width: 8),
           _buildFilterDropdown(
             value: _selectedLanguage,
             hint: 'Language',
@@ -814,14 +833,14 @@ class _CandidateGridView extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: AppColors.navyBlue.withValues(
-                          alpha: 0.1,
-                        ),
+                        backgroundColor: isDark 
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.1),
                         child: Text(
                           candidate.fullName[0],
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.navyBlue,
+                            color: isDark ? AppColors.white : AppColors.navyBlue,
                           ),
                         ),
                       ),

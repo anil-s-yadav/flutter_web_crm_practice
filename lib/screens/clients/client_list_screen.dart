@@ -105,10 +105,15 @@ class _ClientListView extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
+                    backgroundColor: isDark 
+                        ? AppColors.white.withValues(alpha: 0.1)
+                        : AppColors.navyBlue.withValues(alpha: 0.1),
                     child: Text(
                       client.fullName[0],
-                      style: const TextStyle(color: AppColors.navyBlue, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: isDark ? AppColors.white : AppColors.navyBlue, 
+                        fontWeight: FontWeight.bold
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),

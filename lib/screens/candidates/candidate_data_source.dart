@@ -127,15 +127,15 @@ class CandidateDataSource extends DataGridSource {
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: AppColors.navyBlue.withValues(
-                          alpha: 0.1,
-                        ),
+                        backgroundColor: isDark 
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.1),
                         child: Text(
                           candidate.fullName[0],
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.navyBlue,
+                            color: isDark ? AppColors.white : AppColors.navyBlue,
                           ),
                         ),
                       ),
