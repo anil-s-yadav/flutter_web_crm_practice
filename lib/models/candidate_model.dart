@@ -1,41 +1,47 @@
 import 'dart:convert';
 
-enum MaidStatus {
+enum CandidateStatus {
   newlyAdded,
   verificationPending,
   medicalPending,
   readyToPlace,
   placed,
+  renewalPending,
+  jobLeft,
   blacklisted,
 }
 
-extension MaidStatusExtension on MaidStatus {
+extension CandidateStatusExtension on CandidateStatus {
   String get displayName {
     switch (this) {
-      case MaidStatus.newlyAdded:
+      case CandidateStatus.newlyAdded:
         return 'Newly Added';
-      case MaidStatus.verificationPending:
+      case CandidateStatus.verificationPending:
         return 'Verification Pending';
-      case MaidStatus.medicalPending:
+      case CandidateStatus.medicalPending:
         return 'Medical Pending';
-      case MaidStatus.readyToPlace:
+      case CandidateStatus.readyToPlace:
         return 'Ready to Place';
-      case MaidStatus.placed:
+      case CandidateStatus.placed:
         return 'Placed';
-      case MaidStatus.blacklisted:
+      case CandidateStatus.renewalPending:
+        return 'Renewal Pending';
+      case CandidateStatus.jobLeft:
+        return 'Job Left';
+      case CandidateStatus.blacklisted:
         return 'Blacklisted';
     }
   }
 
-  static MaidStatus fromString(String value) {
-    return MaidStatus.values.firstWhere(
+  static CandidateStatus fromString(String value) {
+    return CandidateStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => MaidStatus.newlyAdded,
+      orElse: () => CandidateStatus.newlyAdded,
     );
   }
 }
 
-class MaidModel {
+class CandidateModel {
   final String id;
   final String fullName;
   final int age;
@@ -53,7 +59,7 @@ class MaidModel {
   final String expectedSalary;
   final int workingHoursPerDay;
   final String? preferredWorkType;
-  final MaidStatus status;
+  final CandidateStatus status;
 
   // Verification Flags
   final bool isMedicalCleared;
@@ -76,7 +82,7 @@ class MaidModel {
   final DateTime? availableFrom;
   final String? remarks;
 
-  MaidModel({
+  CandidateModel({
     required this.id,
     required this.fullName,
     required this.age,
@@ -112,8 +118,8 @@ class MaidModel {
     this.remarks,
   });
 
-  factory MaidModel.fromJson(Map<String, dynamic> json) {
-    return MaidModel(
+  factory CandidateModel.fromJson(Map<String, dynamic> json) {
+    return CandidateModel(
       id: json['id'],
       fullName: json['fullName'],
       age: json['age'],
@@ -130,9 +136,9 @@ class MaidModel {
       expectedSalary: json['expectedSalary'],
       workingHoursPerDay: json['workingHoursPerDay'],
       preferredWorkType: json['preferredWorkType'],
-      status: MaidStatus.values.firstWhere(
+      status: CandidateStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
-        orElse: () => MaidStatus.newlyAdded,
+        orElse: () => CandidateStatus.newlyAdded,
       ),
       isMedicalCleared: json['isMedicalCleared'] ?? false,
       isPoliceVerified: json['isPoliceVerified'] ?? false,
@@ -196,7 +202,7 @@ class MaidModel {
 
   String toJsonString() => jsonEncode(toJson());
 
-  MaidModel copyWith({
+  CandidateModel copyWith({
     String? fullName,
     int? age,
     String? phone,
@@ -212,7 +218,7 @@ class MaidModel {
     String? expectedSalary,
     int? workingHoursPerDay,
     String? preferredWorkType,
-    MaidStatus? status,
+    CandidateStatus? status,
     bool? isMedicalCleared,
     bool? isPoliceVerified,
     bool? isAadhaarVerified,
@@ -228,7 +234,7 @@ class MaidModel {
     DateTime? availableFrom,
     String? remarks,
   }) {
-    return MaidModel(
+    return CandidateModel(
       id: id,
       fullName: fullName ?? this.fullName,
       age: age ?? this.age,
@@ -267,14 +273,34 @@ class MaidModel {
     );
   }
 
+  CandidateModel clearPlacement() {
+    return CandidateModel(
+      id: id, fullName: fullName, age: age, phone: phone, altPhone: altPhone,
+      address: address, city: city, state: state, languages: languages,
+      religion: religion, category: category, education: education,
+      experienceYears: experienceYears, expectedSalary: expectedSalary,
+      workingHoursPerDay: workingHoursPerDay, preferredWorkType: preferredWorkType,
+      status: status, isMedicalCleared: isMedicalCleared,
+      isPoliceVerified: isPoliceVerified, isAadhaarVerified: isAadhaarVerified,
+      medicalClearanceDocUrl: medicalClearanceDocUrl,
+      policeVerificationDocUrl: policeVerificationDocUrl,
+      aadhaarDocUrl: aadhaarDocUrl, photoUrl: photoUrl,
+      currentPlacementId: null, // CLEAR PLACEMENT
+      addedBy: addedBy, dateAdded: dateAdded,
+      dateVerificationSent: dateVerificationSent, dateMedicalSent: dateMedicalSent,
+      dateReadyToHire: dateReadyToHire, datePlaced: datePlaced,
+      availableFrom: availableFrom, remarks: remarks,
+    );
+  }
+
   @override
   String toString() =>
-      'MaidModel(id: $id, name: $fullName, status: ${status.displayName})';
+      'CandidateModel(id: $id, name: $fullName, status: ${status.displayName})';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MaidModel && runtimeType == other.runtimeType && id == other.id;
+      other is CandidateModel && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

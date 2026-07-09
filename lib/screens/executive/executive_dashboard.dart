@@ -84,9 +84,9 @@ class ExecutiveDashboard extends StatelessWidget {
                   Text(task.clientName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                   const SizedBox(height: 4),
                   Text(task.clientAddress, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodySmall?.color)),
-                  if (task.maidName != null) ...[
+                  if (task.candidateName != null) ...[
                     const SizedBox(height: 4),
-                    Text('Maid: ${task.maidName}', style: const TextStyle(fontSize: 13, color: AppColors.navyBlue)),
+                    Text('Candidate: ${task.candidateName}', style: const TextStyle(fontSize: 13, color: AppColors.navyBlue)),
                   ],
                   const SizedBox(height: 8),
                   Row(children: [

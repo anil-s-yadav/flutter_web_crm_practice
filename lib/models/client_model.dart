@@ -54,7 +54,7 @@ class ClientModel {
   final bool hasElderlyMembers;
   final bool hasChildren;
   final int? childrenCount;
-  final String preferredMaidCategory;
+  final String preferredCandidateCategory;
   final List<String> requiredSkills;
   final String budgetRange;
   final ClientStatus status;
@@ -79,7 +79,7 @@ class ClientModel {
     this.hasElderlyMembers = false,
     this.hasChildren = false,
     this.childrenCount,
-    required this.preferredMaidCategory,
+    required this.preferredCandidateCategory,
     required this.requiredSkills,
     required this.budgetRange,
     required this.status,
@@ -106,7 +106,7 @@ class ClientModel {
       hasElderlyMembers: (json['hasElderlyMembers'] as bool?) ?? false,
       hasChildren: (json['hasChildren'] as bool?) ?? false,
       childrenCount: json['childrenCount'] as int?,
-      preferredMaidCategory: json['preferredMaidCategory'] as String,
+      preferredCandidateCategory: json['preferredCandidateCategory'] as String,
       requiredSkills: List<String>.from(json['requiredSkills'] as List),
       budgetRange: json['budgetRange'] as String,
       status: ClientStatusExtension.fromString(json['status'] as String),
@@ -134,7 +134,7 @@ class ClientModel {
       'hasElderlyMembers': hasElderlyMembers,
       'hasChildren': hasChildren,
       'childrenCount': childrenCount,
-      'preferredMaidCategory': preferredMaidCategory,
+      'preferredCandidateCategory': preferredCandidateCategory,
       'requiredSkills': requiredSkills,
       'budgetRange': budgetRange,
       'status': status.name,
@@ -163,7 +163,7 @@ class ClientModel {
     bool? hasElderlyMembers,
     bool? hasChildren,
     int? childrenCount,
-    String? preferredMaidCategory,
+    String? preferredCandidateCategory,
     List<String>? requiredSkills,
     String? budgetRange,
     ClientStatus? status,
@@ -188,7 +188,7 @@ class ClientModel {
       hasElderlyMembers: hasElderlyMembers ?? this.hasElderlyMembers,
       hasChildren: hasChildren ?? this.hasChildren,
       childrenCount: childrenCount ?? this.childrenCount,
-      preferredMaidCategory: preferredMaidCategory ?? this.preferredMaidCategory,
+      preferredCandidateCategory: preferredCandidateCategory ?? this.preferredCandidateCategory,
       requiredSkills: requiredSkills ?? this.requiredSkills,
       budgetRange: budgetRange ?? this.budgetRange,
       status: status ?? this.status,

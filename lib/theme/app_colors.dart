@@ -64,7 +64,7 @@ class AppColors {
   static const Color stageCompleted = Color(0xFF4CAF50);
   static const Color stagePending = Color(0xFFBDBDBD);
 
-  // Maid Status Colors
+  // Candidate Status Colors
   static const Color statusVerified = Color(0xFF4CAF50);
   static const Color statusPending = Color(0xFFFFA726);
   static const Color statusPlaced = Color(0xFF42A5F5);

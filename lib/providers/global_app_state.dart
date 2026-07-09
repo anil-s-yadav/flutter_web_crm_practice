@@ -4,13 +4,13 @@ import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/executive_task_model.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/models/user_model.dart';
 
 class GlobalAppState extends ChangeNotifier {
   List<ClientModel> _clients = [];
-  List<MaidModel> _maids = [];
+  List<CandidateModel> _candidates = [];
   List<ContractModel> _contracts = [];
   final List<TicketModel> _tickets = [];
   List<ExecutiveTaskModel> _tasks = [];
@@ -22,7 +22,7 @@ class GlobalAppState extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
 
   List<ClientModel> get clients => _clients;
-  List<MaidModel> get maids => _maids;
+  List<CandidateModel> get candidates => _candidates;
   List<ContractModel> get contracts => _contracts;
   List<TicketModel> get tickets => _tickets;
   List<ExecutiveTaskModel> get tasks => _tasks;
@@ -36,12 +36,12 @@ class GlobalAppState extends ChangeNotifier {
     _currentUser ??= const UserModel(
       id: 2,
       name: 'Priya Mehta',
-      email: 'priya@verifiedmaids.in',
+      email: 'priya@verifiedcandidates.in',
       role: UserRole.sales,
     );
 
     // Seed in-memory data
-    _maids = List.generate(200, (i) => MockDataGenerator.generateMaid(i));
+    _candidates = List.generate(200, (i) => MockDataGenerator.generateCandidate(i));
     _clients = List.generate(100, (i) => MockDataGenerator.generateClient(i));
 
     // Let's generate a few contracts
@@ -50,15 +50,15 @@ class GlobalAppState extends ChangeNotifier {
 
     for (int i = 0; i < 40; i++) {
       final client = _clients[i];
-      final maid = _maids[i];
+      final candidate = _candidates[i];
 
-      // Update maid and client status for realism
+      // Update candidate and client status for realism
       final contract = ContractModel(
         id: 'C${(++contractCount).toString().padLeft(6, '0')}',
         clientId: client.id,
-        maidId: maid.id,
+        candidateId: candidate.id,
         clientName: client.fullName,
-        maidName: maid.fullName,
+        candidateName: candidate.fullName,
         placementDate: DateTime.now().subtract(Duration(days: i * 3)),
         guaranteeEndDate: DateTime.now().add(Duration(days: 180 - (i * 3))),
         serviceFee: 25000,
@@ -71,8 +71,8 @@ class GlobalAppState extends ChangeNotifier {
 
       _contracts.add(contract);
 
-      _maids[i] = maid.copyWith(
-        status: MaidStatus.placed,
+      _candidates[i] = candidate.copyWith(
+        status: CandidateStatus.placed,
         currentPlacementId: contract.id,
       );
 
@@ -94,7 +94,7 @@ class GlobalAppState extends ChangeNotifier {
           actionType: ActionType.create,
           targetId: contract.id,
           description:
-              'Created contract ${contract.id} for ${contract.clientName} with maid ${contract.maidName}',
+              'Created contract ${contract.id} for ${contract.clientName} with candidate ${contract.candidateName}',
         ),
       );
     }
@@ -183,8 +183,8 @@ class GlobalAppState extends ChangeNotifier {
         status: TicketStatus.open,
         clientId: contract.clientId,
         clientName: contract.clientName,
-        maidId: contract.maidId,
-        maidName: contract.maidName,
+        candidateId: contract.candidateId,
+        candidateName: contract.candidateName,
         contractId: contract.id,
         assignedTo: 'Sourcing Team',
         createdAt: DateTime.now(),
@@ -197,6 +197,36 @@ class GlobalAppState extends ChangeNotifier {
         contract.id,
         'Initiated replacement ticket ${ticket.id}',
       );
+      notifyListeners();
+    }
+  }
+
+  void releaseCandidateToPool(String contractId) {
+    final idx = _contracts.indexWhere((c) => c.id == contractId);
+    if (idx != -1) {
+      final contract = _contracts[idx];
+      _contracts[idx] = contract.copyWith(contractStatus: ContractStatus.completed);
+      
+      final candidateIdx = _candidates.indexWhere((m) => m.id == contract.candidateId);
+      if (candidateIdx != -1) {
+        _candidates[candidateIdx] = _candidates[candidateIdx].clearPlacement().copyWith(status: CandidateStatus.readyToPlace); 
+      }
+      logAction(ActionType.update, contract.id, 'Contract completed. Candidate released to pool.');
+      notifyListeners();
+    }
+  }
+
+  void markCandidateLeft(String contractId) {
+    final idx = _contracts.indexWhere((c) => c.id == contractId);
+    if (idx != -1) {
+      final contract = _contracts[idx];
+      _contracts[idx] = contract.copyWith(contractStatus: ContractStatus.completed);
+      
+      final candidateIdx = _candidates.indexWhere((m) => m.id == contract.candidateId);
+      if (candidateIdx != -1) {
+        _candidates[candidateIdx] = _candidates[candidateIdx].clearPlacement().copyWith(status: CandidateStatus.jobLeft); 
+      }
+      logAction(ActionType.update, contract.id, 'Contract completed. Candidate left job.');
       notifyListeners();
     }
   }
@@ -218,60 +248,60 @@ class GlobalAppState extends ChangeNotifier {
     }
   }
 
-  // --- Maid Modifications ---
-  void addMaid(MaidModel maid) {
-    _maids.insert(0, maid);
+  // --- Candidate Modifications ---
+  void addCandidate(CandidateModel candidate) {
+    _candidates.insert(0, candidate);
     logAction(
       ActionType.create,
-      maid.id,
-      'Added new candidate: ${maid.fullName} (${maid.category})',
+      candidate.id,
+      'Added new candidate: ${candidate.fullName} (${candidate.category})',
     );
     notifyListeners();
   }
 
-  void updateMaid(MaidModel updatedMaid, String changesSummary) {
-    final idx = _maids.indexWhere((m) => m.id == updatedMaid.id);
+  void updateCandidate(CandidateModel updatedCandidate, String changesSummary) {
+    final idx = _candidates.indexWhere((m) => m.id == updatedCandidate.id);
     if (idx != -1) {
-      _maids[idx] = updatedMaid;
+      _candidates[idx] = updatedCandidate;
       logAction(
         ActionType.update,
-        updatedMaid.id,
+        updatedCandidate.id,
         'Edited details: $changesSummary',
       );
       notifyListeners();
     }
   }
 
-  void advanceMaidPipeline(String maidId, MaidStatus newStatus) {
-    final idx = _maids.indexWhere((m) => m.id == maidId);
+  void advanceCandidatePipeline(String candidateId, CandidateStatus newStatus) {
+    final idx = _candidates.indexWhere((m) => m.id == candidateId);
     if (idx != -1) {
-      final maid = _maids[idx];
+      final candidate = _candidates[idx];
       final now = DateTime.now();
-      _maids[idx] = maid.copyWith(
+      _candidates[idx] = candidate.copyWith(
         status: newStatus,
-        dateVerificationSent: newStatus == MaidStatus.verificationPending ? now : maid.dateVerificationSent,
-        dateMedicalSent: newStatus == MaidStatus.medicalPending ? now : maid.dateMedicalSent,
-        dateReadyToHire: newStatus == MaidStatus.readyToPlace ? now : maid.dateReadyToHire,
-        datePlaced: newStatus == MaidStatus.placed ? now : maid.datePlaced,
+        dateVerificationSent: newStatus == CandidateStatus.verificationPending ? now : candidate.dateVerificationSent,
+        dateMedicalSent: newStatus == CandidateStatus.medicalPending ? now : candidate.dateMedicalSent,
+        dateReadyToHire: newStatus == CandidateStatus.readyToPlace ? now : candidate.dateReadyToHire,
+        datePlaced: newStatus == CandidateStatus.placed ? now : candidate.datePlaced,
       );
       logAction(
         ActionType.statusChange,
-        maid.id,
+        candidate.id,
         'Advanced pipeline stage to ${newStatus.name}',
       );
       notifyListeners();
     }
   }
 
-  void blacklistMaid(String maidId, String reason) {
-    final idx = _maids.indexWhere((m) => m.id == maidId);
+  void blacklistCandidate(String candidateId, String reason) {
+    final idx = _candidates.indexWhere((m) => m.id == candidateId);
     if (idx != -1) {
-      final maid = _maids[idx];
-      _maids[idx] = maid.copyWith(
-        status: MaidStatus.blacklisted,
-        remarks: 'BLACKLISTED: $reason\n${maid.remarks ?? ""}',
+      final candidate = _candidates[idx];
+      _candidates[idx] = candidate.copyWith(
+        status: CandidateStatus.blacklisted,
+        remarks: 'BLACKLISTED: $reason\n${candidate.remarks ?? ""}',
       );
-      logAction(ActionType.statusChange, maid.id, 'Blacklisted maid: $reason');
+      logAction(ActionType.statusChange, candidate.id, 'Blacklisted candidate: $reason');
       notifyListeners();
     }
   }
@@ -285,9 +315,9 @@ class GlobalAppState extends ChangeNotifier {
     }
   }
 
-  MaidModel? getMaid(String id) {
+  CandidateModel? getCandidate(String id) {
     try {
-      return _maids.firstWhere((m) => m.id == id);
+      return _candidates.firstWhere((m) => m.id == id);
     } catch (_) {
       return null;
     }

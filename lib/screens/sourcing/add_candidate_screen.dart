@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -48,7 +48,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     final newId =
         'M${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
 
-    final maid = MaidModel(
+    final candidate = CandidateModel(
       id: newId,
       fullName: _name,
       age: _age,
@@ -64,7 +64,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       expectedSalary:
           '₹${_expectedSalary.toInt()} - ₹${(_expectedSalary * 1.2).toInt()}',
       workingHoursPerDay: _category == 'Driver' ? 12 : 10,
-      status: MaidStatus.newlyAdded,
+      status: CandidateStatus.newlyAdded,
       isMedicalCleared: false,
       isPoliceVerified: false,
       isAadhaarVerified: false,
@@ -74,7 +74,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       dateAdded: DateTime.now(),
     );
 
-    state.addMaid(maid);
+    state.addCandidate(candidate);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Candidate $_name added successfully!')),
     );

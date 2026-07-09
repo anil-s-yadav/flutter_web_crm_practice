@@ -120,6 +120,11 @@ class _JobleftCandidatesState extends State<JobleftCandidates> {
                   selectionMode: SelectionMode.multiple,
                   columns: [
                     GridColumn(
+                      columnName: 'sr_no',
+                      columnWidthMode: ColumnWidthMode.auto,
+                      label: columnTitle("ID", myColors),
+                    ),
+                    GridColumn(
                       columnName: 'name',
                       label: columnTitle("Name", myColors),
                     ),
@@ -168,9 +173,12 @@ class CandidateDataSource extends DataGridSource {
 
   void buildDataGridRows() {
     _dataGridRows =
-        _candidates.map((c) {
+        _candidates.asMap().entries.map((entry) {
+          final int index = entry.key;
+          final Candidate c = entry.value;
           return DataGridRow(
             cells: [
+              DataGridCell(columnName: 'sr_no', value: 'VMS${c.id.toString().padLeft(3, '0')}'),
               DataGridCell(columnName: 'name', value: c.name),
               DataGridCell(columnName: 'age', value: c.age),
               DataGridCell(columnName: 'mobile', value: c.mobile),

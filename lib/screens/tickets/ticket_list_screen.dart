@@ -170,7 +170,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                     const SizedBox(height: 8),
                                     Text(ticket.title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 4),
-                                    Text('Client: ${ticket.clientName} | Maid: ${ticket.maidName ?? "None"}', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grey600)),
+                                    Text('Client: ${ticket.clientName} | Candidate: ${ticket.candidateName ?? "None"}', style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grey600)),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [

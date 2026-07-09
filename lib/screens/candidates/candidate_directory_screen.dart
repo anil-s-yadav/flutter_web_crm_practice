@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
@@ -10,9 +10,9 @@ import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
-import 'package:practice_app/screens/maids/maid_data_source.dart';
+import 'package:practice_app/screens/candidates/candidate_data_source.dart';
 
-enum MaidDirectoryType {
+enum CandidateDirectoryType {
   newlyAdded,
   readyToPlace,
   verificationPending,
@@ -21,37 +21,38 @@ enum MaidDirectoryType {
   blacklisted,
 }
 
-class MaidDirectoryScreen extends StatefulWidget {
+class CandidateDirectoryScreen extends StatefulWidget {
   final bool readOnly;
-  final MaidDirectoryType type;
+  final CandidateDirectoryType type;
 
-  const MaidDirectoryScreen({
+  const CandidateDirectoryScreen({
     super.key,
     this.readOnly = false,
     required this.type,
   });
 
   @override
-  State<MaidDirectoryScreen> createState() => _MaidDirectoryScreenState();
+  State<CandidateDirectoryScreen> createState() => _CandidateDirectoryScreenState();
 }
 
-class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
+class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   final _searchController = TextEditingController();
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
   String _searchQuery = '';
   String? _selectedLanguage;
-  String? _selectedEducation;
+  String? _selectedExperience;
+  String? _selectedLocation;
 
-  void _onRowTap(MaidModel maid) {
+  void _onRowTap(CandidateModel candidate) {
     if (!widget.readOnly) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
       final routePrefix =
           state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-      context.go('$routePrefix/maids/${maid.id}');
+      context.push('$routePrefix/candidates/${candidate.id}');
     }
   }
 
-  void _onActionTap(MaidModel maid, String action) {
+  void _onActionTap(CandidateModel candidate, String action) {
     if (widget.readOnly) return;
     final state = Provider.of<GlobalAppState>(context, listen: false);
 
@@ -59,15 +60,15 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
       case 'edit':
         final routePrefix =
             state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-        context.go('$routePrefix/maids/${maid.id}/edit');
+        context.go('$routePrefix/candidates/${candidate.id}/edit');
         break;
       case 'promote_verification':
-        state.advanceMaidPipeline(maid.id, MaidStatus.verificationPending);
+        state.advanceCandidatePipeline(candidate.id, CandidateStatus.verificationPending);
         break;
       case 'promote_medical':
-        state.updateMaid(
-          maid.copyWith(
-            status: MaidStatus.medicalPending,
+        state.updateCandidate(
+          candidate.copyWith(
+            status: CandidateStatus.medicalPending,
             isPoliceVerified: true,
             isAadhaarVerified: true,
           ),
@@ -75,29 +76,29 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
         );
         break;
       case 'promote_ready':
-        state.updateMaid(
-          maid.copyWith(
-            status: MaidStatus.readyToPlace,
+        state.updateCandidate(
+          candidate.copyWith(
+            status: CandidateStatus.readyToPlace,
             isPoliceVerified: true,
             isAadhaarVerified: true,
             isMedicalCleared:
-                maid.status == MaidStatus.medicalPending ? true : false,
+                candidate.status == CandidateStatus.medicalPending ? true : false,
             availableFrom: DateTime.now(),
           ),
-          maid.status == MaidStatus.medicalPending
+          candidate.status == CandidateStatus.medicalPending
               ? 'Medical Test Cleared. Moved to Ready to Place.'
               : 'Police & Aadhaar Verified. Medical bypassed. Moved to Ready to Place.',
         );
         break;
       case 'blacklist':
-        _showBlacklistDialog(context, maid.id, state);
+        _showBlacklistDialog(context, candidate.id, state);
         break;
     }
   }
 
   void _showBlacklistDialog(
     BuildContext context,
-    String maidId,
+    String candidateId,
     GlobalAppState state,
   ) {
     final noteController = TextEditingController();
@@ -153,7 +154,7 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
                   );
                   return;
                 }
-                state.blacklistMaid(maidId, noteController.text.trim());
+                state.blacklistCandidate(candidateId, noteController.text.trim());
                 Navigator.pop(ctx);
               },
               style: ElevatedButton.styleFrom(
@@ -181,8 +182,8 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
     }
 
     // 1. Search Filter
-    final baseMaids =
-        state.maids.where((m) {
+    final baseCandidates =
+        state.candidates.where((m) {
           if (_searchQuery.isNotEmpty) {
             final q = _searchQuery.toLowerCase();
             final matchesQuery =
@@ -196,21 +197,31 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
           if (_selectedLanguage != null && _selectedLanguage != 'All') {
             if (!m.languages.contains(_selectedLanguage)) return false;
           }
-          if (_selectedEducation != null && _selectedEducation != 'All') {
-            if (m.education != _selectedEducation) return false;
+          if (_selectedExperience != null && _selectedExperience != 'All') {
+            final exp = m.experienceYears;
+            if (_selectedExperience == '0-1 Years' && exp > 1) return false;
+            if (_selectedExperience == '1-3 Years' && (exp <= 1 || exp > 3))
+              return false;
+            if (_selectedExperience == '3-5 Years' && (exp <= 3 || exp > 5))
+              return false;
+            if (_selectedExperience == '5+ Years' && exp <= 5) return false;
+          }
+          if (_selectedLocation != null && _selectedLocation != 'All') {
+            if (m.city.toLowerCase() != _selectedLocation!.toLowerCase())
+              return false;
           }
           return true;
         }).toList();
 
     // 2. Routing Logic based on Directory Type
-    if (widget.type == MaidDirectoryType.readyToPlace) {
+    if (widget.type == CandidateDirectoryType.readyToPlace) {
       final policeAndAadhaar =
-          baseMaids.where((m) => m.status == MaidStatus.readyToPlace).toList();
+          baseCandidates.where((m) => m.status == CandidateStatus.readyToPlace).toList();
       final medicalCleared =
-          baseMaids
+          baseCandidates
               .where(
                 (m) =>
-                    m.status == MaidStatus.readyToPlace && m.isMedicalCleared,
+                    m.status == CandidateStatus.readyToPlace && m.isMedicalCleared,
               )
               .toList();
 
@@ -219,7 +230,7 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
         child: Column(
           children: [
             Container(
-              color: isDark ? AppColors.darkSurface : AppColors.white,
+              color: isDark ? AppColors.darkSurface : AppColors.grey200,
               child: TabBar(
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
@@ -228,7 +239,8 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
                 labelColor: isDark ? AppColors.white : AppColors.navyBlue,
                 unselectedLabelColor: AppColors.grey500,
                 labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                dividerColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                dividerColor:
+                    isDark ? AppColors.dividerDark : AppColors.grey200,
                 tabs: [
                   Tab(
                     text:
@@ -241,15 +253,16 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
             _buildToolbar(isDark, policeAndAadhaar.length),
             Expanded(
               child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _MaidGridView(
-                    maids: policeAndAadhaar,
+                  _CandidateGridView(
+                    candidates: policeAndAadhaar,
                     isDark: isDark,
                     onRowTap: _onRowTap,
                     onActionTap: _onActionTap,
                   ),
-                  _MaidGridView(
-                    maids: medicalCleared,
+                  _CandidateGridView(
+                    candidates: medicalCleared,
                     isDark: isDark,
                     onRowTap: _onRowTap,
                     onActionTap: _onActionTap,
@@ -262,10 +275,10 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
       );
     }
 
-    if (widget.type == MaidDirectoryType.verificationPending) {
+    if (widget.type == CandidateDirectoryType.verificationPending) {
       final allPending =
-          baseMaids
-              .where((m) => m.status == MaidStatus.verificationPending)
+          baseCandidates
+              .where((m) => m.status == CandidateStatus.verificationPending)
               .toList();
       final policePending =
           allPending.where((m) => !m.isPoliceVerified).toList();
@@ -277,7 +290,7 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
         child: Column(
           children: [
             Container(
-              color: isDark ? AppColors.darkSurface : AppColors.white,
+              color: isDark ? AppColors.darkSurface : AppColors.grey100,
               child: TabBar(
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
@@ -286,7 +299,8 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
                 labelColor: isDark ? AppColors.white : AppColors.navyBlue,
                 unselectedLabelColor: AppColors.grey500,
                 labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                dividerColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                dividerColor:
+                    isDark ? AppColors.dividerDark : AppColors.grey200,
                 tabs: [
                   Tab(
                     text:
@@ -302,15 +316,16 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
             _buildToolbar(isDark, allPending.length),
             Expanded(
               child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _MaidGridView(
-                    maids: policePending,
+                  _CandidateGridView(
+                    candidates: policePending,
                     isDark: isDark,
                     onRowTap: _onRowTap,
                     onActionTap: _onActionTap,
                   ),
-                  _MaidGridView(
-                    maids: aadhaarPending,
+                  _CandidateGridView(
+                    candidates: aadhaarPending,
                     isDark: isDark,
                     onRowTap: _onRowTap,
                     onActionTap: _onActionTap,
@@ -324,25 +339,25 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
     }
 
     // For single view lists
-    List<MaidModel> displayMaids = [];
+    List<CandidateModel> displayCandidates = [];
     switch (widget.type) {
-      case MaidDirectoryType.newlyAdded:
-        displayMaids =
-            baseMaids.where((m) => m.status == MaidStatus.newlyAdded).toList();
+      case CandidateDirectoryType.newlyAdded:
+        displayCandidates =
+            baseCandidates.where((m) => m.status == CandidateStatus.newlyAdded).toList();
         break;
-      case MaidDirectoryType.medicalPending:
-        displayMaids =
-            baseMaids
-                .where((m) => m.status == MaidStatus.medicalPending)
+      case CandidateDirectoryType.medicalPending:
+        displayCandidates =
+            baseCandidates
+                .where((m) => m.status == CandidateStatus.medicalPending)
                 .toList();
         break;
-      case MaidDirectoryType.hired:
-        displayMaids =
-            baseMaids.where((m) => m.status == MaidStatus.placed).toList();
+      case CandidateDirectoryType.hired:
+        displayCandidates =
+            baseCandidates.where((m) => m.status == CandidateStatus.placed).toList();
         break;
-      case MaidDirectoryType.blacklisted:
-        displayMaids =
-            baseMaids.where((m) => m.status == MaidStatus.blacklisted).toList();
+      case CandidateDirectoryType.blacklisted:
+        displayCandidates =
+            baseCandidates.where((m) => m.status == CandidateStatus.blacklisted).toList();
         break;
       default:
         break;
@@ -350,10 +365,10 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
 
     return Column(
       children: [
-        _buildToolbar(isDark, displayMaids.length),
+        _buildToolbar(isDark, displayCandidates.length),
         Expanded(
-          child: _MaidGridView(
-            maids: displayMaids,
+          child: _CandidateGridView(
+            candidates: displayCandidates,
             isDark: isDark,
             onRowTap: _onRowTap,
             onActionTap: _onActionTap,
@@ -410,10 +425,30 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
           ),
           const SizedBox(width: 8),
           _buildFilterDropdown(
-            value: _selectedEducation,
-            hint: 'Education',
-            items: ['All', 'Below 10th', '10th Pass', '12th Pass', 'Graduate'],
-            onChanged: (val) => setState(() => _selectedEducation = val),
+            value: _selectedExperience,
+            hint: 'Experience',
+            items: ['All', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'],
+            onChanged: (val) => setState(() => _selectedExperience = val),
+            isDark: isDark,
+          ),
+          const SizedBox(width: 8),
+          _buildFilterDropdown(
+            value: _selectedLocation,
+            hint: 'Location',
+            items: [
+              'All',
+              'Andheri',
+              'Bandra',
+              'Borivali',
+              'Dadar',
+              'Ghatkopar',
+              'Juhu',
+              'Kurla',
+              'Powai',
+              'Thane',
+              'Worli',
+            ],
+            onChanged: (val) => setState(() => _selectedLocation = val),
             isDark: isDark,
           ),
           const SizedBox(width: 12),
@@ -427,7 +462,7 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
               },
               style: GoogleFonts.poppins(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Search maids...',
+                hintText: 'Search candidates...',
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 13,
                   color: AppColors.grey500,
@@ -500,14 +535,14 @@ class _MaidDirectoryScreenState extends State<MaidDirectoryScreen> {
   }
 }
 
-class _MaidGridView extends StatelessWidget {
-  final List<MaidModel> maids;
+class _CandidateGridView extends StatelessWidget {
+  final List<CandidateModel> candidates;
   final bool isDark;
-  final Function(MaidModel) onRowTap;
-  final Function(MaidModel, String) onActionTap;
+  final Function(CandidateModel) onRowTap;
+  final Function(CandidateModel, String) onActionTap;
 
-  const _MaidGridView({
-    required this.maids,
+  const _CandidateGridView({
+    required this.candidates,
     required this.isDark,
     required this.onRowTap,
     required this.onActionTap,
@@ -515,7 +550,7 @@ class _MaidGridView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (maids.isEmpty) {
+    if (candidates.isEmpty) {
       return Center(
         child: Text(
           'No candidates found.',
@@ -528,13 +563,13 @@ class _MaidGridView extends StatelessWidget {
 
     final isDesktop = context.media.width > 900;
     if (!isDesktop) {
-      return _buildMobileList(isDark, maids);
+      return _buildMobileList(isDark, candidates);
     }
 
-    final dataSource = MaidDataSource(
+    final dataSource = CandidateDataSource(
       context: context,
       isDark: isDark,
-      maids: maids,
+      candidates: candidates,
       onRowTap: onRowTap,
       onActionTap: onActionTap,
     );
@@ -542,119 +577,182 @@ class _MaidGridView extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: SfDataGridTheme(
-              data: SfDataGridThemeData(
-                headerColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-                rowHoverColor:
-                    isDark
-                        ? AppColors.navyBlue.withValues(alpha: 0.1)
-                        : AppColors.navyBlue.withValues(alpha: 0.04),
-                sortIconColor: isDark ? AppColors.gold : AppColors.navyBlue,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SfDataGridTheme(
+                data: SfDataGridThemeData(
+                  headerColor:
+                      isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                  rowHoverColor:
+                      isDark
+                          ? AppColors.navyBlue.withValues(alpha: 0.1)
+                          : AppColors.navyBlue.withValues(alpha: 0.04),
+                  sortIconColor: isDark ? AppColors.gold : AppColors.navyBlue,
+                ),
+                child: SfDataGrid(
+                  source: dataSource,
+                  allowSorting: true,
+                  allowMultiColumnSorting: false,
+                  columnWidthMode: ColumnWidthMode.fill,
+                  gridLinesVisibility: GridLinesVisibility.both,
+                  headerGridLinesVisibility: GridLinesVisibility.both,
+                  columns: <GridColumn>[
+                    GridColumn(
+                      columnName: 'id',
+                      visible: false,
+                      label: const SizedBox.shrink(),
+                    ),
+                    GridColumn(
+                      columnName: 'sr_no',
+                      columnWidthMode: ColumnWidthMode.auto,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'ID',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'date',
+                      width: 120,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Date',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'candidate',
+                      width: 220,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Profile',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'category',
+                      minimumWidth: 120,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Category',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'experience',
+                      width: 100,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Exp (Yrs)',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'salary',
+                      minimumWidth: 140,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Expected Salary',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'education',
+                      minimumWidth: 120,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Education',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'languages',
+                      minimumWidth: 120,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Lang',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'status',
+                      width: 150,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Status',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    GridColumn(
+                      columnName: 'actions',
+                      width: 80,
+                      label: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Actions',
+                          style: _headerStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: SfDataGrid(
-                source: dataSource,
-                allowSorting: true,
-                allowMultiColumnSorting: false,
-                columnWidthMode: ColumnWidthMode.fill,
-                gridLinesVisibility: GridLinesVisibility.horizontal,
-                headerGridLinesVisibility: GridLinesVisibility.none,
-                columns: <GridColumn>[
-                GridColumn(
-                  columnName: 'id',
-                  visible: false,
-                  label: const SizedBox.shrink(),
-                ),
-                GridColumn(
-                  columnName: 'date',
-                  width: 120,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Date', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'maid',
-                  width: 220,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Profile', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'category',
-                  minimumWidth: 120,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Category', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'experience',
-                  width: 100,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Exp (Yrs)', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'salary',
-                  minimumWidth: 140,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Expected Salary', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'education',
-                  minimumWidth: 120,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Education', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'languages',
-                  minimumWidth: 120,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Lang', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'status',
-                  width: 150,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text('Status', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                GridColumn(
-                  columnName: 'actions',
-                  width: 80,
-                  label: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.center,
-                    child: Text('Actions', style: _headerStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-              ],
             ),
-          ),
           ),
         ),
         // Pagination
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
             border: Border(
@@ -688,13 +786,13 @@ class _MaidGridView extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileList(bool isDark, List<MaidModel> maids) {
+  Widget _buildMobileList(bool isDark, List<CandidateModel> candidates) {
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      itemCount: maids.length,
+      itemCount: candidates.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final maid = maids[index];
+        final candidate = candidates[index];
         return Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -706,7 +804,7 @@ class _MaidGridView extends StatelessWidget {
           color: isDark ? AppColors.darkSurface : AppColors.white,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => onRowTap(maid),
+            onTap: () => onRowTap(candidate),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -720,7 +818,7 @@ class _MaidGridView extends StatelessWidget {
                           alpha: 0.1,
                         ),
                         child: Text(
-                          maid.fullName[0],
+                          candidate.fullName[0],
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             color: AppColors.navyBlue,
@@ -733,7 +831,7 @@ class _MaidGridView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              maid.fullName,
+                              candidate.fullName,
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -744,7 +842,7 @@ class _MaidGridView extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              maid.category,
+                              candidate.category,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color:
@@ -757,8 +855,8 @@ class _MaidGridView extends StatelessWidget {
                         ),
                       ),
                       _buildStatusBadge(
-                        maid.status.displayName,
-                        _maidStatusColor(maid.status),
+                        candidate.status.displayName,
+                        _candidateStatusColor(candidate.status),
                       ),
                       PopupMenuButton<String>(
                         icon: Icon(
@@ -766,10 +864,10 @@ class _MaidGridView extends StatelessWidget {
                           size: 20,
                           color: isDark ? AppColors.grey400 : AppColors.grey600,
                         ),
-                        onSelected: (action) => onActionTap(maid, action),
+                        onSelected: (action) => onActionTap(candidate, action),
                         itemBuilder: (context) {
                           final items = <PopupMenuEntry<String>>[];
-                          if (maid.status == MaidStatus.newlyAdded) {
+                          if (candidate.status == CandidateStatus.newlyAdded) {
                             items.add(
                               const PopupMenuItem(
                                 value: 'edit',
@@ -782,8 +880,8 @@ class _MaidGridView extends StatelessWidget {
                                 child: Text('Move to Verification'),
                               ),
                             );
-                          } else if (maid.status ==
-                              MaidStatus.verificationPending) {
+                          } else if (candidate.status ==
+                              CandidateStatus.verificationPending) {
                             items.add(
                               const PopupMenuItem(
                                 value: 'promote_medical',
@@ -796,7 +894,7 @@ class _MaidGridView extends StatelessWidget {
                                 child: Text('Promote to Ready (Skip Medical)'),
                               ),
                             );
-                          } else if (maid.status == MaidStatus.medicalPending) {
+                          } else if (candidate.status == CandidateStatus.medicalPending) {
                             items.add(
                               const PopupMenuItem(
                                 value: 'promote_ready',
@@ -804,8 +902,8 @@ class _MaidGridView extends StatelessWidget {
                               ),
                             );
                           }
-                          if (maid.status != MaidStatus.blacklisted &&
-                              maid.status != MaidStatus.placed) {
+                          if (candidate.status != CandidateStatus.blacklisted &&
+                              candidate.status != CandidateStatus.placed) {
                             items.add(
                               const PopupMenuItem(
                                 value: 'blacklist',
@@ -850,20 +948,26 @@ class _MaidGridView extends StatelessWidget {
     );
   }
 
-  Color _maidStatusColor(MaidStatus status) {
+  Color _candidateStatusColor(CandidateStatus status) {
     switch (status) {
-      case MaidStatus.newlyAdded:
+      case CandidateStatus.newlyAdded:
         return AppColors.statusInterviewed;
-      case MaidStatus.verificationPending:
+      case CandidateStatus.verificationPending:
         return AppColors.stagePoliceVerification;
-      case MaidStatus.medicalPending:
+      case CandidateStatus.medicalPending:
         return AppColors.stageMedicalCheck;
-      case MaidStatus.readyToPlace:
+      case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case MaidStatus.placed:
+      case CandidateStatus.placed:
         return AppColors.statusPlaced;
-      case MaidStatus.blacklisted:
+      case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
+      case CandidateStatus.renewalPending:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case CandidateStatus.jobLeft:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 

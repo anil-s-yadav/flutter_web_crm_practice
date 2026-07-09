@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 
-class EditMaidScreen extends StatefulWidget {
-  final String maidId;
-  const EditMaidScreen({super.key, required this.maidId});
+class EditCandidateScreen extends StatefulWidget {
+  final String candidateId;
+  const EditCandidateScreen({super.key, required this.candidateId});
 
   @override
-  State<EditMaidScreen> createState() => _EditMaidScreenState();
+  State<EditCandidateScreen> createState() => _EditCandidateScreenState();
 }
 
-class _EditMaidScreenState extends State<EditMaidScreen> {
+class _EditCandidateScreenState extends State<EditCandidateScreen> {
   final _formKey = GlobalKey<FormState>();
-  late MaidModel _maid;
+  late CandidateModel _candidate;
   bool _isLoading = true;
 
   // Form fields
@@ -39,21 +39,21 @@ class _EditMaidScreenState extends State<EditMaidScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
-      final found = state.getMaid(widget.maidId);
+      final found = state.getCandidate(widget.candidateId);
       if (found != null) {
         setState(() {
-          _maid = found;
-          _name = _maid.fullName;
-          _phone = _maid.phone;
-          _age = _maid.age;
-          _city = _maid.city;
-          _address = _maid.address;
-          _religion = _maid.religion;
-          _education = _maid.education;
-          _category = _maid.category;
-          _languages = List.from(_maid.languages);
-          _experienceYears = _maid.experienceYears;
-          _expectedSalary = _maid.expectedSalary;
+          _candidate = found;
+          _name = _candidate.fullName;
+          _phone = _candidate.phone;
+          _age = _candidate.age;
+          _city = _candidate.city;
+          _address = _candidate.address;
+          _religion = _candidate.religion;
+          _education = _candidate.education;
+          _category = _candidate.category;
+          _languages = List.from(_candidate.languages);
+          _experienceYears = _candidate.experienceYears;
+          _expectedSalary = _candidate.expectedSalary;
           _isLoading = false;
         });
       } else {
@@ -70,18 +70,18 @@ class _EditMaidScreenState extends State<EditMaidScreen> {
 
       // Determine what changed for the audit log
       List<String> changes = [];
-      if (_name != _maid.fullName) changes.add('Name');
-      if (_phone != _maid.phone) changes.add('Phone');
-      if (_age != _maid.age) changes.add('Age');
-      if (_city != _maid.city || _address != _maid.address)
+      if (_name != _candidate.fullName) changes.add('Name');
+      if (_phone != _candidate.phone) changes.add('Phone');
+      if (_age != _candidate.age) changes.add('Age');
+      if (_city != _candidate.city || _address != _candidate.address)
         changes.add('Address');
-      if (_religion != _maid.religion) changes.add('Religion');
-      if (_education != _maid.education) changes.add('Education');
-      if (_category != _maid.category) changes.add('Category');
-      if (_languages.join(',') != _maid.languages.join(','))
+      if (_religion != _candidate.religion) changes.add('Religion');
+      if (_education != _candidate.education) changes.add('Education');
+      if (_category != _candidate.category) changes.add('Category');
+      if (_languages.join(',') != _candidate.languages.join(','))
         changes.add('Languages');
-      if (_experienceYears != _maid.experienceYears) changes.add('Experience');
-      if (_expectedSalary != _maid.expectedSalary) changes.add('Salary');
+      if (_experienceYears != _candidate.experienceYears) changes.add('Experience');
+      if (_expectedSalary != _candidate.expectedSalary) changes.add('Salary');
 
       if (changes.isEmpty) {
         ScaffoldMessenger.of(
@@ -91,7 +91,7 @@ class _EditMaidScreenState extends State<EditMaidScreen> {
         return;
       }
 
-      final updatedMaid = _maid.copyWith(
+      final updatedCandidate = _candidate.copyWith(
         fullName: _name,
         age: _age,
         phone: _phone,
@@ -106,7 +106,7 @@ class _EditMaidScreenState extends State<EditMaidScreen> {
       );
 
       final summary = 'Updated: ${changes.join(', ')}';
-      state.updateMaid(updatedMaid, summary);
+      state.updateCandidate(updatedCandidate, summary);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully.')),

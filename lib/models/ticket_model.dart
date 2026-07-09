@@ -65,8 +65,8 @@ class TicketModel {
   final TicketStatus status;
   final String clientId;
   final String clientName;
-  final String? maidId;
-  final String? maidName;
+  final String? candidateId;
+  final String? candidateName;
   final String? contractId;
   final String assignedTo;
   final DateTime createdAt;
@@ -82,8 +82,8 @@ class TicketModel {
     required this.status,
     required this.clientId,
     required this.clientName,
-    this.maidId,
-    this.maidName,
+    this.candidateId,
+    this.candidateName,
     this.contractId,
     required this.assignedTo,
     required this.createdAt,
@@ -114,8 +114,8 @@ class TicketModel {
       status: TicketStatusExtension.fromString(json['status'] as String),
       clientId: json['clientId'] as String,
       clientName: json['clientName'] as String,
-      maidId: json['maidId'] as String?,
-      maidName: json['maidName'] as String?,
+      candidateId: json['candidateId'] as String?,
+      candidateName: json['candidateName'] as String?,
       contractId: json['contractId'] as String?,
       assignedTo: json['assignedTo'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -138,8 +138,8 @@ class TicketModel {
       'status': status.name,
       'clientId': clientId,
       'clientName': clientName,
-      'maidId': maidId,
-      'maidName': maidName,
+      'candidateId': candidateId,
+      'candidateName': candidateName,
       'contractId': contractId,
       'assignedTo': assignedTo,
       'createdAt': createdAt.toIso8601String(),
@@ -159,8 +159,8 @@ class TicketModel {
     TicketStatus? status,
     String? clientId,
     String? clientName,
-    String? maidId,
-    String? maidName,
+    String? candidateId,
+    String? candidateName,
     String? contractId,
     String? assignedTo,
     DateTime? createdAt,
@@ -176,8 +176,8 @@ class TicketModel {
       status: status ?? this.status,
       clientId: clientId ?? this.clientId,
       clientName: clientName ?? this.clientName,
-      maidId: maidId ?? this.maidId,
-      maidName: maidName ?? this.maidName,
+      candidateId: candidateId ?? this.candidateId,
+      candidateName: candidateName ?? this.candidateName,
       contractId: contractId ?? this.contractId,
       assignedTo: assignedTo ?? this.assignedTo,
       createdAt: createdAt ?? this.createdAt,

@@ -76,7 +76,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               _buildStatCard(
                 icon: Icons.trending_down,
                 iconColor: AppColors.urgentAmber,
-                title: 'Maid Attrition Rate',
+                title: 'Candidate Attrition Rate',
                 value: '${_stats['attritionRate']}%',
                 subtitle: 'Last 90 Days',
                 width: _cardWidth(width, isDesktop, isTablet),
@@ -110,8 +110,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             runSpacing: 12,
             children: [
               _buildMiniStat(
-                'Total Maids',
-                _indianFormat.format(_stats['totalMaids'] as int),
+                'Total Candidates',
+                _indianFormat.format(_stats['totalCandidates'] as int),
                 Icons.people_outline,
                 AppColors.stageInterviewed,
                 isDark

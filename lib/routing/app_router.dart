@@ -10,14 +10,14 @@ import 'package:practice_app/screens/sales/sales_dashboard.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
 import 'package:practice_app/screens/shared/learning_screen.dart';
 import 'package:practice_app/screens/executive/executive_dashboard.dart';
-import 'package:practice_app/screens/maids/maid_directory_screen.dart';
-import 'package:practice_app/screens/maids/maid_profile_screen.dart';
+import 'package:practice_app/screens/candidates/candidate_directory_screen.dart';
+import 'package:practice_app/screens/candidates/candidate_profile_screen.dart';
 import 'package:practice_app/screens/clients/client_list_screen.dart';
 import 'package:practice_app/screens/sales/client_profile_screen.dart';
 import 'package:practice_app/screens/contracts/contract_list_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_list_screen.dart';
 import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
-import 'package:practice_app/screens/maids/edit_maid_screen.dart';
+import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
 
 class AppRouter {
   static GoRouter createRouter() {
@@ -48,39 +48,39 @@ class AppRouter {
               builder: (context, state) => const AdminDashboard(),
             ),
             GoRoute(
-              path: '/admin/maids/ready',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.readyToPlace),
+              path: '/admin/candidates/ready',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace),
             ),
             GoRoute(
-              path: '/admin/maids/new',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.newlyAdded),
+              path: '/admin/candidates/new',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.newlyAdded),
             ),
             GoRoute(
-              path: '/admin/maids/verification',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.verificationPending),
+              path: '/admin/candidates/verification',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.verificationPending),
             ),
             GoRoute(
-              path: '/admin/maids/medical',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.medicalPending),
+              path: '/admin/candidates/medical',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.medicalPending),
             ),
             GoRoute(
-              path: '/admin/maids/hired',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.hired),
+              path: '/admin/candidates/hired',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.hired),
             ),
             GoRoute(
-              path: '/admin/maids/blacklisted',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.blacklisted),
+              path: '/admin/candidates/blacklisted',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.blacklisted),
             ),
             GoRoute(
-              path: '/admin/maids/:id',
+              path: '/admin/candidates/:id',
               builder:
                   (context, state) =>
-                      MaidProfileScreen(maidId: state.pathParameters['id']!),
+                      CandidateProfileScreen(candidateId: state.pathParameters['id']!),
             ),
             GoRoute(
-              path: '/admin/maids/:id/edit',
-              builder: (context, state) => EditMaidScreen(
-                maidId: state.pathParameters['id']!,
+              path: '/admin/candidates/:id/edit',
+              builder: (context, state) => EditCandidateScreen(
+                candidateId: state.pathParameters['id']!,
               ),
             ),
             GoRoute(
@@ -137,9 +137,9 @@ class AppRouter {
                       ClientProfileScreen(clientId: state.pathParameters['id']!),
             ),
             GoRoute(
-              path: '/sales/maids',
+              path: '/sales/candidates',
               builder:
-                  (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.readyToPlace, readOnly: true),
+                  (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace, readOnly: true),
             ),
             GoRoute(
               path: '/sales/contracts',
@@ -172,39 +172,39 @@ class AppRouter {
               builder: (context, state) => const LearningScreen(),
             ),
             GoRoute(
-              path: '/sourcing/maids/ready',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.readyToPlace),
+              path: '/sourcing/candidates/ready',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace),
             ),
             GoRoute(
-              path: '/sourcing/maids/new',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.newlyAdded),
+              path: '/sourcing/candidates/new',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.newlyAdded),
             ),
             GoRoute(
-              path: '/sourcing/maids/verification',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.verificationPending),
+              path: '/sourcing/candidates/verification',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.verificationPending),
             ),
             GoRoute(
-              path: '/sourcing/maids/medical',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.medicalPending),
+              path: '/sourcing/candidates/medical',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.medicalPending),
             ),
             GoRoute(
-              path: '/sourcing/maids/hired',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.hired),
+              path: '/sourcing/candidates/hired',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.hired),
             ),
             GoRoute(
-              path: '/sourcing/maids/blacklisted',
-              builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.blacklisted),
+              path: '/sourcing/candidates/blacklisted',
+              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.blacklisted),
             ),
             GoRoute(
-              path: '/sourcing/maids/:id',
-              builder: (context, state) => MaidProfileScreen(
-                maidId: state.pathParameters['id']!,
+              path: '/sourcing/candidates/:id',
+              builder: (context, state) => CandidateProfileScreen(
+                candidateId: state.pathParameters['id']!,
               ),
             ),
             GoRoute(
-              path: '/sourcing/maids/:id/edit',
-              builder: (context, state) => EditMaidScreen(
-                maidId: state.pathParameters['id']!,
+              path: '/sourcing/candidates/:id/edit',
+              builder: (context, state) => EditCandidateScreen(
+                candidateId: state.pathParameters['id']!,
               ),
             ),
           ],

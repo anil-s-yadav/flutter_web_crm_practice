@@ -53,6 +53,7 @@ class ClientListScreen extends StatelessWidget {
           ),
           Expanded(
             child: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _ClientListView(clients: leads, isDark: isDark),
                 _ClientListView(clients: active, isDark: isDark),
@@ -98,7 +99,7 @@ class _ClientListView extends StatelessWidget {
           color: isDark ? AppColors.darkSurface : AppColors.white,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => context.go('$routePrefix/clients/${client.id}'),
+            onTap: () => context.push('$routePrefix/clients/${client.id}'),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -116,11 +117,11 @@ class _ClientListView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          client.fullName,
+                          '[VMC${client.id.padLeft(3, '0')}] ${client.fullName}',
                           style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         Text(
-                          '${client.locality}, ${client.city} • ${client.preferredMaidCategory} • ${DateFormat('MMM dd, yyyy').format(client.inquiryDate)}',
+                          '${client.locality}, ${client.city} • ${client.preferredCandidateCategory} • ${DateFormat('MMM dd, yyyy').format(client.inquiryDate)}',
                           style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500),
                         ),
                       ],

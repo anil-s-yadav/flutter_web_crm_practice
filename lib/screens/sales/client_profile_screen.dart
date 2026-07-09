@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -30,7 +31,7 @@ class ClientProfileScreen extends StatelessWidget {
     }
 
     final contract = state.getContractForClient(client.id);
-    final maid = contract != null ? state.getMaid(contract.maidId) : null;
+    final candidate = contract != null ? state.getCandidate(contract.candidateId) : null;
 
     // Get logs related to this client or their active contract
     final relevantLogs =
@@ -57,6 +58,20 @@ class ClientProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            TextButton.icon(
+              onPressed: () {
+                context.pop();
+              },
+              icon: const Icon(Icons.arrow_back_ios, size: 18),
+              label: Text(
+                'Go Back',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.navyBlue,
+              ),
+            ),
+            const SizedBox(height: 16),
             _buildClientHeader(client, isDark),
             const SizedBox(height: 24),
             Row(
@@ -68,11 +83,11 @@ class ClientProfileScreen extends StatelessWidget {
                     children: [
                       _buildRequirements(client, isDark),
                       const SizedBox(height: 16),
-                      if (contract != null && maid != null) ...[
+                      if (contract != null && candidate != null) ...[
                         _buildActiveContractCard(
                           context,
                           contract,
-                          maid,
+                          candidate,
                           isDark,
                         ),
                         const SizedBox(height: 16),
@@ -170,7 +185,7 @@ class ClientProfileScreen extends StatelessWidget {
 
   Widget _buildRequirements(ClientModel client, bool isDark) {
     return _buildSectionCard('Service Requirements', isDark, [
-      _infoRow('Looking For', client.preferredMaidCategory, isDark),
+      _infoRow('Looking For', client.preferredCandidateCategory, isDark),
       _infoRow('Budget', client.budgetRange, isDark),
       const SizedBox(height: 8),
       Text(
@@ -226,7 +241,7 @@ class ClientProfileScreen extends StatelessWidget {
   Widget _buildActiveContractCard(
     BuildContext context,
     ContractModel contract,
-    MaidModel maid,
+    CandidateModel candidate,
     bool isDark,
   ) {
     final dateFormat = DateFormat('dd MMM yyyy');
@@ -270,14 +285,14 @@ class ClientProfileScreen extends StatelessWidget {
                 child: const Icon(Icons.person, color: AppColors.navyBlue),
               ),
               title: Text(
-                maid.fullName,
+                candidate.fullName,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
               ),
               subtitle: Text(
-                maid.category,
+                candidate.category,
                 style: GoogleFonts.poppins(fontSize: 12),
               ),
             ),
@@ -395,7 +410,7 @@ class ClientProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'This client does not have a placed maid currently.',
+            'This client does not have a placed candidate currently.',
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: isDark ? AppColors.grey400 : AppColors.grey600,
@@ -485,6 +500,32 @@ class ClientProfileScreen extends StatelessWidget {
                     'Replacement ticket generated for Sourcing Team',
                   ),
                 ),
+              );
+            },
+          ),
+          _actionButton(
+            'Release to Pool',
+            Icons.person_add_alt_1,
+            AppColors.navyBlue,
+            isDark,
+            () {
+              Provider.of<GlobalAppState>(context, listen: false)
+                  .releaseCandidateToPool(contract.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Candidate released back to sourcing pool')),
+              );
+            },
+          ),
+          _actionButton(
+            'Mark Job Left',
+            Icons.exit_to_app,
+            AppColors.grey600,
+            isDark,
+            () {
+              Provider.of<GlobalAppState>(context, listen: false)
+                  .markCandidateLeft(contract.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Candidate marked as Job Left')),
               );
             },
           ),

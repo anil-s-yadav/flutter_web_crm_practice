@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-enum TaskType { maidDrop, paymentCollection, documentPickup, clientVisit }
+enum TaskType { candidateDrop, paymentCollection, documentPickup, clientVisit }
 
 enum TaskStatus { pending, inProgress, completed, cancelled }
 
 extension TaskTypeExtension on TaskType {
   String get displayName {
     switch (this) {
-      case TaskType.maidDrop:
-        return 'Maid Drop';
+      case TaskType.candidateDrop:
+        return 'Candidate Drop';
       case TaskType.paymentCollection:
         return 'Payment Collection';
       case TaskType.documentPickup:
@@ -58,8 +58,8 @@ class ExecutiveTaskModel {
   final String clientName;
   final String clientAddress;
   final String clientPhone;
-  final String? maidName;
-  final String? maidPhone;
+  final String? candidateName;
+  final String? candidatePhone;
   final String? gpsLink;
   final DateTime scheduledDate;
   final DateTime? completedAt;
@@ -77,8 +77,8 @@ class ExecutiveTaskModel {
     required this.clientName,
     required this.clientAddress,
     required this.clientPhone,
-    this.maidName,
-    this.maidPhone,
+    this.candidateName,
+    this.candidatePhone,
     this.gpsLink,
     required this.scheduledDate,
     this.completedAt,
@@ -98,8 +98,8 @@ class ExecutiveTaskModel {
       clientName: json['clientName'] as String,
       clientAddress: json['clientAddress'] as String,
       clientPhone: json['clientPhone'] as String,
-      maidName: json['maidName'] as String?,
-      maidPhone: json['maidPhone'] as String?,
+      candidateName: json['candidateName'] as String?,
+      candidatePhone: json['candidatePhone'] as String?,
       gpsLink: json['gpsLink'] as String?,
       scheduledDate: DateTime.parse(json['scheduledDate'] as String),
       completedAt: json['completedAt'] != null
@@ -122,8 +122,8 @@ class ExecutiveTaskModel {
       'clientName': clientName,
       'clientAddress': clientAddress,
       'clientPhone': clientPhone,
-      'maidName': maidName,
-      'maidPhone': maidPhone,
+      'candidateName': candidateName,
+      'candidatePhone': candidatePhone,
       'gpsLink': gpsLink,
       'scheduledDate': scheduledDate.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
@@ -145,8 +145,8 @@ class ExecutiveTaskModel {
     String? clientName,
     String? clientAddress,
     String? clientPhone,
-    String? maidName,
-    String? maidPhone,
+    String? candidateName,
+    String? candidatePhone,
     String? gpsLink,
     DateTime? scheduledDate,
     DateTime? completedAt,
@@ -164,8 +164,8 @@ class ExecutiveTaskModel {
       clientName: clientName ?? this.clientName,
       clientAddress: clientAddress ?? this.clientAddress,
       clientPhone: clientPhone ?? this.clientPhone,
-      maidName: maidName ?? this.maidName,
-      maidPhone: maidPhone ?? this.maidPhone,
+      candidateName: candidateName ?? this.candidateName,
+      candidatePhone: candidatePhone ?? this.candidatePhone,
       gpsLink: gpsLink ?? this.gpsLink,
       scheduledDate: scheduledDate ?? this.scheduledDate,
       completedAt: completedAt ?? this.completedAt,

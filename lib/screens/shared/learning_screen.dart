@@ -29,7 +29,7 @@ class LearningScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Use this section to understand standard abbreviations, scripts, and FAQs used across Verified Maids CRM.',
+              'Use this section to understand standard abbreviations, scripts, and FAQs used across Verified Candidates CRM.',
               style: GoogleFonts.poppins(fontSize: 14, color: isDark ? AppColors.grey400 : AppColors.grey600)
             ),
             const SizedBox(height: 32),
@@ -73,7 +73,7 @@ class LearningScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildScriptCard(
               'Initial Interview (Hindi)',
-              'Namaste! Main Verified Maids se baat kar rahi hoon. Kya aap abhi kaam dhundh rahe hain? Humare paas kaafi requirements hain. Kya aap humare office aakar verification process start kar sakte hain?',
+              'Namaste! Main Verified Candidates se baat kar rahi hoon. Kya aap abhi kaam dhundh rahe hain? Humare paas kaafi requirements hain. Kya aap humare office aakar verification process start kar sakte hain?',
               isDark
             ),
             const SizedBox(height: 12),

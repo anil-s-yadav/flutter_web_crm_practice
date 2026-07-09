@@ -1,87 +1,96 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class MaidDataSource extends DataGridSource {
+class CandidateDataSource extends DataGridSource {
   final BuildContext context;
   final bool isDark;
-  final Function(MaidModel) onRowTap;
-  final Function(MaidModel, String) onActionTap;
+  final Function(CandidateModel) onRowTap;
+  final Function(CandidateModel, String) onActionTap;
   List<DataGridRow> _dataGridRows = [];
-  List<MaidModel> _maids = [];
+  List<CandidateModel> _candidates = [];
 
-  MaidDataSource({
+  CandidateDataSource({
     required this.context,
     required this.isDark,
-    required List<MaidModel> maids,
+    required List<CandidateModel> candidates,
     required this.onRowTap,
     required this.onActionTap,
   }) {
-    _maids = maids;
+    _candidates = candidates;
     _buildDataGridRows();
   }
 
-  String _getMostRelevantDate(MaidModel maid) {
-    if (maid.status == MaidStatus.placed && maid.datePlaced != null) {
-      return DateFormat('MMM dd, yyyy').format(maid.datePlaced!);
-    } else if (maid.status == MaidStatus.readyToPlace && maid.dateReadyToHire != null) {
-      return DateFormat('MMM dd, yyyy').format(maid.dateReadyToHire!);
-    } else if (maid.status == MaidStatus.medicalPending && maid.dateMedicalSent != null) {
-      return DateFormat('MMM dd, yyyy').format(maid.dateMedicalSent!);
-    } else if (maid.status == MaidStatus.verificationPending && maid.dateVerificationSent != null) {
-      return DateFormat('MMM dd, yyyy').format(maid.dateVerificationSent!);
+  String _getMostRelevantDate(CandidateModel candidate) {
+    if (candidate.status == CandidateStatus.placed && candidate.datePlaced != null) {
+      return DateFormat('MMM dd, yyyy').format(candidate.datePlaced!);
+    } else if (candidate.status == CandidateStatus.readyToPlace &&
+        candidate.dateReadyToHire != null) {
+      return DateFormat('MMM dd, yyyy').format(candidate.dateReadyToHire!);
+    } else if (candidate.status == CandidateStatus.medicalPending &&
+        candidate.dateMedicalSent != null) {
+      return DateFormat('MMM dd, yyyy').format(candidate.dateMedicalSent!);
+    } else if (candidate.status == CandidateStatus.verificationPending &&
+        candidate.dateVerificationSent != null) {
+      return DateFormat('MMM dd, yyyy').format(candidate.dateVerificationSent!);
     }
-    return DateFormat('MMM dd, yyyy').format(maid.dateAdded);
+    return DateFormat('MMM dd, yyyy').format(candidate.dateAdded);
   }
 
   void _buildDataGridRows() {
     _dataGridRows =
-        _maids.map<DataGridRow>((MaidModel maid) {
+        _candidates.asMap().entries.map<DataGridRow>((entry) {
+          final int index = entry.key;
+          final CandidateModel candidate = entry.value;
           return DataGridRow(
             cells: [
-              DataGridCell<String>(columnName: 'id', value: maid.id),
+              DataGridCell<String>(columnName: 'id', value: candidate.id),
+              DataGridCell<String>(
+                columnName: 'sr_no',
+                value: 'VMS${candidate.id.padLeft(3, '0')}',
+              ),
               DataGridCell<String>(
                 columnName: 'date',
-                value: _getMostRelevantDate(maid),
+                value: _getMostRelevantDate(candidate),
               ),
-              DataGridCell<MaidModel>(columnName: 'maid', value: maid),
+              DataGridCell<CandidateModel>(columnName: 'candidate', value: candidate),
               DataGridCell<String>(
                 columnName: 'category',
-                value: maid.category,
+                value: candidate.category,
               ),
               DataGridCell<int>(
                 columnName: 'experience',
-                value: maid.experienceYears,
+                value: candidate.experienceYears,
               ),
               DataGridCell<String>(
                 columnName: 'salary',
-                value: maid.expectedSalary,
+                value: candidate.expectedSalary,
               ),
               DataGridCell<String>(
                 columnName: 'education',
-                value: maid.education,
+                value: candidate.education,
               ),
               DataGridCell<String>(
                 columnName: 'languages',
-                value: maid.languages
+                value: candidate.languages
                     .map((l) => l.substring(0, 2).toLowerCase())
                     .join(', '),
               ),
-              DataGridCell<MaidStatus>(
+              DataGridCell<CandidateStatus>(
                 columnName: 'status',
-                value: maid.status,
+                value: candidate.status,
               ),
-              DataGridCell<MaidModel>(columnName: 'actions', value: maid),
+              DataGridCell<CandidateModel>(columnName: 'actions', value: candidate),
             ],
           );
         }).toList();
   }
 
-  void updateData(List<MaidModel> newMaids) {
-    _maids = newMaids;
+  void updateData(List<CandidateModel> newCandidates) {
+    _candidates = newCandidates;
     _buildDataGridRows();
     notifyListeners();
   }
@@ -91,7 +100,9 @@ class MaidDataSource extends DataGridSource {
 
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
-    final MaidModel maid = row.getCells().firstWhere((c) => c.columnName == 'maid').value as MaidModel;
+    final CandidateModel candidate =
+        row.getCells().firstWhere((c) => c.columnName == 'candidate').value
+            as CandidateModel;
     final isEven = _dataGridRows.indexOf(row) % 2 == 0;
 
     return DataGridRowAdapter(
@@ -103,9 +114,9 @@ class MaidDataSource extends DataGridSource {
                   : AppColors.grey50),
       cells:
           row.getCells().map<Widget>((DataGridCell cell) {
-            if (cell.columnName == 'maid') {
+            if (cell.columnName == 'candidate') {
               return InkWell(
-                onTap: () => onRowTap(maid),
+                onTap: () => onRowTap(candidate),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -120,7 +131,7 @@ class MaidDataSource extends DataGridSource {
                           alpha: 0.1,
                         ),
                         child: Text(
-                          maid.fullName[0],
+                          candidate.fullName[0],
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -136,7 +147,7 @@ class MaidDataSource extends DataGridSource {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              maid.fullName,
+                              candidate.fullName,
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -149,7 +160,7 @@ class MaidDataSource extends DataGridSource {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${maid.age} yrs • ${maid.city}',
+                              '${candidate.age} yrs • ${candidate.city}',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color:
@@ -166,7 +177,7 @@ class MaidDataSource extends DataGridSource {
                 ),
               );
             } else if (cell.columnName == 'status') {
-              final status = cell.value as MaidStatus;
+              final status = cell.value as CandidateStatus;
               return Container(
                 padding: const EdgeInsets.all(8),
                 alignment: Alignment.centerLeft,
@@ -176,7 +187,7 @@ class MaidDataSource extends DataGridSource {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _maidStatusColor(status).withValues(alpha: 0.1),
+                    color: _candidateStatusColor(status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -184,7 +195,7 @@ class MaidDataSource extends DataGridSource {
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: _maidStatusColor(status),
+                      color: _candidateStatusColor(status),
                     ),
                   ),
                 ),
@@ -199,10 +210,10 @@ class MaidDataSource extends DataGridSource {
                     color: isDark ? AppColors.grey400 : AppColors.grey600,
                   ),
                   tooltip: 'Actions',
-                  onSelected: (action) => onActionTap(maid, action),
+                  onSelected: (action) => onActionTap(candidate, action),
                   itemBuilder: (context) {
                     final items = <PopupMenuEntry<String>>[];
-                    if (maid.status == MaidStatus.newlyAdded) {
+                    if (candidate.status == CandidateStatus.newlyAdded) {
                       items.add(
                         const PopupMenuItem(
                           value: 'edit',
@@ -215,7 +226,7 @@ class MaidDataSource extends DataGridSource {
                           child: Text('Move to Verification'),
                         ),
                       );
-                    } else if (maid.status == MaidStatus.verificationPending) {
+                    } else if (candidate.status == CandidateStatus.verificationPending) {
                       items.add(
                         const PopupMenuItem(
                           value: 'promote_medical',
@@ -228,7 +239,7 @@ class MaidDataSource extends DataGridSource {
                           child: Text('Promote to Ready (Skip Medical)'),
                         ),
                       );
-                    } else if (maid.status == MaidStatus.medicalPending) {
+                    } else if (candidate.status == CandidateStatus.medicalPending) {
                       items.add(
                         const PopupMenuItem(
                           value: 'promote_ready',
@@ -237,8 +248,8 @@ class MaidDataSource extends DataGridSource {
                       );
                     }
 
-                    if (maid.status != MaidStatus.blacklisted &&
-                        maid.status != MaidStatus.placed) {
+                    if (candidate.status != CandidateStatus.blacklisted &&
+                        candidate.status != CandidateStatus.placed) {
                       items.add(
                         const PopupMenuItem(
                           value: 'blacklist',
@@ -272,20 +283,26 @@ class MaidDataSource extends DataGridSource {
     );
   }
 
-  Color _maidStatusColor(MaidStatus status) {
+  Color _candidateStatusColor(CandidateStatus status) {
     switch (status) {
-      case MaidStatus.newlyAdded:
+      case CandidateStatus.newlyAdded:
         return AppColors.statusInterviewed; // using existing color
-      case MaidStatus.verificationPending:
+      case CandidateStatus.verificationPending:
         return AppColors.stagePoliceVerification;
-      case MaidStatus.medicalPending:
+      case CandidateStatus.medicalPending:
         return AppColors.stageMedicalCheck;
-      case MaidStatus.readyToPlace:
+      case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case MaidStatus.placed:
+      case CandidateStatus.placed:
         return AppColors.statusPlaced;
-      case MaidStatus.blacklisted:
+      case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
+      case CandidateStatus.renewalPending:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case CandidateStatus.jobLeft:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 }

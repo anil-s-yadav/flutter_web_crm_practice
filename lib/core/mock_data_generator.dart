@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:practice_app/models/maid_model.dart';
+import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/models/contract_model.dart';
@@ -62,18 +62,18 @@ class MockDataGenerator {
   ];
 
   static const _religions = ['Hindu', 'Muslim', 'Christian', 'Buddhist', 'Sikh', 'Jain'];
-  static const _categories = ['Maid', 'Cook', 'Nanny', 'Caretaker', 'Driver', 'Gardener'];
+  static const _categories = ['Candidate', 'Cook', 'Nanny', 'Caretaker', 'Driver', 'Gardener'];
   static const _educationLevels = ['Below 10th', '10th Pass', '12th Pass', 'Graduate'];
   static const _houseTypes = ['1BHK', '2BHK', '3BHK', '4BHK', 'Villa', 'Bungalow', 'Penthouse', 'Duplex'];
   static const _sources = ['Website', 'Referral', 'JustDial', 'Walk-in', 'Google Ads', 'Instagram', 'Facebook', 'Sulekha', 'UrbanCompany'];
 
-  static const int totalMaids = 500000;
+  static const int totalCandidates = 500000;
   static const int totalClients = 100000;
   static const int totalContracts = 80000;
   static const int totalTickets = 15000;
 
-  /// Generate a deterministic maid for a given index (0-based)
-  static MaidModel generateMaid(int index) {
+  /// Generate a deterministic candidate for a given index (0-based)
+  static CandidateModel generateCandidate(int index) {
     final rng = Random(index * 31 + 7);
     final firstName = _femaleFirstNames[index % _femaleFirstNames.length];
     final lastName = _lastNames[(index ~/ _femaleFirstNames.length) % _lastNames.length];
@@ -81,11 +81,11 @@ class MockDataGenerator {
     final city = _cities[rng.nextInt(_cities.length)];
     final age = 20 + rng.nextInt(35);
     final exp = rng.nextInt(age - 18).clamp(0, 20);
-    final statusValues = MaidStatus.values;
+    final statusValues = CandidateStatus.values;
     // Weight distribution: newlyAdded, verificationPending, medicalPending, readyToPlace, placed, blacklisted
     final statusWeights = [0.10, 0.15, 0.10, 0.30, 0.30, 0.05];
     double roll = rng.nextDouble();
-    MaidStatus status = MaidStatus.newlyAdded;
+    CandidateStatus status = CandidateStatus.newlyAdded;
     double cumulative = 0;
     for (int i = 0; i < statusWeights.length; i++) {
       cumulative += statusWeights[i];
@@ -107,21 +107,21 @@ class MockDataGenerator {
     bool isAadhaarVerified = false;
     bool isMedicalCleared = false;
     
-    if (status == MaidStatus.readyToPlace || status == MaidStatus.placed) {
+    if (status == CandidateStatus.readyToPlace || status == CandidateStatus.placed) {
       isPoliceVerified = true;
       isAadhaarVerified = true;
       isMedicalCleared = rng.nextDouble() > 0.5; // Some ready to place are not medically cleared
-    } else if (status == MaidStatus.medicalPending) {
+    } else if (status == CandidateStatus.medicalPending) {
       isPoliceVerified = true;
       isAadhaarVerified = true;
-    } else if (status == MaidStatus.verificationPending) {
+    } else if (status == CandidateStatus.verificationPending) {
       isPoliceVerified = rng.nextDouble() > 0.5;
       isAadhaarVerified = rng.nextDouble() > 0.5;
     }
     
     final workTypes = ['Live-in', '12-hour', '24-hour', 'Part-time'];
 
-    return MaidModel(
+    return CandidateModel(
       id: 'M${(index + 1).toString().padLeft(6, '0')}',
       fullName: fullName,
       age: age,
@@ -141,14 +141,14 @@ class MockDataGenerator {
       isMedicalCleared: isMedicalCleared,
       isPoliceVerified: isPoliceVerified,
       isAadhaarVerified: isAadhaarVerified,
-      currentPlacementId: status == MaidStatus.placed ? 'C${(rng.nextInt(totalContracts) + 1).toString().padLeft(6, '0')}' : null,
+      currentPlacementId: status == CandidateStatus.placed ? 'C${(rng.nextInt(totalContracts) + 1).toString().padLeft(6, '0')}' : null,
       addedBy: '${_maleFirstNames[rng.nextInt(_maleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}',
       dateAdded: DateTime.now().subtract(Duration(days: rng.nextInt(730) + 30)),
-      dateVerificationSent: status.index >= MaidStatus.verificationPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(30) + 20)) : null,
-      dateMedicalSent: status.index >= MaidStatus.medicalPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(20) + 10)) : null,
-      dateReadyToHire: status.index >= MaidStatus.readyToPlace.index ? DateTime.now().subtract(Duration(days: rng.nextInt(10) + 5)) : null,
-      datePlaced: status == MaidStatus.placed ? DateTime.now().subtract(Duration(days: rng.nextInt(5))) : null,
-      availableFrom: status == MaidStatus.readyToPlace ? DateTime.now().add(Duration(days: rng.nextInt(30))) : null,
+      dateVerificationSent: status.index >= CandidateStatus.verificationPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(30) + 20)) : null,
+      dateMedicalSent: status.index >= CandidateStatus.medicalPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(20) + 10)) : null,
+      dateReadyToHire: status.index >= CandidateStatus.readyToPlace.index ? DateTime.now().subtract(Duration(days: rng.nextInt(10) + 5)) : null,
+      datePlaced: status == CandidateStatus.placed ? DateTime.now().subtract(Duration(days: rng.nextInt(5))) : null,
+      availableFrom: status == CandidateStatus.readyToPlace ? DateTime.now().add(Duration(days: rng.nextInt(30))) : null,
       preferredWorkType: workTypes[rng.nextInt(workTypes.length)],
     );
   }
@@ -202,7 +202,7 @@ class MockDataGenerator {
       hasElderlyMembers: hasElderly,
       hasChildren: hasChildren,
       childrenCount: hasChildren ? 1 + rng.nextInt(3) : null,
-      preferredMaidCategory: _categories[rng.nextInt(_categories.length)],
+      preferredCandidateCategory: _categories[rng.nextInt(_categories.length)],
       requiredSkills: shuffledSkills.take(numSkills).toList(),
       budgetRange: '\u20B9${budgetBase ~/ 1000}K - \u20B9${budgetEnd ~/ 1000}K',
       status: status,
@@ -217,9 +217,9 @@ class MockDataGenerator {
   static ContractModel generateContract(int index) {
     final rng = Random(index * 53 + 19);
     final clientIdx = index % totalClients;
-    final maidIdx = index % totalMaids;
+    final candidateIdx = index % totalCandidates;
     final client = generateClient(clientIdx);
-    final maid = generateMaid(maidIdx);
+    final candidate = generateCandidate(candidateIdx);
     final placementDate = DateTime.now().subtract(Duration(days: rng.nextInt(365)));
     final guaranteeEnd = placementDate.add(const Duration(days: 180));
     final fee = (15000 + rng.nextInt(35000)).toDouble();
@@ -238,9 +238,9 @@ class MockDataGenerator {
     return ContractModel(
       id: 'CON${(index + 1).toString().padLeft(6, '0')}',
       clientId: client.id,
-      maidId: maid.id,
+      candidateId: candidate.id,
       clientName: client.fullName,
-      maidName: maid.fullName,
+      candidateName: candidate.fullName,
       placementDate: placementDate,
       guaranteeEndDate: guaranteeEnd,
       serviceFee: fee,
@@ -261,14 +261,14 @@ class MockDataGenerator {
     final status = statusValues[rng.nextInt(statusValues.length)];
     final clientIdx = rng.nextInt(totalClients);
     final client = generateClient(clientIdx);
-    final maidIdx = rng.nextInt(totalMaids);
-    final maid = generateMaid(maidIdx);
+    final candidateIdx = rng.nextInt(totalCandidates);
+    final candidate = generateCandidate(candidateIdx);
     final createdAt = DateTime.now().subtract(Duration(days: rng.nextInt(60)));
     final titles = {
       TicketPriority.critical: [
-        'Maid Not Reporting',
+        'Candidate Not Reporting',
         'Security Concern - Theft Reported',
-        'Maid Absconded',
+        'Candidate Absconded',
         'Unauthorized Person Sent',
         'Violent Behavior Reported'
       ],
@@ -293,13 +293,13 @@ class MockDataGenerator {
     return TicketModel(
       id: 'TKT${(index + 1).toString().padLeft(6, '0')}',
       title: title,
-      description: 'Ticket raised by ${client.fullName} regarding ${maid.fullName}. $title.',
+      description: 'Ticket raised by ${client.fullName} regarding ${candidate.fullName}. $title.',
       priority: priority,
       status: status,
       clientId: client.id,
       clientName: client.fullName,
-      maidId: maid.id,
-      maidName: maid.fullName,
+      candidateId: candidate.id,
+      candidateName: candidate.fullName,
       assignedTo: '${_maleFirstNames[rng.nextInt(_maleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}',
       createdAt: createdAt,
       slaDeadline: priority == TicketPriority.urgent ? createdAt.add(const Duration(days: 15)) : null,
@@ -319,7 +319,7 @@ class MockDataGenerator {
     final client = generateClient(clientIdx);
     final city = _cities[rng.nextInt(_cities.length)];
     final titleMap = {
-      TaskType.maidDrop: 'Drop Maid to ${client.fullName}',
+      TaskType.candidateDrop: 'Drop Candidate to ${client.fullName}',
       TaskType.paymentCollection: 'Collect Payment from ${client.fullName}',
       TaskType.documentPickup: 'Pick Documents from $city',
       TaskType.clientVisit: 'Visit ${client.fullName} for Verification'
@@ -335,7 +335,7 @@ class MockDataGenerator {
       clientName: client.fullName,
       clientAddress: '${rng.nextInt(500) + 1}, ${_localities[rng.nextInt(_localities.length)]}, $city',
       clientPhone: client.phone,
-      maidName: type == TaskType.maidDrop ? '${_femaleFirstNames[rng.nextInt(_femaleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}' : null,
+      candidateName: type == TaskType.candidateDrop ? '${_femaleFirstNames[rng.nextInt(_femaleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}' : null,
       gpsLink: 'https://maps.google.com/?q=19.${rng.nextInt(200)},72.${rng.nextInt(200)}',
       scheduledDate: DateTime.now().add(Duration(days: rng.nextInt(7) - 1)),
       isPaymentCollected: type == TaskType.paymentCollection && status == TaskStatus.completed,
@@ -345,12 +345,12 @@ class MockDataGenerator {
 
   // ============ PAGINATED QUERIES (simulate server-side pagination) ============
 
-  static PaginatedResult<MaidModel> getMaids(PaginationParams params) {
-    int filteredTotal = totalMaids;
+  static PaginatedResult<CandidateModel> getCandidates(PaginationParams params) {
+    int filteredTotal = totalCandidates;
     final query = params.searchQuery?.toLowerCase();
     // For search: simulate reduced result count
     if (query != null && query.isNotEmpty) {
-      filteredTotal = (totalMaids * 0.05).round().clamp(0, totalMaids);
+      filteredTotal = (totalCandidates * 0.05).round().clamp(0, totalCandidates);
     }
     // For status filter
     if (params.filters.containsKey('status')) {
@@ -362,7 +362,7 @@ class MockDataGenerator {
     if (params.filters.containsKey('city')) {
       filteredTotal = (filteredTotal * 0.05).round();
     }
-    filteredTotal = filteredTotal.clamp(0, totalMaids);
+    filteredTotal = filteredTotal.clamp(0, totalCandidates);
 
     final startIndex = (params.page - 1) * params.pageSize;
     if (startIndex >= filteredTotal) {
@@ -375,11 +375,11 @@ class MockDataGenerator {
       );
     }
     final endIndex = (startIndex + params.pageSize).clamp(0, filteredTotal);
-    final items = <MaidModel>[];
+    final items = <CandidateModel>[];
     // Use a different seed offset for search/filter to give different results
     final seedOffset = query != null ? query.length * 1000 : 0;
     for (int i = startIndex; i < endIndex; i++) {
-      items.add(generateMaid(i + seedOffset));
+      items.add(generateCandidate(i + seedOffset));
     }
     return PaginatedResult(
       items: items,
@@ -522,9 +522,9 @@ class MockDataGenerator {
   static Map<String, dynamic> getAdminStats() => {
     'totalRevenue': 42500000,
     'activePlacements': 32450,
-    'maidAttritionRate': 8.5,
+    'candidateAttritionRate': 8.5,
     'urgentTickets': 234,
-    'totalMaids': totalMaids,
+    'totalCandidates': totalCandidates,
     'totalClients': totalClients,
     'totalContracts': totalContracts,
     'openTickets': 1580
@@ -536,9 +536,11 @@ class MockDataGenerator {
     'slaCountdowns': 45,
     'totalLeads': 8500,
     'followUps': 3200,
+    'urgentFollowUps': 18,
     'noResponse': 1800,
     'converted': 2100,
-    'monthlyRevenue': 3850000
+    'monthlyRevenue': 3850000,
+    'targetRevenue': 5000000
   };
 
   static Map<String, dynamic> getSourcingStats() => {
@@ -550,7 +552,9 @@ class MockDataGenerator {
     'readyToPlaceMedical': 60000,
     'placed': 150000,
     'blacklisted': 1200,
+    'addedLastMonth': 850,
     'addedThisMonth': 680,
+    'targetThisMonth': 1000,
     'totalCandidates': 500000,
   };
 

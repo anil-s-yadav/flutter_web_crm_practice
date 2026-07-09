@@ -36,8 +36,8 @@ class _DesktopShellState extends State<DesktopShell> {
           _SidebarItem(
             icon: Icons.people_outline,
             activeIcon: Icons.people,
-            label: 'Maids',
-            route: '/admin/maids',
+            label: 'Candidates',
+            route: '/admin/candidates',
           ),
           _SidebarItem(
             icon: Icons.business_outlined,
@@ -93,8 +93,8 @@ class _DesktopShellState extends State<DesktopShell> {
           _SidebarItem(
             icon: Icons.people_outline,
             activeIcon: Icons.people,
-            label: 'Maid Pool',
-            route: '/sales/maids',
+            label: 'Candidate Pool',
+            route: '/sales/candidates',
           ),
           _SidebarItem(
             icon: Icons.description_outlined,
@@ -133,37 +133,37 @@ class _DesktopShellState extends State<DesktopShell> {
             icon: Icons.verified_outlined,
             activeIcon: Icons.verified,
             label: 'Ready to Place',
-            route: '/sourcing/maids/ready',
+            route: '/sourcing/candidates/ready',
           ),
           _SidebarItem(
             icon: Icons.new_releases_outlined,
             activeIcon: Icons.new_releases,
             label: 'Newly Added',
-            route: '/sourcing/maids/new',
+            route: '/sourcing/candidates/new',
           ),
           _SidebarItem(
             icon: Icons.fact_check_outlined,
             activeIcon: Icons.fact_check,
             label: 'Verification Pending',
-            route: '/sourcing/maids/verification',
+            route: '/sourcing/candidates/verification',
           ),
           _SidebarItem(
             icon: Icons.medical_services_outlined,
             activeIcon: Icons.medical_services,
             label: 'Medical Pending',
-            route: '/sourcing/maids/medical',
+            route: '/sourcing/candidates/medical',
           ),
           _SidebarItem(
             icon: Icons.assignment_ind_outlined,
             activeIcon: Icons.assignment_ind,
             label: 'Hired Candidates',
-            route: '/sourcing/maids/hired',
+            route: '/sourcing/candidates/hired',
           ),
           _SidebarItem(
             icon: Icons.block_outlined,
             activeIcon: Icons.block,
             label: 'Blacklisted',
-            route: '/sourcing/maids/blacklisted',
+            route: '/sourcing/candidates/blacklisted',
           ),
           _SidebarItem(
             icon: Icons.school_outlined,
@@ -232,7 +232,7 @@ class _DesktopShellState extends State<DesktopShell> {
         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
       ),
       actions: [
-        _buildTimerChip(timerProvider),
+        // _buildTimerChip(timerProvider),
         _buildThemeToggle(isDark),
         IconButton(
           icon: const Icon(Icons.fullscreen, size: 22),
@@ -363,7 +363,7 @@ class _DesktopShellState extends State<DesktopShell> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Verified Maids',
+              'Verified Candidates',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -628,7 +628,7 @@ class _DesktopShellState extends State<DesktopShell> {
           const SizedBox(width: 16),
 
           // Timer
-          _buildTimerChip(timerProvider),
+          // _buildTimerChip(timerProvider),
           const SizedBox(width: 8),
 
           // Theme toggle
@@ -663,36 +663,36 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
-  Widget _buildTimerChip(LogoutTimerProvider timerProvider) {
-    final remaining = timerProvider.remaining;
-    final hours = remaining.inHours.toString().padLeft(2, '0');
-    final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
+  // Widget _buildTimerChip(LogoutTimerProvider timerProvider) {
+  //   final remaining = timerProvider.remaining;
+  //   final hours = remaining.inHours.toString().padLeft(2, '0');
+  //   final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+  //   final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.timer_outlined, size: 14, color: AppColors.gold),
-          const SizedBox(width: 4),
-          Text(
-            '$hours:$minutes:$seconds',
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+  //     decoration: BoxDecoration(
+  //       color: AppColors.gold.withValues(alpha: 0.1),
+  //       borderRadius: BorderRadius.circular(8),
+  //       border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+  //     ),
+  //     child: Row(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         const Icon(Icons.timer_outlined, size: 14, color: AppColors.gold),
+  //         const SizedBox(width: 4),
+  //         Text(
+  //           '$hours:$minutes:$seconds',
+  //           style: GoogleFonts.poppins(
+  //             fontSize: 11,
+  //             fontWeight: FontWeight.w600,
+  //             color: AppColors.gold,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildThemeToggle(bool isDark) {
     return IconButton(
@@ -712,17 +712,17 @@ class _DesktopShellState extends State<DesktopShell> {
     // Sourcing / Admin specific routes
     if (location.endsWith('/learning')) return 'Learning Center';
     if (location.endsWith('/add_candidate')) return 'Add Candidate';
-    if (location.endsWith('/maids/ready')) return 'Ready to Place';
-    if (location.endsWith('/maids/new')) return 'Newly Added';
-    if (location.endsWith('/maids/verification')) return 'Verification Pending';
-    if (location.endsWith('/maids/medical')) return 'Medical Pending';
-    if (location.endsWith('/maids/hired')) return 'Hired Candidates';
-    if (location.endsWith('/maids/blacklisted'))
+    if (location.endsWith('/candidates/ready')) return 'Ready to Place';
+    if (location.endsWith('/candidates/new')) return 'Newly Added';
+    if (location.endsWith('/candidates/verification')) return 'Verification Pending';
+    if (location.endsWith('/candidates/medical')) return 'Medical Pending';
+    if (location.endsWith('/candidates/hired')) return 'Hired Candidates';
+    if (location.endsWith('/candidates/blacklisted'))
       return 'Blacklisted Candidates';
 
     // Generic sub-routes
-    if (location.endsWith('/maids')) return 'Maid Directory';
-    if (location.contains('/maids/')) return 'Candidate Profile';
+    if (location.endsWith('/candidates')) return 'Candidate Directory';
+    if (location.contains('/candidates/')) return 'Candidate Profile';
     if (location.endsWith('/clients')) return 'Clients';
     if (location.contains('/clients/')) return 'Client Profile';
     if (location.endsWith('/contracts')) return 'Contracts';

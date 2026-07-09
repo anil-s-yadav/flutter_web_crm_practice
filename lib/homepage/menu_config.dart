@@ -64,7 +64,7 @@ class MenuConfig {
 
   static List<MenuItemModel> candidatesMenu() => [
     MenuItemModel(
-      title: "Job Left Maids",
+      title: "Job Left Candidates",
       icon: Icons.exit_to_app,
       page: JobleftCandidates(),
     ),

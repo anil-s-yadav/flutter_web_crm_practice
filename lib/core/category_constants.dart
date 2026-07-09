@@ -1,17 +1,17 @@
 class CategoryConstants {
   static const List<String> categories = [
-    'House Maid',
+    'House Candidate',
     'Cook',
     'Babysitter',
     'Nanny',
-    'Japa Maid',
+    'Japa Candidate',
     'Patient Care',
     'Elderly Care',
     'Driver'
   ];
 
   static const Map<String, List<String>> skillsByCategory = {
-    'House Maid': [
+    'House Candidate': [
       'Daily sweeping & mopping',
       'Laundry & ironing',
       'Kitchen & utensil cleaning',
@@ -43,7 +43,7 @@ class CategoryConstants {
       'Healthy meal feeding',
       'School pick-up/drop-off',
     ],
-    'Japa Maid': [
+    'Japa Candidate': [
       'Newborn massage & bath',
       'Mother diet & care',
       'Lactation support',
@@ -76,11 +76,11 @@ class CategoryConstants {
   };
 
   static const Map<String, double> baseSalaries = {
-    'House Maid': 8000,
+    'House Candidate': 8000,
     'Cook': 12000,
     'Babysitter': 10000,
     'Nanny': 15000,
-    'Japa Maid': 20000,
+    'Japa Candidate': 20000,
     'Patient Care': 18000,
     'Elderly Care': 16000,
     'Driver': 15000,

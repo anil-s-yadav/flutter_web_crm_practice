@@ -142,7 +142,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                         DataColumn(label: Text('Date', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Contract ID', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Client', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
-                        DataColumn(label: Text('Maid', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
+                        DataColumn(label: Text('Candidate', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Fee', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Status', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Payment', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
@@ -152,7 +152,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           DataCell(Text(DateFormat('MMM dd, yyyy').format(contract.placementDate), style: GoogleFonts.poppins(fontSize: 13))),
                           DataCell(Text(contract.id, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500))),
                           DataCell(Text(contract.clientName, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.navyBlue))),
-                          DataCell(Text(contract.maidName, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.navyBlue))),
+                          DataCell(Text(contract.candidateName, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.navyBlue))),
                           DataCell(Text('₹${_indianFormat.format(contract.serviceFee)}', style: GoogleFonts.poppins(fontSize: 13))),
                           DataCell(
                             Container(

@@ -28,19 +28,19 @@ class _MobileShellState extends State<MobileShell> {
       icon: Icons.person_search_outlined,
       activeIcon: Icons.person_search,
       label: 'Available Candidates',
-      route: '/sourcing/maids',
+      route: '/sourcing/candidates',
     ),
     _TabItem(
       icon: Icons.assignment_ind_outlined,
       activeIcon: Icons.assignment_ind,
       label: 'Placed Candidates',
-      route: '/sourcing/maids/hired',
+      route: '/sourcing/candidates/hired',
     ),
     _TabItem(
       icon: Icons.gavel_outlined,
       activeIcon: Icons.gavel,
       label: 'Disputes & Issues',
-      route: '/sourcing/maids/disputes',
+      route: '/sourcing/candidates/disputes',
     ),
     _TabItem(
       icon: Icons.person_add_outlined,
@@ -90,7 +90,7 @@ class _MobileShellState extends State<MobileShell> {
             ),
             const SizedBox(width: 10),
             Text(
-              'Verified Maids',
+              'Verified Candidates',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,

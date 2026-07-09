@@ -51,9 +51,9 @@ extension ContractStatusExtension on ContractStatus {
 class ContractModel {
   final String id;
   final String clientId;
-  final String maidId;
+  final String candidateId;
   final String clientName;
-  final String maidName;
+  final String candidateName;
   final DateTime placementDate;
   final DateTime guaranteeEndDate;
   final double serviceFee;
@@ -63,16 +63,16 @@ class ContractModel {
   final ContractStatus contractStatus;
   final bool isReplacementUsed;
   final DateTime? replacementDate;
-  final String? replacementMaidId;
+  final String? replacementCandidateId;
   final String createdBy;
   final String? remarks;
 
   const ContractModel({
     required this.id,
     required this.clientId,
-    required this.maidId,
+    required this.candidateId,
     required this.clientName,
-    required this.maidName,
+    required this.candidateName,
     required this.placementDate,
     required this.guaranteeEndDate,
     required this.serviceFee,
@@ -82,7 +82,7 @@ class ContractModel {
     required this.contractStatus,
     this.isReplacementUsed = false,
     this.replacementDate,
-    this.replacementMaidId,
+    this.replacementCandidateId,
     required this.createdBy,
     this.remarks
   });
@@ -101,9 +101,9 @@ class ContractModel {
     return ContractModel(
       id: json['id'] as String,
       clientId: json['clientId'] as String,
-      maidId: json['maidId'] as String,
+      candidateId: json['candidateId'] as String,
       clientName: json['clientName'] as String,
-      maidName: json['maidName'] as String,
+      candidateName: json['candidateName'] as String,
       placementDate: DateTime.parse(json['placementDate'] as String),
       guaranteeEndDate: DateTime.parse(json['guaranteeEndDate'] as String),
       serviceFee: (json['serviceFee'] as num).toDouble(),
@@ -115,7 +115,7 @@ class ContractModel {
       replacementDate: json['replacementDate'] != null
           ? DateTime.parse(json['replacementDate'] as String)
           : null,
-      replacementMaidId: json['replacementMaidId'] as String?,
+      replacementCandidateId: json['replacementCandidateId'] as String?,
       createdBy: json['createdBy'] as String,
       remarks: json['remarks'] as String?
     );
@@ -125,9 +125,9 @@ class ContractModel {
     return {
       'id': id,
       'clientId': clientId,
-      'maidId': maidId,
+      'candidateId': candidateId,
       'clientName': clientName,
-      'maidName': maidName,
+      'candidateName': candidateName,
       'placementDate': placementDate.toIso8601String(),
       'guaranteeEndDate': guaranteeEndDate.toIso8601String(),
       'serviceFee': serviceFee,
@@ -137,7 +137,7 @@ class ContractModel {
       'contractStatus': contractStatus.name,
       'isReplacementUsed': isReplacementUsed,
       'replacementDate': replacementDate?.toIso8601String(),
-      'replacementMaidId': replacementMaidId,
+      'replacementCandidateId': replacementCandidateId,
       'createdBy': createdBy,
       'remarks': remarks
     };
@@ -148,9 +148,9 @@ class ContractModel {
   ContractModel copyWith({
     String? id,
     String? clientId,
-    String? maidId,
+    String? candidateId,
     String? clientName,
-    String? maidName,
+    String? candidateName,
     DateTime? placementDate,
     DateTime? guaranteeEndDate,
     double? serviceFee,
@@ -160,16 +160,16 @@ class ContractModel {
     ContractStatus? contractStatus,
     bool? isReplacementUsed,
     DateTime? replacementDate,
-    String? replacementMaidId,
+    String? replacementCandidateId,
     String? createdBy,
     String? remarks
   }) {
     return ContractModel(
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
-      maidId: maidId ?? this.maidId,
+      candidateId: candidateId ?? this.candidateId,
       clientName: clientName ?? this.clientName,
-      maidName: maidName ?? this.maidName,
+      candidateName: candidateName ?? this.candidateName,
       placementDate: placementDate ?? this.placementDate,
       guaranteeEndDate: guaranteeEndDate ?? this.guaranteeEndDate,
       serviceFee: serviceFee ?? this.serviceFee,
@@ -179,14 +179,14 @@ class ContractModel {
       contractStatus: contractStatus ?? this.contractStatus,
       isReplacementUsed: isReplacementUsed ?? this.isReplacementUsed,
       replacementDate: replacementDate ?? this.replacementDate,
-      replacementMaidId: replacementMaidId ?? this.replacementMaidId,
+      replacementCandidateId: replacementCandidateId ?? this.replacementCandidateId,
       createdBy: createdBy ?? this.createdBy,
       remarks: remarks ?? this.remarks
     );
   }
 
   @override
-  String toString() => 'ContractModel(id: $id, client: $clientName, maid: $maidName)';
+  String toString() => 'ContractModel(id: $id, client: $clientName, candidate: $candidateName)';
 
   @override
   bool operator ==(Object other) =>
