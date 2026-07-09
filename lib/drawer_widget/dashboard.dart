@@ -1,11 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:practice_app/drawer_widget/final_candidate.dart';
-import 'package:practice_app/models/candidates.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 import 'summarycard.dart';
 

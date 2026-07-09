@@ -1,32 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:practice_app/auth/login_screen.dart';
-import 'package:practice_app/homepage/home_page.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
 import 'auth/logout_timer_provider.dart';
 import 'auth/user_manager.dart';
+import 'routing/app_router.dart';
 import 'theme/text.dart';
 import 'theme/theme.dart';
+import 'providers/global_app_state.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await LocalStoragePref().initPrefBox();
   await UserManager().init();
-  configLoading();
+  _configLoading();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
+        ChangeNotifierProvider(create: (_) => GlobalAppState()..initializeData()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
-void configLoading() {
+void _configLoading() {
   EasyLoading.instance
     ..displayDuration = const Duration(milliseconds: 2000)
     ..indicatorType = EasyLoadingIndicatorType.cubeGrid
@@ -45,41 +47,21 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool isLogin = false;
-  @override
-  void initState() {
-    super.initState();
-    checkLogin;
-  }
-
-  checkLogin() {
-    bool loginStatus = LocalStoragePref().getLoginBool() ?? false;
-    setState(() {
-      isLogin = loginStatus;
-    });
-  }
+  late final _router = AppRouter.createRouter();
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-
     TextTheme textTheme = createTextTheme(context, "Poppins", "Poppins");
 
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: MaterialTheme(textTheme).lightMediumContrast(),
-      // darkTheme: MaterialTheme(textTheme).lightMediumContrast(),
-      darkTheme: MaterialTheme(textTheme).darkMediumContrast(),
+      title: 'Verified Maids CRM',
+      theme: MaterialTheme(textTheme).light(),
+      darkTheme: MaterialTheme(textTheme).dark(),
       themeMode: themeProvider.themeMode,
-      // initialRoute: '/',
-      // initialRoute: '/login',
-      initialRoute: isLogin ? '/' : '/login',
+      routerConfig: _router,
       builder: EasyLoading.init(),
-      routes: {
-        '/': (context) => const MyHomePage(),
-        '/login': (context) => const LoginScreen(),
-      },
     );
   }
 }

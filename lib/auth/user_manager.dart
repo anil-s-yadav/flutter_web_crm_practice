@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import '../models/user_model.dart';
 import '../utils/shared_preferences.dart';
 
@@ -12,7 +11,7 @@ class UserManager {
 
   Future<void> init() async {
     _currentUser = LocalStoragePref().getUserModel();
-    log("init ${_currentUser}");
+    log("UserManager init: $_currentUser");
   }
 
   Future<void> setUser(UserModel user) async {
@@ -25,9 +24,27 @@ class UserManager {
   Future<void> clearUser() async {
     _currentUser = null;
     await LocalStoragePref().clearKey(LocalStorageKeys.userProfile);
+    await LocalStoragePref().setLoginBool(false);
   }
 
-  bool isAdmin() => _currentUser?.role == "admin";
-  bool isMaidDepartment() => _currentUser?.role == "candidate";
-  bool isCustomerDepartment() => _currentUser?.role == "customer";
+  bool get isLoggedIn => _currentUser != null;
+  bool get isAdmin => _currentUser?.role == UserRole.admin;
+  bool get isSales => _currentUser?.role == UserRole.sales;
+  bool get isSourcing => _currentUser?.role == UserRole.sourcing;
+  bool get isExecutive => _currentUser?.role == UserRole.executive;
+
+  String get homeRoute {
+    switch (_currentUser?.role) {
+      case UserRole.admin:
+        return '/admin';
+      case UserRole.sales:
+        return '/sales';
+      case UserRole.sourcing:
+        return '/sourcing';
+      case UserRole.executive:
+        return '/executive';
+      default:
+        return '/login';
+    }
+  }
 }

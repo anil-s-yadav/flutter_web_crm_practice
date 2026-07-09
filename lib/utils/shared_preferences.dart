@@ -1,15 +1,11 @@
 import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/user_model.dart';
 
 class LocalStoragePref {
   static final LocalStoragePref _instance = LocalStoragePref._internal();
   static SharedPreferences? _storage;
-
   static LocalStoragePref get instance => _instance;
-
   factory LocalStoragePref() => _instance;
   LocalStoragePref._internal();
 
@@ -28,16 +24,15 @@ class LocalStoragePref {
   }
 
   Future<void> setUserModel(UserModel model) async {
-    await _storage?.setString(
-      LocalStorageKeys.userProfile,
-      jsonEncode(model.toJson()),
-    );
+    final jsonString = jsonEncode(model.toJson());
+    await _storage?.setString(LocalStorageKeys.userProfile, jsonString);
   }
 
   UserModel? getUserModel() {
     final jsonStr = _storage?.getString(LocalStorageKeys.userProfile);
     if (jsonStr == null) return null;
-    return UserModel.fromJson(jsonDecode(jsonStr));
+    final Map<String, dynamic> jsonMap = jsonDecode(jsonStr);
+    return UserModel.fromJson(jsonMap);
   }
 }
 

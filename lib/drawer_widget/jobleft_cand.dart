@@ -164,7 +164,7 @@ class CandidateDataSource extends DataGridSource {
   }
 
   List<DataGridRow> _dataGridRows = [];
-  List<Candidate> _candidates;
+  final List<Candidate> _candidates;
 
   void buildDataGridRows() {
     _dataGridRows =

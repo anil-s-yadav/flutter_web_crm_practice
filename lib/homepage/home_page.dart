@@ -35,11 +35,11 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     final userManager = UserManager();
     menuItems =
-        userManager.isAdmin()
+        userManager.isAdmin
             ? MenuConfig.getAdminMenu()
-            : userManager.isCustomerDepartment()
+            : userManager.isSales
             ? MenuConfig.getCustomerMenu()
-            : userManager.isMaidDepartment()
+            : userManager.isSourcing
             ? MenuConfig.getCandidatesMenu()
             : [
               MenuItemModel(

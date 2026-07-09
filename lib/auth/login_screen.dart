@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/auth/user_manager.dart';
+import 'package:practice_app/models/user_model.dart';
+import 'package:practice_app/utils/shared_preferences.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
-
-import '../homepage/home_page.dart';
-import '../models/user_model.dart';
-import '../utils/shared_preferences.dart';
-import 'logout_timer_provider.dart';
+import 'package:practice_app/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,200 +14,406 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  String? _errorMessage;
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800)
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOut
+    );
+    _animController.forward();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
-  /*Future<void> emailPasswordSignIn() async {
-    if (!_formKey.currentState!.validate()) return;
-    EasyLoading.show(status: 'Signing in...');
-    try {
-      User? user = await AuthService().loginUserWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+  Future<void> _quickLogin(UserRole role) async {
+    setState(() => _isLoading = true);
 
-      if (user != null && user.email == AuthService.authorizedEmail) {
-        await LocalStoragePref.instance?.setLoginBool(true);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-        EasyLoading.dismiss();
-      } else {
-        setState(() {
-          _errorMessage = 'Unauthorized access';
-        });
-        EasyLoading.dismiss();
+    final mockUsers = {
+      UserRole.admin: UserModel(
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@verifiedmaids.com',
+        role: UserRole.admin
+      ),
+      UserRole.sales: UserModel(
+        id: 2,
+        name: 'Sales Manager',
+        email: 'sales@verifiedmaids.com',
+        role: UserRole.sales
+      ),
+      UserRole.sourcing: UserModel(
+        id: 3,
+        name: 'Sourcing Lead',
+        email: 'sourcing@verifiedmaids.com',
+        role: UserRole.sourcing
+      ),
+      UserRole.executive: UserModel(
+        id: 4,
+        name: 'Field Executive',
+        email: 'exec@verifiedmaids.com',
+        role: UserRole.executive
+      ),
+    };
+
+    try {
+      await LocalStoragePref().setLoginBool(true);
+      await UserManager().setUser(mockUsers[role]!);
+      if (mounted) {
+        context.go('/');
       }
-    } on FirebaseAuthException catch (_) {
-      setState(() {
-        _errorMessage = 'Invalid email or password.';
-      });
-      EasyLoading.dismiss();
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred. Please try again.';
-      });
-      EasyLoading.dismiss();
+      setState(() => _isLoading = false);
     }
-  }*/
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.themeRef.brightness == Brightness.dark;
+
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 450),
-              child: Card(
-                elevation: 8,
-                margin: const EdgeInsets.all(32),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Practice Maids CRM',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineMedium?.copyWith(
-                            color: context.themeRef.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    const Color(0xFF0A1628),
+                    const Color(0xFF0F2847),
+                    const Color(0xFF0A1628),
+                  ]
+                : [
+                    AppColors.navyBlue,
+                    AppColors.navyLight,
+                    AppColors.navyDark,
+                  ]
+          )
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.gold, AppColors.goldDark]
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Admin Panel',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleLarge?.copyWith(
-                            color: context.themeRef.colorScheme.secondary,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 32),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Mobile no.',
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        ]
+                      ),
+                      child: const Icon(
+                        Icons.verified_user,
+                        size: 40,
+                        color: AppColors.navyBlue
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Verified Maids',
+                      style: GoogleFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Premium Domestic Staffing',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.white.withValues(alpha: 0.7),
+                        letterSpacing: 2
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Login Card
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.darkSurface.withValues(alpha: 0.9)
+                            : AppColors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10)
                           ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        if (_errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontSize: 12,
+                        ]
+                      ),
+                      padding: const EdgeInsets.all(32),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Sign In',
+                              style: GoogleFonts.poppins(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.navyBlue
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // if (_formKey.currentState?.validate() ?? false) {
-                              // emailPasswordSignIn();
-                              try {
-                                LocalStoragePref().setLoginBool(true);
-                                UserManager().setUser(
-                                  UserModel(id: 1, name: 'Anil', role: 'admin'),
-                                );
-                              } catch (e) {}
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const MyHomePage(),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Access your dashboard',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: AppColors.grey500
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+
+                            // Email field
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: GoogleFonts.poppins(fontSize: 14),
+                              decoration: InputDecoration(
+                                labelText: 'Email / Mobile',
+                                labelStyle: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: AppColors.grey500
                                 ),
-                              );
-                              final countdown =
-                                  context.read<LogoutTimerProvider>();
-
-                              countdown.startCountdown(() {
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  "/login",
-                                );
-                              });
-
-                              Navigator.pushReplacementNamed(context, "/");
-                            },
-                            // },
-                            style: ElevatedButton.styleFrom(
-                              surfaceTintColor:
-                                  context.themeRef.colorScheme.primaryContainer,
-                              elevation: 10,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                prefixIcon: Icon(
+                                  Icons.email_outlined,
+                                  color: AppColors.gold.withValues(alpha: 0.8),
+                                  size: 20
+                                ),
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.grey50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.gold,
+                                    width: 1.5
+                                  )
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14
+                                )
                               ),
                             ),
-                            child: const Text('Sign In'),
-                          ),
+                            const SizedBox(height: 16),
+
+                            // Password field
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              style: GoogleFonts.poppins(fontSize: 14),
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                labelStyle: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: AppColors.grey500
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline,
+                                  color: AppColors.gold.withValues(alpha: 0.8),
+                                  size: 20
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 20,
+                                    color: AppColors.grey500
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  }
+                                ),
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.grey50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.gold,
+                                    width: 1.5
+                                  )
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14
+                                )
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Sign In button
+                            SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gold,
+                                  foregroundColor: AppColors.navyBlue,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)
+                                  )
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.navyBlue
+                                        ),
+                                      )
+                                    : Text(
+                                        'Sign In',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Quick login section
+                    Text(
+                      'DEMO ACCESS',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.white.withValues(alpha: 0.5),
+                        letterSpacing: 3
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quick login buttons grid
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _buildQuickLoginButton(
+                          label: 'Admin',
+                          icon: Icons.admin_panel_settings,
+                          role: UserRole.admin
+                        ),
+                        _buildQuickLoginButton(
+                          label: 'Sales',
+                          icon: Icons.point_of_sale,
+                          role: UserRole.sales
+                        ),
+                        _buildQuickLoginButton(
+                          label: 'Sourcing',
+                          icon: Icons.person_search,
+                          role: UserRole.sourcing
+                        ),
+                        _buildQuickLoginButton(
+                          label: 'Executive',
+                          icon: Icons.phone_android,
+                          role: UserRole.executive
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickLoginButton({
+    required String label,
+    required IconData icon,
+    required UserRole role
+  }) {
+    return SizedBox(
+      width: 150,
+      height: 44,
+      child: OutlinedButton.icon(
+        onPressed: _isLoading ? null : () => _quickLogin(role),
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.gold,
+          side: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.4)
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12)
         ),
       ),
     );
