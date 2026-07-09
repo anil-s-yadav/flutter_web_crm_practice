@@ -143,7 +143,11 @@ class MockDataGenerator {
       isAadhaarVerified: isAadhaarVerified,
       currentPlacementId: status == MaidStatus.placed ? 'C${(rng.nextInt(totalContracts) + 1).toString().padLeft(6, '0')}' : null,
       addedBy: '${_maleFirstNames[rng.nextInt(_maleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}',
-      dateAdded: DateTime.now().subtract(Duration(days: rng.nextInt(730))),
+      dateAdded: DateTime.now().subtract(Duration(days: rng.nextInt(730) + 30)),
+      dateVerificationSent: status.index >= MaidStatus.verificationPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(30) + 20)) : null,
+      dateMedicalSent: status.index >= MaidStatus.medicalPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(20) + 10)) : null,
+      dateReadyToHire: status.index >= MaidStatus.readyToPlace.index ? DateTime.now().subtract(Duration(days: rng.nextInt(10) + 5)) : null,
+      datePlaced: status == MaidStatus.placed ? DateTime.now().subtract(Duration(days: rng.nextInt(5))) : null,
       availableFrom: status == MaidStatus.readyToPlace ? DateTime.now().add(Duration(days: rng.nextInt(30))) : null,
       preferredWorkType: workTypes[rng.nextInt(workTypes.length)],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:practice_app/models/maid_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
@@ -192,6 +193,12 @@ class MaidProfileScreen extends StatelessWidget {
     final progress = _pipelineProgress(maid.status);
     final steps = ['New', 'Verification', 'Medical', 'Ready'];
     final colors = [AppColors.stageInterviewed, AppColors.stagePoliceVerification, AppColors.stageMedicalCheck, AppColors.stageVerified];
+    final dates = [
+      maid.dateAdded,
+      maid.dateVerificationSent,
+      maid.dateMedicalSent,
+      maid.dateReadyToHire,
+    ];
 
     return Card(
       elevation: 0,
@@ -221,6 +228,10 @@ class MaidProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(steps[stepIndex], style: GoogleFonts.poppins(fontSize: 10, fontWeight: isComplete ? FontWeight.w600 : FontWeight.w400, color: isComplete ? colors[stepIndex] : (isDark ? AppColors.grey500 : AppColors.grey600))),
+                    if (dates[stepIndex] != null) ...[
+                      const SizedBox(height: 2),
+                      Text(DateFormat('MMM dd').format(dates[stepIndex]!), style: GoogleFonts.poppins(fontSize: 9, color: isDark ? AppColors.grey500 : AppColors.grey600)),
+                    ]
                   ]
                 );
               })

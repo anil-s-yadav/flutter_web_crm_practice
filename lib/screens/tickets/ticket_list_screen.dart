@@ -158,7 +158,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        Text(ticket.id, style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500)),
+                                        Text('${ticket.id} • ${DateFormat('MMM dd, yyyy').format(ticket.createdAt)}', style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500)),
                                         const Spacer(),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

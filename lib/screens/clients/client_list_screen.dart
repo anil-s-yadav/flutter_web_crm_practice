@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
@@ -119,7 +120,7 @@ class _ClientListView extends StatelessWidget {
                           style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         Text(
-                          '${client.locality}, ${client.city} • ${client.preferredMaidCategory}',
+                          '${client.locality}, ${client.city} • ${client.preferredMaidCategory} • ${DateFormat('MMM dd, yyyy').format(client.inquiryDate)}',
                           style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500),
                         ),
                       ],

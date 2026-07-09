@@ -168,6 +168,10 @@ class AppRouter {
               builder: (context, state) => const AddCandidateScreen(),
             ),
             GoRoute(
+              path: '/sourcing/learning',
+              builder: (context, state) => const LearningScreen(),
+            ),
+            GoRoute(
               path: '/sourcing/maids/ready',
               builder: (context, state) => const MaidDirectoryScreen(type: MaidDirectoryType.readyToPlace),
             ),

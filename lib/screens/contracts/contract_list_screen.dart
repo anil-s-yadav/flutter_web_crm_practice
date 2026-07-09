@@ -139,6 +139,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                       dataRowMaxHeight: 60,
                       columnSpacing: 20,
                       columns: [
+                        DataColumn(label: Text('Date', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Contract ID', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Client', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
                         DataColumn(label: Text('Maid', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.grey600))),
@@ -148,6 +149,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                       ],
                       rows: _state.items.map((contract) => DataRow(
                         cells: [
+                          DataCell(Text(DateFormat('MMM dd, yyyy').format(contract.placementDate), style: GoogleFonts.poppins(fontSize: 13))),
                           DataCell(Text(contract.id, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500))),
                           DataCell(Text(contract.clientName, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.navyBlue))),
                           DataCell(Text(contract.maidName, style: GoogleFonts.poppins(fontSize: 13, color: AppColors.navyBlue))),

@@ -69,6 +69,10 @@ class MaidModel {
   final String? currentPlacementId; // nullable - linked to a Contract
   final String addedBy;
   final DateTime dateAdded;
+  final DateTime? dateVerificationSent;
+  final DateTime? dateMedicalSent;
+  final DateTime? dateReadyToHire;
+  final DateTime? datePlaced;
   final DateTime? availableFrom;
   final String? remarks;
 
@@ -100,6 +104,10 @@ class MaidModel {
     this.currentPlacementId,
     required this.addedBy,
     required this.dateAdded,
+    this.dateVerificationSent,
+    this.dateMedicalSent,
+    this.dateReadyToHire,
+    this.datePlaced,
     this.availableFrom,
     this.remarks,
   });
@@ -136,6 +144,10 @@ class MaidModel {
       currentPlacementId: json['currentPlacementId'],
       addedBy: json['addedBy'],
       dateAdded: DateTime.parse(json['dateAdded']),
+      dateVerificationSent: json['dateVerificationSent'] != null ? DateTime.parse(json['dateVerificationSent']) : null,
+      dateMedicalSent: json['dateMedicalSent'] != null ? DateTime.parse(json['dateMedicalSent']) : null,
+      dateReadyToHire: json['dateReadyToHire'] != null ? DateTime.parse(json['dateReadyToHire']) : null,
+      datePlaced: json['datePlaced'] != null ? DateTime.parse(json['datePlaced']) : null,
       availableFrom:
           json['availableFrom'] != null
               ? DateTime.parse(json['availableFrom'])
@@ -173,6 +185,10 @@ class MaidModel {
       'currentPlacementId': currentPlacementId,
       'addedBy': addedBy,
       'dateAdded': dateAdded.toIso8601String(),
+      'dateVerificationSent': dateVerificationSent?.toIso8601String(),
+      'dateMedicalSent': dateMedicalSent?.toIso8601String(),
+      'dateReadyToHire': dateReadyToHire?.toIso8601String(),
+      'datePlaced': datePlaced?.toIso8601String(),
       'availableFrom': availableFrom?.toIso8601String(),
       'remarks': remarks,
     };
@@ -205,6 +221,10 @@ class MaidModel {
     String? aadhaarDocUrl,
     String? photoUrl,
     String? currentPlacementId,
+    DateTime? dateVerificationSent,
+    DateTime? dateMedicalSent,
+    DateTime? dateReadyToHire,
+    DateTime? datePlaced,
     DateTime? availableFrom,
     String? remarks,
   }) {
@@ -238,6 +258,10 @@ class MaidModel {
       currentPlacementId: currentPlacementId ?? this.currentPlacementId,
       addedBy: addedBy,
       dateAdded: dateAdded,
+      dateVerificationSent: dateVerificationSent ?? this.dateVerificationSent,
+      dateMedicalSent: dateMedicalSent ?? this.dateMedicalSent,
+      dateReadyToHire: dateReadyToHire ?? this.dateReadyToHire,
+      datePlaced: datePlaced ?? this.datePlaced,
       availableFrom: availableFrom ?? this.availableFrom,
       remarks: remarks ?? this.remarks,
     );

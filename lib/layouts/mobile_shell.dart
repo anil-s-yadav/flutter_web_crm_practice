@@ -83,20 +83,10 @@ class _MobileShellState extends State<MobileShell> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.gold, AppColors.goldDark],
-                ),
-              ),
-              child: const Icon(
-                Icons.verified_user,
-                size: 16,
-                color: AppColors.navyBlue,
-              ),
+            Image.asset(
+              'lib/assets/applogo.png',
+              width: 32,
+              height: 32,
             ),
             const SizedBox(width: 10),
             Text(

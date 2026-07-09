@@ -12,12 +12,12 @@ class GlobalAppState extends ChangeNotifier {
   List<ClientModel> _clients = [];
   List<MaidModel> _maids = [];
   List<ContractModel> _contracts = [];
-  List<TicketModel> _tickets = [];
+  final List<TicketModel> _tickets = [];
   List<ExecutiveTaskModel> _tasks = [];
-  List<AuditLogModel> _auditLogs = [];
-  
+  final List<AuditLogModel> _auditLogs = [];
+
   UserModel? _currentUser;
-  
+
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
@@ -31,7 +31,7 @@ class GlobalAppState extends ChangeNotifier {
 
   Future<void> initializeData() async {
     if (_isInitialized) return;
-    
+
     // Default current user to Sales if none set
     _currentUser ??= const UserModel(
       id: 2,
@@ -39,19 +39,19 @@ class GlobalAppState extends ChangeNotifier {
       email: 'priya@verifiedmaids.in',
       role: UserRole.sales,
     );
-    
+
     // Seed in-memory data
     _maids = List.generate(200, (i) => MockDataGenerator.generateMaid(i));
     _clients = List.generate(100, (i) => MockDataGenerator.generateClient(i));
-    
+
     // Let's generate a few contracts
     _contracts = [];
     int contractCount = 0;
-    
+
     for (int i = 0; i < 40; i++) {
       final client = _clients[i];
       final maid = _maids[i];
-      
+
       // Update maid and client status for realism
       final contract = ContractModel(
         id: 'C${(++contractCount).toString().padLeft(6, '0')}',
@@ -68,38 +68,39 @@ class GlobalAppState extends ChangeNotifier {
         contractStatus: ContractStatus.active,
         createdBy: 'Priya Mehta',
       );
-      
+
       _contracts.add(contract);
-      
+
       _maids[i] = maid.copyWith(
-        status: MaidStatus.placed, 
-        currentPlacementId: contract.id
+        status: MaidStatus.placed,
+        currentPlacementId: contract.id,
       );
-      
-      _clients[i] = client.copyWith(
-        status: ClientStatus.active
-      );
+
+      _clients[i] = client.copyWith(status: ClientStatus.active);
     }
-    
+
     // Generate Tasks
     _tasks = List.generate(20, (i) => MockDataGenerator.generateTask(i));
 
     // Generate some audit logs
     for (var contract in _contracts) {
-      _auditLogs.add(AuditLogModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        timestamp: contract.placementDate,
-        userId: '2',
-        userName: contract.createdBy,
-        userRole: UserRole.sales,
-        actionType: ActionType.create,
-        targetId: contract.id,
-        description: 'Created contract ${contract.id} for ${contract.clientName} with maid ${contract.maidName}'
-      ));
+      _auditLogs.add(
+        AuditLogModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          timestamp: contract.placementDate,
+          userId: '2',
+          userName: contract.createdBy,
+          userRole: UserRole.sales,
+          actionType: ActionType.create,
+          targetId: contract.id,
+          description:
+              'Created contract ${contract.id} for ${contract.clientName} with maid ${contract.maidName}',
+        ),
+      );
     }
-    
+
     _auditLogs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    
+
     _isInitialized = true;
     notifyListeners();
   }
@@ -111,17 +112,20 @@ class GlobalAppState extends ChangeNotifier {
 
   void logAction(ActionType type, String targetId, String description) {
     if (_currentUser == null) return;
-    
-    _auditLogs.insert(0, AuditLogModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      timestamp: DateTime.now(),
-      userId: _currentUser!.id.toString(),
-      userName: _currentUser!.name,
-      userRole: _currentUser!.role,
-      actionType: type,
-      targetId: targetId,
-      description: description,
-    ));
+
+    _auditLogs.insert(
+      0,
+      AuditLogModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        timestamp: DateTime.now(),
+        userId: _currentUser!.id.toString(),
+        userName: _currentUser!.name,
+        userRole: _currentUser!.role,
+        actionType: type,
+        targetId: targetId,
+        description: description,
+      ),
+    );
     notifyListeners();
   }
 
@@ -131,9 +135,15 @@ class GlobalAppState extends ChangeNotifier {
     if (idx != -1) {
       final contract = _contracts[idx];
       _contracts[idx] = contract.copyWith(
-        guaranteeEndDate: contract.guaranteeEndDate.add(Duration(days: extraDays))
+        guaranteeEndDate: contract.guaranteeEndDate.add(
+          Duration(days: extraDays),
+        ),
       );
-      logAction(ActionType.update, contract.id, 'Extended guarantee by $extraDays days');
+      logAction(
+        ActionType.update,
+        contract.id,
+        'Extended guarantee by $extraDays days',
+      );
       notifyListeners();
     }
   }
@@ -147,9 +157,14 @@ class GlobalAppState extends ChangeNotifier {
       _contracts[idx] = contract.copyWith(
         amountPaid: newAmountPaid,
         balanceAmount: newBalance,
-        paymentStatus: newBalance <= 0 ? PaymentStatus.paid : PaymentStatus.partial
+        paymentStatus:
+            newBalance <= 0 ? PaymentStatus.paid : PaymentStatus.partial,
       );
-      logAction(ActionType.paymentLogged, contract.id, 'Logged payment of ₹$amountPaid');
+      logAction(
+        ActionType.paymentLogged,
+        contract.id,
+        'Logged payment of ₹$amountPaid',
+      );
       notifyListeners();
     }
   }
@@ -158,7 +173,7 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _contracts.indexWhere((c) => c.id == contractId);
     if (idx != -1) {
       final contract = _contracts[idx];
-      
+
       // Create an SLA Ticket for Sourcing
       final ticket = TicketModel(
         id: 'T${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
@@ -173,11 +188,15 @@ class GlobalAppState extends ChangeNotifier {
         contractId: contract.id,
         assignedTo: 'Sourcing Team',
         createdAt: DateTime.now(),
-        slaDeadline: DateTime.now().add(const Duration(days: 15))
+        slaDeadline: DateTime.now().add(const Duration(days: 15)),
       );
-      
+
       _tickets.insert(0, ticket);
-      logAction(ActionType.slaInitiated, contract.id, 'Initiated replacement ticket ${ticket.id}');
+      logAction(
+        ActionType.slaInitiated,
+        contract.id,
+        'Initiated replacement ticket ${ticket.id}',
+      );
       notifyListeners();
     }
   }
@@ -186,8 +205,15 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _tasks.indexWhere((t) => t.id == taskId);
     if (idx != -1) {
       final task = _tasks[idx];
-      _tasks[idx] = task.copyWith(status: TaskStatus.completed, completedAt: DateTime.now());
-      logAction(ActionType.taskCompleted, task.id, 'Completed task: ${task.title}');
+      _tasks[idx] = task.copyWith(
+        status: TaskStatus.completed,
+        completedAt: DateTime.now(),
+      );
+      logAction(
+        ActionType.taskCompleted,
+        task.id,
+        'Completed task: ${task.title}',
+      );
       notifyListeners();
     }
   }
@@ -195,7 +221,11 @@ class GlobalAppState extends ChangeNotifier {
   // --- Maid Modifications ---
   void addMaid(MaidModel maid) {
     _maids.insert(0, maid);
-    logAction(ActionType.create, maid.id, 'Added new candidate: ${maid.fullName} (${maid.category})');
+    logAction(
+      ActionType.create,
+      maid.id,
+      'Added new candidate: ${maid.fullName} (${maid.category})',
+    );
     notifyListeners();
   }
 
@@ -203,7 +233,11 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _maids.indexWhere((m) => m.id == updatedMaid.id);
     if (idx != -1) {
       _maids[idx] = updatedMaid;
-      logAction(ActionType.update, updatedMaid.id, 'Edited details: $changesSummary');
+      logAction(
+        ActionType.update,
+        updatedMaid.id,
+        'Edited details: $changesSummary',
+      );
       notifyListeners();
     }
   }
@@ -212,8 +246,19 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _maids.indexWhere((m) => m.id == maidId);
     if (idx != -1) {
       final maid = _maids[idx];
-      _maids[idx] = maid.copyWith(status: newStatus);
-      logAction(ActionType.statusChange, maid.id, 'Advanced pipeline stage to ${newStatus.name}');
+      final now = DateTime.now();
+      _maids[idx] = maid.copyWith(
+        status: newStatus,
+        dateVerificationSent: newStatus == MaidStatus.verificationPending ? now : maid.dateVerificationSent,
+        dateMedicalSent: newStatus == MaidStatus.medicalPending ? now : maid.dateMedicalSent,
+        dateReadyToHire: newStatus == MaidStatus.readyToPlace ? now : maid.dateReadyToHire,
+        datePlaced: newStatus == MaidStatus.placed ? now : maid.datePlaced,
+      );
+      logAction(
+        ActionType.statusChange,
+        maid.id,
+        'Advanced pipeline stage to ${newStatus.name}',
+      );
       notifyListeners();
     }
   }
@@ -224,7 +269,7 @@ class GlobalAppState extends ChangeNotifier {
       final maid = _maids[idx];
       _maids[idx] = maid.copyWith(
         status: MaidStatus.blacklisted,
-        remarks: 'BLACKLISTED: $reason\n${maid.remarks ?? ""}'
+        remarks: 'BLACKLISTED: $reason\n${maid.remarks ?? ""}',
       );
       logAction(ActionType.statusChange, maid.id, 'Blacklisted maid: $reason');
       notifyListeners();
@@ -250,7 +295,10 @@ class GlobalAppState extends ChangeNotifier {
 
   ContractModel? getContractForClient(String clientId) {
     try {
-      return _contracts.firstWhere((c) => c.clientId == clientId && c.contractStatus == ContractStatus.active);
+      return _contracts.firstWhere(
+        (c) =>
+            c.clientId == clientId && c.contractStatus == ContractStatus.active,
+      );
     } catch (_) {
       return null;
     }

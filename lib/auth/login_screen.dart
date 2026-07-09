@@ -122,40 +122,11 @@ class _LoginScreenState extends State<LoginScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Logo
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppColors.gold, AppColors.goldDark]
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.gold.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2
-                          ),
-                        ]
-                      ),
-                      child: const Icon(
-                        Icons.verified_user,
-                        size: 40,
-                        color: AppColors.navyBlue
-                      ),
+                    Image.asset(
+                      'lib/assets/applogo.png',
+                      height: 120,
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Verified Maids',
-                      style: GoogleFonts.poppins(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.gold
-                      ),
-                    ),
-                    const SizedBox(height: 4),
                     Text(
                       'Premium Domestic Staffing',
                       style: GoogleFonts.poppins(

@@ -3,6 +3,7 @@ import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:practice_app/models/maid_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class MaidDataSource extends DataGridSource {
   final BuildContext context;
@@ -23,12 +24,29 @@ class MaidDataSource extends DataGridSource {
     _buildDataGridRows();
   }
 
+  String _getMostRelevantDate(MaidModel maid) {
+    if (maid.status == MaidStatus.placed && maid.datePlaced != null) {
+      return DateFormat('MMM dd, yyyy').format(maid.datePlaced!);
+    } else if (maid.status == MaidStatus.readyToPlace && maid.dateReadyToHire != null) {
+      return DateFormat('MMM dd, yyyy').format(maid.dateReadyToHire!);
+    } else if (maid.status == MaidStatus.medicalPending && maid.dateMedicalSent != null) {
+      return DateFormat('MMM dd, yyyy').format(maid.dateMedicalSent!);
+    } else if (maid.status == MaidStatus.verificationPending && maid.dateVerificationSent != null) {
+      return DateFormat('MMM dd, yyyy').format(maid.dateVerificationSent!);
+    }
+    return DateFormat('MMM dd, yyyy').format(maid.dateAdded);
+  }
+
   void _buildDataGridRows() {
     _dataGridRows =
         _maids.map<DataGridRow>((MaidModel maid) {
           return DataGridRow(
             cells: [
               DataGridCell<String>(columnName: 'id', value: maid.id),
+              DataGridCell<String>(
+                columnName: 'date',
+                value: _getMostRelevantDate(maid),
+              ),
               DataGridCell<MaidModel>(columnName: 'maid', value: maid),
               DataGridCell<String>(
                 columnName: 'category',
@@ -73,7 +91,7 @@ class MaidDataSource extends DataGridSource {
 
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
-    final MaidModel maid = row.getCells()[1].value as MaidModel;
+    final MaidModel maid = row.getCells().firstWhere((c) => c.columnName == 'maid').value as MaidModel;
     final isEven = _dataGridRows.indexOf(row) % 2 == 0;
 
     return DataGridRowAdapter(

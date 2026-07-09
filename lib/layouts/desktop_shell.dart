@@ -8,6 +8,7 @@ import 'package:practice_app/auth/logout_timer_provider.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/models/user_model.dart';
+import 'package:practice_app/utils/fullscreen.dart';
 
 class DesktopShell extends StatefulWidget {
   final Widget child;
@@ -30,49 +31,49 @@ class _DesktopShellState extends State<DesktopShell> {
             icon: Icons.dashboard_outlined,
             activeIcon: Icons.dashboard,
             label: 'Dashboard',
-            route: '/admin'
+            route: '/admin',
           ),
           _SidebarItem(
             icon: Icons.people_outline,
             activeIcon: Icons.people,
             label: 'Maids',
-            route: '/admin/maids'
+            route: '/admin/maids',
           ),
           _SidebarItem(
             icon: Icons.business_outlined,
             activeIcon: Icons.business,
             label: 'Clients',
-            route: '/admin/clients'
+            route: '/admin/clients',
           ),
           _SidebarItem(
             icon: Icons.description_outlined,
             activeIcon: Icons.description,
             label: 'Contracts',
-            route: '/admin/contracts'
+            route: '/admin/contracts',
           ),
           _SidebarItem(
             icon: Icons.confirmation_number_outlined,
             activeIcon: Icons.confirmation_number,
             label: 'Tickets',
-            route: '/admin/tickets'
+            route: '/admin/tickets',
           ),
           _SidebarItem(
             icon: Icons.history_outlined,
             activeIcon: Icons.history,
             label: 'Audit Trail',
-            route: '/admin/audit'
+            route: '/admin/audit',
           ),
           _SidebarItem(
             icon: Icons.school_outlined,
             activeIcon: Icons.school,
             label: 'Learning',
-            route: '/admin/learning'
+            route: '/admin/learning',
           ),
           _SidebarItem(
             icon: Icons.settings_outlined,
             activeIcon: Icons.settings,
             label: 'Settings',
-            route: '/admin/settings'
+            route: '/admin/settings',
           ),
         ];
       case UserRole.sales:
@@ -81,37 +82,37 @@ class _DesktopShellState extends State<DesktopShell> {
             icon: Icons.dashboard_outlined,
             activeIcon: Icons.dashboard,
             label: 'Dashboard',
-            route: '/sales'
+            route: '/sales',
           ),
           _SidebarItem(
             icon: Icons.business_outlined,
             activeIcon: Icons.business,
             label: 'Clients',
-            route: '/sales/clients'
+            route: '/sales/clients',
           ),
           _SidebarItem(
             icon: Icons.people_outline,
             activeIcon: Icons.people,
             label: 'Maid Pool',
-            route: '/sales/maids'
+            route: '/sales/maids',
           ),
           _SidebarItem(
             icon: Icons.description_outlined,
             activeIcon: Icons.description,
             label: 'Contracts',
-            route: '/sales/contracts'
+            route: '/sales/contracts',
           ),
           _SidebarItem(
             icon: Icons.confirmation_number_outlined,
             activeIcon: Icons.confirmation_number,
             label: 'Tickets',
-            route: '/sales/tickets'
+            route: '/sales/tickets',
           ),
           _SidebarItem(
             icon: Icons.school_outlined,
             activeIcon: Icons.school,
             label: 'Learning',
-            route: '/sales/learning'
+            route: '/sales/learning',
           ),
         ];
       case UserRole.sourcing:
@@ -120,55 +121,55 @@ class _DesktopShellState extends State<DesktopShell> {
             icon: Icons.person_add_outlined,
             activeIcon: Icons.person_add,
             label: 'Add Candidate',
-            route: '/sourcing/add_candidate'
+            route: '/sourcing/add_candidate',
           ),
           _SidebarItem(
             icon: Icons.dashboard_outlined,
             activeIcon: Icons.dashboard,
             label: 'Dashboard',
-            route: '/sourcing'
+            route: '/sourcing',
           ),
           _SidebarItem(
             icon: Icons.verified_outlined,
             activeIcon: Icons.verified,
             label: 'Ready to Place',
-            route: '/sourcing/maids/ready'
+            route: '/sourcing/maids/ready',
           ),
           _SidebarItem(
             icon: Icons.new_releases_outlined,
             activeIcon: Icons.new_releases,
             label: 'Newly Added',
-            route: '/sourcing/maids/new'
+            route: '/sourcing/maids/new',
           ),
           _SidebarItem(
             icon: Icons.fact_check_outlined,
             activeIcon: Icons.fact_check,
             label: 'Verification Pending',
-            route: '/sourcing/maids/verification'
+            route: '/sourcing/maids/verification',
           ),
           _SidebarItem(
             icon: Icons.medical_services_outlined,
             activeIcon: Icons.medical_services,
             label: 'Medical Pending',
-            route: '/sourcing/maids/medical'
+            route: '/sourcing/maids/medical',
           ),
           _SidebarItem(
             icon: Icons.assignment_ind_outlined,
             activeIcon: Icons.assignment_ind,
             label: 'Hired Candidates',
-            route: '/sourcing/maids/hired'
+            route: '/sourcing/maids/hired',
           ),
           _SidebarItem(
             icon: Icons.block_outlined,
             activeIcon: Icons.block,
             label: 'Blacklisted',
-            route: '/sourcing/maids/blacklisted'
+            route: '/sourcing/maids/blacklisted',
           ),
           _SidebarItem(
             icon: Icons.school_outlined,
             activeIcon: Icons.school,
             label: 'Learning',
-            route: '/sourcing/learning'
+            route: '/sourcing/learning',
           ),
         ];
       case UserRole.executive:
@@ -221,24 +222,25 @@ class _DesktopShellState extends State<DesktopShell> {
   PreferredSizeWidget _buildAppBar(
     bool isDark,
     String currentLocation,
-    LogoutTimerProvider timerProvider
+    LogoutTimerProvider timerProvider,
   ) {
     return AppBar(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.navyBlue,
       foregroundColor: AppColors.white,
       title: Text(
         _getPageTitle(currentLocation),
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w600
-        ),
+        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
       ),
       actions: [
         _buildTimerChip(timerProvider),
         _buildThemeToggle(isDark),
         IconButton(
+          icon: const Icon(Icons.fullscreen, size: 22),
+          onPressed: toggleFullScreen,
+        ),
+        IconButton(
           icon: const Icon(Icons.notifications_outlined, size: 22),
-          onPressed: () {}
+          onPressed: () {},
         ),
         const SizedBox(width: 8),
       ],
@@ -247,21 +249,23 @@ class _DesktopShellState extends State<DesktopShell> {
 
   Widget _buildDrawer(bool isDark, String currentLocation, UserModel? user) {
     return Drawer(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.navyBlue,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
       child: Column(
         children: [
           const SizedBox(height: 48),
-          _buildBrandHeader(true),
+          _buildBrandHeader(true, isDark),
           const SizedBox(height: 24),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: _menuItems.map((item) {
-                final isActive = _isRouteActive(
-                  item.route, currentLocation
-                );
-                return _buildMenuItem(item, isActive, true, isDark);
-              }).toList(),
+              children:
+                  _menuItems.map((item) {
+                    final isActive = _isRouteActive(
+                      item.route,
+                      currentLocation,
+                    );
+                    return _buildMenuItem(item, isActive, true, isDark);
+                  }).toList(),
             ),
           ),
           _buildUserSection(user, true, isDark),
@@ -270,9 +274,7 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
-  Widget _buildSidebar(
-    bool isDark, String currentLocation, UserModel? user
-  ) {
+  Widget _buildSidebar(bool isDark, String currentLocation, UserModel? user) {
     final width = _sidebarExpanded ? 240.0 : 72.0;
 
     return AnimatedContainer(
@@ -280,47 +282,44 @@ class _DesktopShellState extends State<DesktopShell> {
       curve: Curves.easeInOut,
       width: width,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.navyBlue,
+        color: isDark ? AppColors.darkSurface : AppColors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
-            offset: const Offset(2, 0)
+            offset: const Offset(2, 0),
           ),
-        ]
+        ],
       ),
       child: Column(
         children: [
           const SizedBox(height: 20),
-          _buildBrandHeader(_sidebarExpanded),
+          _buildBrandHeader(_sidebarExpanded, isDark),
           const SizedBox(height: 8),
 
           // Toggle button
           Align(
-            alignment: _sidebarExpanded
-                ? Alignment.centerRight
-                : Alignment.center,
+            alignment:
+                _sidebarExpanded ? Alignment.centerRight : Alignment.center,
             child: Padding(
               padding: const EdgeInsets.only(right: 8),
               child: IconButton(
                 icon: Icon(
-                  _sidebarExpanded
-                      ? Icons.chevron_left
-                      : Icons.chevron_right,
+                  _sidebarExpanded ? Icons.chevron_left : Icons.chevron_right,
                   color: AppColors.grey500,
-                  size: 20
+                  size: 20,
                 ),
                 onPressed: () {
                   setState(() => _sidebarExpanded = !_sidebarExpanded);
-                }
+                },
               ),
             ),
           ),
-          const Divider(
-            color: AppColors.grey700,
+          Divider(
+            color: isDark ? AppColors.grey700 : AppColors.grey200,
             height: 1,
             indent: 16,
-            endIndent: 16
+            endIndent: 16,
           ),
           const SizedBox(height: 8),
 
@@ -328,14 +327,19 @@ class _DesktopShellState extends State<DesktopShell> {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              children: _menuItems.map((item) {
-                final isActive = _isRouteActive(
-                  item.route, currentLocation
-                );
-                return _buildMenuItem(
-                  item, isActive, _sidebarExpanded, isDark
-                );
-              }).toList(),
+              children:
+                  _menuItems.map((item) {
+                    final isActive = _isRouteActive(
+                      item.route,
+                      currentLocation,
+                    );
+                    return _buildMenuItem(
+                      item,
+                      isActive,
+                      _sidebarExpanded,
+                      isDark,
+                    );
+                  }).toList(),
             ),
           ),
 
@@ -346,44 +350,16 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
-  Widget _buildBrandHeader(bool expanded) {
+  Widget _buildBrandHeader(bool expanded, bool isDark) {
     if (!expanded) {
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [AppColors.gold, AppColors.goldDark]
-          )
-        ),
-        child: const Icon(
-          Icons.verified_user,
-          size: 22,
-          color: AppColors.navyBlue
-        ),
-      );
+      return Image.asset('lib/assets/applogo.png', width: 40, height: 40);
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppColors.gold, AppColors.goldDark]
-              )
-            ),
-            child: const Icon(
-              Icons.verified_user,
-              size: 20,
-              color: AppColors.navyBlue
-            ),
-          ),
+          Image.asset('lib/assets/applogo.png', width: 36, height: 36),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -391,7 +367,7 @@ class _DesktopShellState extends State<DesktopShell> {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.gold
+                color: isDark ? AppColors.gold : AppColors.navyBlue,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -405,7 +381,7 @@ class _DesktopShellState extends State<DesktopShell> {
     _SidebarItem item,
     bool isActive,
     bool expanded,
-    bool isDark
+    bool isDark,
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -423,60 +399,79 @@ class _DesktopShellState extends State<DesktopShell> {
             duration: const Duration(milliseconds: 200),
             padding: EdgeInsets.symmetric(
               horizontal: expanded ? 14 : 0,
-              vertical: 12
+              vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: isActive
-                  ? AppColors.gold.withValues(alpha: 0.15)
-                  : Colors.transparent,
+              color:
+                  isActive
+                      ? (isDark
+                          ? AppColors.gold.withValues(alpha: 0.15)
+                          : AppColors.navyBlue.withValues(alpha: 0.08))
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: isActive
-                  ? Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.3),
-                      width: 1
-                    )
-                  : null
+              border:
+                  isActive && isDark
+                      ? Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.3),
+                        width: 1,
+                      )
+                      : null,
             ),
-            child: expanded
-                ? Row(
-                    children: [
-                      Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        size: 20,
-                        color: isActive
-                            ? AppColors.gold
-                            : AppColors.grey400
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: isActive
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isActive
-                                ? AppColors.gold
-                                : AppColors.grey300
+            child:
+                expanded
+                    ? Row(
+                      children: [
+                        Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 20,
+                          color:
+                              isActive
+                                  ? (isDark
+                                      ? AppColors.gold
+                                      : AppColors.navyBlue)
+                                  : (isDark
+                                      ? AppColors.grey400
+                                      : AppColors.grey600),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight:
+                                  isActive ? FontWeight.w600 : FontWeight.w400,
+                              color:
+                                  isActive
+                                      ? (isDark
+                                          ? AppColors.gold
+                                          : AppColors.navyBlue)
+                                      : (isDark
+                                          ? AppColors.grey300
+                                          : AppColors.grey600),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    )
+                    : Center(
+                      child: Tooltip(
+                        message: item.label,
+                        child: Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 22,
+                          color:
+                              isActive
+                                  ? (isDark
+                                      ? AppColors.gold
+                                      : AppColors.navyBlue)
+                                  : (isDark
+                                      ? AppColors.grey400
+                                      : AppColors.grey600),
                         ),
                       ),
-                    ],
-                  )
-                : Center(
-                    child: Tooltip(
-                      message: item.label,
-                      child: Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        size: 22,
-                        color: isActive
-                            ? AppColors.gold
-                            : AppColors.grey400
-                      ),
                     ),
-                  ),
           ),
         ),
       ),
@@ -491,94 +486,100 @@ class _DesktopShellState extends State<DesktopShell> {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: AppColors.grey700.withValues(alpha: 0.5)
-          )
-        )
+            color:
+                isDark
+                    ? AppColors.grey700.withValues(alpha: 0.5)
+                    : AppColors.grey200,
+          ),
+        ),
       ),
-      child: expanded
-          ? Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-                  child: Text(
-                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.gold
+      child:
+          expanded
+              ? Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.gold.withValues(alpha: 0.2),
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.gold : AppColors.navyBlue,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        user.name,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.white
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          user.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        user.role.name.toUpperCase(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.gold.withValues(alpha: 0.7),
-                          letterSpacing: 1
+                        Text(
+                          user.role.name.toUpperCase(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                            color:
+                                isDark
+                                    ? AppColors.gold.withValues(alpha: 0.7)
+                                    : AppColors.navyBlue.withValues(alpha: 0.7),
+                            letterSpacing: 1,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.logout,
-                    size: 18,
-                    color: AppColors.grey400
+                  IconButton(
+                    icon: const Icon(
+                      Icons.logout,
+                      size: 18,
+                      color: AppColors.grey400,
+                    ),
+                    tooltip: 'Logout',
+                    onPressed: () => _handleLogout(),
                   ),
-                  tooltip: 'Logout',
-                  onPressed: () => _handleLogout()
+                ],
+              )
+              : IconButton(
+                icon: const Icon(
+                  Icons.logout,
+                  size: 20,
+                  color: AppColors.grey400,
                 ),
-              ],
-            )
-          : IconButton(
-              icon: const Icon(
-                Icons.logout,
-                size: 20,
-                color: AppColors.grey400
+                tooltip: 'Logout',
+                onPressed: () => _handleLogout(),
               ),
-              tooltip: 'Logout',
-              onPressed: () => _handleLogout()
-            ),
     );
   }
 
   Widget _buildTopBar(
     bool isDark,
     String currentLocation,
-    LogoutTimerProvider timerProvider
+    LogoutTimerProvider timerProvider,
   ) {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceVariant
-            : AppColors.white,
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
-            offset: const Offset(0, 2)
+            offset: const Offset(0, 2),
           ),
-        ]
+        ],
       ),
       child: Row(
         children: [
@@ -588,7 +589,7 @@ class _DesktopShellState extends State<DesktopShell> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue
+              color: isDark ? AppColors.white : AppColors.navyBlue,
             ),
           ),
           const Spacer(),
@@ -599,16 +600,12 @@ class _DesktopShellState extends State<DesktopShell> {
             height: 38,
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : AppColors.grey100,
-              borderRadius: BorderRadius.circular(10)
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
                 const SizedBox(width: 12),
-                Icon(
-                  Icons.search,
-                  size: 18,
-                  color: AppColors.grey500
-                ),
+                Icon(Icons.search, size: 18, color: AppColors.grey500),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -617,11 +614,11 @@ class _DesktopShellState extends State<DesktopShell> {
                       hintText: 'Search...',
                       hintStyle: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: AppColors.grey500
+                        color: AppColors.grey500,
                       ),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8)
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ),
@@ -638,6 +635,17 @@ class _DesktopShellState extends State<DesktopShell> {
           _buildThemeToggle(isDark),
           const SizedBox(width: 4),
 
+          // Fullscreen toggle
+          IconButton(
+            icon: Icon(
+              Icons.fullscreen,
+              size: 22,
+              color: isDark ? AppColors.grey300 : AppColors.navyBlue,
+            ),
+            onPressed: toggleFullScreen,
+          ),
+          const SizedBox(width: 4),
+
           // Notifications
           IconButton(
             icon: Badge(
@@ -645,10 +653,10 @@ class _DesktopShellState extends State<DesktopShell> {
               child: Icon(
                 Icons.notifications_outlined,
                 size: 22,
-                color: isDark ? AppColors.grey300 : AppColors.navyBlue
+                color: isDark ? AppColors.grey300 : AppColors.navyBlue,
               ),
             ),
-            onPressed: () {}
+            onPressed: () {},
           ),
         ],
       ),
@@ -666,9 +674,7 @@ class _DesktopShellState extends State<DesktopShell> {
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.3)
-        )
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -680,7 +686,7 @@ class _DesktopShellState extends State<DesktopShell> {
             style: GoogleFonts.poppins(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppColors.gold
+              color: AppColors.gold,
             ),
           ),
         ],
@@ -693,12 +699,12 @@ class _DesktopShellState extends State<DesktopShell> {
       icon: Icon(
         isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
         size: 20,
-        color: isDark ? AppColors.grey300 : AppColors.grey600
+        color: isDark ? AppColors.grey300 : AppColors.grey600,
       ),
       tooltip: isDark ? 'Light Mode' : 'Dark Mode',
       onPressed: () {
         context.read<ThemeProvider>().toggleTheme(!isDark);
-      }
+      },
     );
   }
 
@@ -711,8 +717,9 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location.endsWith('/maids/verification')) return 'Verification Pending';
     if (location.endsWith('/maids/medical')) return 'Medical Pending';
     if (location.endsWith('/maids/hired')) return 'Hired Candidates';
-    if (location.endsWith('/maids/blacklisted')) return 'Blacklisted Candidates';
-    
+    if (location.endsWith('/maids/blacklisted'))
+      return 'Blacklisted Candidates';
+
     // Generic sub-routes
     if (location.endsWith('/maids')) return 'Maid Directory';
     if (location.contains('/maids/')) return 'Candidate Profile';
@@ -751,6 +758,6 @@ class _SidebarItem {
     required this.icon,
     required this.activeIcon,
     required this.label,
-    required this.route
+    required this.route,
   });
 }
