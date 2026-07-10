@@ -4,12 +4,16 @@ import 'package:practice_app/auth/login_screen.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/layouts/desktop_shell.dart';
 import 'package:practice_app/layouts/mobile_shell.dart';
+import 'package:practice_app/layouts/executive_shell.dart';
 import 'package:practice_app/screens/admin/admin_dashboard.dart';
 import 'package:practice_app/screens/admin/admin_audit_trail_screen.dart';
 import 'package:practice_app/screens/sales/sales_dashboard.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
 import 'package:practice_app/screens/shared/learning_screen.dart';
 import 'package:practice_app/screens/executive/executive_dashboard.dart';
+import 'package:practice_app/screens/executive/executive_tasks_screen.dart';
+import 'package:practice_app/screens/executive/executive_task_detail_screen.dart';
+import 'package:practice_app/screens/executive/executive_profile_screen.dart';
 import 'package:practice_app/screens/candidates/candidate_directory_screen.dart';
 import 'package:practice_app/screens/candidates/candidate_profile_screen.dart';
 import 'package:practice_app/screens/clients/client_list_screen.dart';
@@ -209,9 +213,9 @@ class AppRouter {
             ),
           ],
         ),
-        // Executive shell (mobile)
+        // Executive shell
         ShellRoute(
-          builder: (context, state, child) => MobileShell(child: child),
+          builder: (context, state, child) => ExecutiveShell(child: child),
           routes: [
             GoRoute(
               path: '/executive',
@@ -219,16 +223,17 @@ class AppRouter {
             ),
             GoRoute(
               path: '/executive/tasks',
-              builder:
-                  (context, state) =>
-                      const Scaffold(body: Center(child: Text('All Tasks'))),
+              builder: (context, state) => const ExecutiveTasksScreen(),
             ),
             GoRoute(
-              path: '/executive/rewards',
-              builder:
-                  (context, state) => const Scaffold(
-                    body: Center(child: Text('Rewards & Bonuses')),
-                  ),
+              path: '/executive/profile',
+              builder: (context, state) => const ExecutiveProfileScreen(),
+            ),
+            GoRoute(
+              path: '/executive/tasks/:id',
+              builder: (context, state) => ExecutiveTaskDetailScreen(
+                taskId: state.pathParameters['id']!,
+              ),
             ),
           ],
         ),

@@ -75,10 +75,120 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     );
 
     state.addCandidate(candidate);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Candidate $_name added successfully!')),
+    _showSuccessDialog();
+  }
+
+  void _showSuccessDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreen.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: AppColors.successGreen,
+                    size: 64,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Candidate Added!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$_name has been successfully added to the system and is now in the pipeline.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        context.pop(); // Go back to directory
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark ? AppColors.grey300 : AppColors.grey700,
+                      ),
+                      child: Text(
+                        'View Directory',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        _resetForm(); // Reset the form
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navyBlue,
+                        foregroundColor: AppColors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: Text(
+                        'Add Another',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
-    context.pop();
+  }
+
+  void _resetForm() {
+    _formKey1.currentState?.reset();
+    _formKey3.currentState?.reset();
+    setState(() {
+      _currentStep = 0;
+      _name = '';
+      _phone = '';
+      _age = 25;
+      _city = 'Mumbai';
+      _address = '';
+      _religion = 'Hindu';
+      _education = '10th Pass';
+      _category = CategoryConstants.categories.first;
+      _languages.clear();
+      _languages.add('Hindi');
+      _experienceYears = 0;
+      _expectedSalary = CategoryConstants.baseSalaries.values.first;
+      _hasAadhaar = false;
+      _hasPhoto = false;
+    });
   }
 
   @override
@@ -184,7 +294,9 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
+                    maxLength: 10,
                     decoration: const InputDecoration(
+                      counterText: "",
                       labelText: 'Phone Number',
                       border: OutlineInputBorder(),
                     ),
@@ -228,6 +340,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
               validator: (v) => v!.isEmpty ? 'Required' : null,
               onSaved: (v) => _address = v!,
             ),
+            const SizedBox(height: 20),
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(
                 labelText: 'Religion',
@@ -242,7 +355,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                   }).toList(),
               onChanged: (val) => setState(() => _religion = val!),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(
                 labelText: 'Education',

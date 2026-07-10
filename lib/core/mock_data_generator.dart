@@ -559,11 +559,12 @@ class MockDataGenerator {
   };
 
   static Map<String, dynamic> getExecutiveStats() => {
-    'todaysDrops': 8,
-    'pendingPayments': 5,
-    'completedToday': 3,
-    'monthlyBonus': 4500,
-    'totalTasksMonth': 85,
-    'completedMonth': 72
+    'dropsLastMonth': 42,
+    'dropsLastWeek': 15,
+    'dropsThisWeek': 12,
+    'dropsThisMonth': 38,
+    'totalDrops': 345,
+    'todaysPendingDrops': 5,
+    'todaysAssignedDrops': 8,
   };
 }

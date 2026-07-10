@@ -65,6 +65,7 @@ class ExecutiveTaskModel {
   final DateTime? completedAt;
   final bool isPaymentCollected;
   final double? paymentAmount;
+  final bool isContractUploaded;
   final String? remarks;
 
   const ExecutiveTaskModel({
@@ -84,6 +85,7 @@ class ExecutiveTaskModel {
     this.completedAt,
     this.isPaymentCollected = false,
     this.paymentAmount,
+    this.isContractUploaded = false,
     this.remarks
   });
 
@@ -107,6 +109,7 @@ class ExecutiveTaskModel {
           : null,
       isPaymentCollected: (json['isPaymentCollected'] as bool?) ?? false,
       paymentAmount: (json['paymentAmount'] as num?)?.toDouble(),
+      isContractUploaded: (json['isContractUploaded'] as bool?) ?? false,
       remarks: json['remarks'] as String?
     );
   }
@@ -129,6 +132,7 @@ class ExecutiveTaskModel {
       'completedAt': completedAt?.toIso8601String(),
       'isPaymentCollected': isPaymentCollected,
       'paymentAmount': paymentAmount,
+      'isContractUploaded': isContractUploaded,
       'remarks': remarks
     };
   }
@@ -152,6 +156,7 @@ class ExecutiveTaskModel {
     DateTime? completedAt,
     bool? isPaymentCollected,
     double? paymentAmount,
+    bool? isContractUploaded,
     String? remarks
   }) {
     return ExecutiveTaskModel(
@@ -171,6 +176,7 @@ class ExecutiveTaskModel {
       completedAt: completedAt ?? this.completedAt,
       isPaymentCollected: isPaymentCollected ?? this.isPaymentCollected,
       paymentAmount: paymentAmount ?? this.paymentAmount,
+      isContractUploaded: isContractUploaded ?? this.isContractUploaded,
       remarks: remarks ?? this.remarks
     );
   }

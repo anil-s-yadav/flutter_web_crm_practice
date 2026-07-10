@@ -173,12 +173,34 @@ class _DesktopShellState extends State<DesktopShell> {
           ),
         ];
       case UserRole.executive:
-        return [];
+        return [
+          _SidebarItem(
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
+            label: 'Dashboard',
+            route: '/executive',
+          ),
+          _SidebarItem(
+            icon: Icons.task_outlined,
+            activeIcon: Icons.task,
+            label: 'My Tasks',
+            route: '/executive/tasks',
+          ),
+          _SidebarItem(
+            icon: Icons.emoji_events_outlined,
+            activeIcon: Icons.emoji_events,
+            label: 'Rewards & Bonus',
+            route: '/executive/rewards',
+          ),
+        ];
     }
   }
 
   bool _isRouteActive(String route, String currentLocation) {
-    if (route == '/admin' || route == '/sales' || route == '/sourcing') {
+    if (route == '/admin' ||
+        route == '/sales' ||
+        route == '/sourcing' ||
+        route == '/executive') {
       return currentLocation == route;
     }
     return currentLocation.startsWith(route);
@@ -194,7 +216,7 @@ class _DesktopShellState extends State<DesktopShell> {
 
     if (isNarrow) {
       return Scaffold(
-        appBar: _buildAppBar(isDark, currentLocation, timerProvider),
+        appBar: _buildAppBar(context, isDark, currentLocation, timerProvider),
         drawer: _buildDrawer(isDark, currentLocation, user),
         body: widget.child,
       );
@@ -220,13 +242,14 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   PreferredSizeWidget _buildAppBar(
+    BuildContext context,
     bool isDark,
     String currentLocation,
     LogoutTimerProvider timerProvider,
   ) {
     return AppBar(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.navyBlue,
-      foregroundColor: AppColors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.goldDark,
+      foregroundColor: isDark ? AppColors.white : AppColors.goldDark,
       title: Text(
         _getPageTitle(currentLocation),
         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
@@ -234,10 +257,11 @@ class _DesktopShellState extends State<DesktopShell> {
       actions: [
         // _buildTimerChip(timerProvider),
         _buildThemeToggle(isDark),
-        IconButton(
-          icon: const Icon(Icons.fullscreen, size: 22),
-          onPressed: toggleFullScreen,
-        ),
+        if (context.media.width >= 600)
+          IconButton(
+            icon: const Icon(Icons.fullscreen, size: 22),
+            onPressed: toggleFullScreen,
+          ),
         IconButton(
           icon: const Icon(Icons.notifications_outlined, size: 22),
           onPressed: () {},
@@ -282,14 +306,13 @@ class _DesktopShellState extends State<DesktopShell> {
       curve: Curves.easeInOut,
       width: width,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(2, 0),
+        color: isDark ? AppColors.darkSurface : AppColors.grey50,
+        border: Border(
+          right: BorderSide(
+            color: isDark ? AppColors.dividerDark : AppColors.grey200,
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Column(
         children: [
@@ -363,7 +386,7 @@ class _DesktopShellState extends State<DesktopShell> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Verified Candidates',
+              'Verified Maids',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -404,13 +427,11 @@ class _DesktopShellState extends State<DesktopShell> {
             decoration: BoxDecoration(
               color:
                   isActive
-                      ? (isDark
-                          ? AppColors.gold.withValues(alpha: 0.15)
-                          : AppColors.navyBlue.withValues(alpha: 0.08))
+                      ? AppColors.gold.withValues(alpha: 0.12)
                       : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
               border:
-                  isActive && isDark
+                  isActive
                       ? Border.all(
                         color: AppColors.gold.withValues(alpha: 0.3),
                         width: 1,
@@ -424,14 +445,7 @@ class _DesktopShellState extends State<DesktopShell> {
                         Icon(
                           isActive ? item.activeIcon : item.icon,
                           size: 20,
-                          color:
-                              isActive
-                                  ? (isDark
-                                      ? AppColors.gold
-                                      : AppColors.navyBlue)
-                                  : (isDark
-                                      ? AppColors.grey400
-                                      : AppColors.grey600),
+                          color: isActive ? AppColors.gold : AppColors.grey400,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -445,7 +459,7 @@ class _DesktopShellState extends State<DesktopShell> {
                                   isActive
                                       ? (isDark
                                           ? AppColors.gold
-                                          : AppColors.navyBlue)
+                                          : AppColors.gold)
                                       : (isDark
                                           ? AppColors.grey300
                                           : AppColors.grey600),
@@ -463,9 +477,7 @@ class _DesktopShellState extends State<DesktopShell> {
                           size: 22,
                           color:
                               isActive
-                                  ? (isDark
-                                      ? AppColors.gold
-                                      : AppColors.navyBlue)
+                                  ? (isDark ? AppColors.gold : AppColors.gold)
                                   : (isDark
                                       ? AppColors.grey400
                                       : AppColors.grey600),
@@ -573,13 +585,12 @@ class _DesktopShellState extends State<DesktopShell> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.dividerDark : AppColors.grey200,
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Row(
         children: [
@@ -699,7 +710,7 @@ class _DesktopShellState extends State<DesktopShell> {
       icon: Icon(
         isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
         size: 20,
-        color: isDark ? AppColors.grey300 : AppColors.grey600,
+        // color: isDark ? AppColors.grey300 : AppColors.grey600,
       ),
       tooltip: isDark ? 'Light Mode' : 'Dark Mode',
       onPressed: () {
@@ -714,11 +725,13 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location.endsWith('/add_candidate')) return 'Add Candidate';
     if (location.endsWith('/candidates/ready')) return 'Ready to Place';
     if (location.endsWith('/candidates/new')) return 'Newly Added';
-    if (location.endsWith('/candidates/verification')) return 'Verification Pending';
+    if (location.endsWith('/candidates/verification'))
+      return 'Verification Pending';
     if (location.endsWith('/candidates/medical')) return 'Medical Pending';
     if (location.endsWith('/candidates/hired')) return 'Hired Candidates';
-    if (location.endsWith('/candidates/blacklisted'))
+    if (location.endsWith('/candidates/blacklisted')) {
       return 'Blacklisted Candidates';
+    }
 
     // Generic sub-routes
     if (location.endsWith('/candidates')) return 'Candidate Directory';
@@ -735,6 +748,8 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location == '/sales') return 'Sales Dashboard';
     if (location == '/sourcing') return 'Sourcing Dashboard';
     if (location == '/executive') return 'Executive Dashboard';
+    if (location == '/executive/tasks') return 'My Tasks';
+    if (location == '/executive/rewards') return 'Rewards & Bonus';
 
     return 'Dashboard';
   }

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/models/executive_task_model.dart';
-
 import 'package:provider/provider.dart';
 import 'package:practice_app/providers/global_app_state.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ExecutiveDashboard extends StatelessWidget {
   const ExecutiveDashboard({super.key});
@@ -13,14 +12,13 @@ class ExecutiveDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (!state.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final stats = MockDataGenerator.getExecutiveStats();
-    final tasks = state.tasks;
-    final inFmt = NumberFormat('#,##,###', 'en_IN');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -28,138 +26,158 @@ class ExecutiveDashboard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          // Large tappable stat cards
-          Row(children: [
-            Expanded(child: _BigCard(
-              title: "Today's Drops", value: '${stats['todaysDrops']}',
-              icon: Icons.local_shipping, color: AppColors.navyBlue)),
-            const SizedBox(width: 12),
-            Expanded(child: _BigCard(
-              title: 'Pending Pay', value: '${stats['pendingPayments']}',
-              icon: Icons.payment, color: AppColors.urgentAmber)),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _BigCard(
-              title: 'Completed', value: '${stats['completedToday']}',
-              icon: Icons.check_circle, color: AppColors.successGreen)),
-            const SizedBox(width: 12),
-            Expanded(child: _BigCard(
-              title: 'Monthly Bonus', value: '₹${inFmt.format(stats['monthlyBonus'])}',
-              icon: Icons.emoji_events, color: AppColors.gold)),
-          ]),
-          const SizedBox(height: 24),
-          Text("Today's Tasks", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          ...tasks.take(8).map((task) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(task.type.displayName, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.gold)),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: task.status.name == 'completed'
-                            ? AppColors.successGreen.withValues(alpha: 0.1)
-                            : AppColors.urgentAmber.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(task.status.displayName, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                          color: task.status.name == 'completed' ? AppColors.successGreen : AppColors.urgentAmber)),
-                    ),
-                  ]),
-                  const SizedBox(height: 8),
-                  Text(task.clientName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                  const SizedBox(height: 4),
-                  Text(task.clientAddress, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodySmall?.color)),
-                  if (task.candidateName != null) ...[
-                    const SizedBox(height: 4),
-                    Text('Candidate: ${task.candidateName}', style: const TextStyle(fontSize: 13, color: AppColors.navyBlue)),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    if (task.gpsLink != null)
-                      OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.navigation, size: 16),
-                        label: const Text('Navigate'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.navyBlue,
-                          textStyle: const TextStyle(fontSize: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      ),
-                    const Spacer(),
-                    if (task.status != TaskStatus.completed)
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          state.markTaskCompleted(task.id);
-                        },
-                        icon: const Icon(Icons.check, size: 16),
-                        label: const Text('Mark Completed'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.successGreen,
-                          foregroundColor: AppColors.white,
-                          elevation: 0,
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      )
-                    else if (task.paymentAmount != null)
-                      Text('₹${inFmt.format(task.paymentAmount!.toInt())}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gold)),
-                  ]),
-                ],
+          Text(
+            "Drop Metrics",
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.1,
+            children: [
+              _MetricCard(
+                title: "Today's Status",
+                value: "${stats['todaysPendingDrops']} Pending",
+                subtitle: "Out of ${stats['todaysAssignedDrops']} assigned",
+                icon: Icons.assignment_late,
+                color: AppColors.urgentAmber,
               ),
-            ),
-          )),
+              _MetricCard(
+                title: 'This Week',
+                value: '${stats['dropsThisWeek']}',
+                subtitle: 'Drops completed',
+                icon: Icons.view_week,
+                color: AppColors.gold,
+              ),
+              _MetricCard(
+                title: 'Last Week',
+                value: '${stats['dropsLastWeek']}',
+                subtitle: 'Drops completed',
+                icon: Icons.history,
+                color: AppColors.grey500,
+              ),
+              _MetricCard(
+                title: 'This Month',
+                value: '${stats['dropsThisMonth']}',
+                subtitle: 'Drops completed',
+                icon: Icons.calendar_today,
+                color: AppColors.gold,
+              ),
+              _MetricCard(
+                title: 'Last Month',
+                value: '${stats['dropsLastMonth']}',
+                subtitle: 'Drops completed',
+                icon: Icons.date_range,
+                color: AppColors.grey500,
+              ),
+              _MetricCard(
+                title: 'Total Drops',
+                value: '${stats['totalDrops']}',
+                subtitle: 'Overall drops',
+                icon: Icons.done_all,
+                color: AppColors.successGreen,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _BigCard extends StatelessWidget {
-  final String title, value;
+class _MetricCard extends StatelessWidget {
+  final String title, value, subtitle;
   final IconData icon;
   final Color color;
-  const _BigCard({required this.title, required this.value, required this.icon, required this.color});
+
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withValues(alpha: 0.3)),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: isDark ? 0.1 : 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+      child: Stack(
+        children: [
+          Positioned(
+            right: -10,
+            top: -10,
+            child: Icon(
+              icon,
+              size: 70,
+              color: color.withValues(alpha: isDark ? 0.1 : 0.05),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color, size: 32),
-              const SizedBox(height: 8),
-              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                  height: 1.1,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(title, style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color), textAlign: TextAlign.center),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

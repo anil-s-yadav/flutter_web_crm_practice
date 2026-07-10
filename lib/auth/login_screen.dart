@@ -51,25 +51,25 @@ class _LoginScreenState extends State<LoginScreen>
       UserRole.admin: UserModel(
         id: 1,
         name: 'Admin User',
-        email: 'admin@verifiedcandidates.com',
+        email: 'admin@verifiedmaids.in',
         role: UserRole.admin,
       ),
       UserRole.sales: UserModel(
         id: 2,
         name: 'Sales Manager',
-        email: 'sales@verifiedcandidates.com',
+        email: 'sales@verifiedmaids.in',
         role: UserRole.sales,
       ),
       UserRole.sourcing: UserModel(
         id: 3,
         name: 'Sourcing Lead',
-        email: 'sourcing@verifiedcandidates.com',
+        email: 'sourcing@verifiedmaids.in',
         role: UserRole.sourcing,
       ),
       UserRole.executive: UserModel(
         id: 4,
         name: 'Field Executive',
-        email: 'exec@verifiedcandidates.com',
+        email: 'exec@verifiedmaids.in',
         role: UserRole.executive,
       ),
     };
@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 onPressed: _isLoading ? null : () {},
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.gold,
-                                  foregroundColor: AppColors.navyBlue,
+                                  foregroundColor: AppColors.white,
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),

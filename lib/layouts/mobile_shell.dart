@@ -90,7 +90,7 @@ class _MobileShellState extends State<MobileShell> {
             ),
             const SizedBox(width: 10),
             Text(
-              'Verified Candidates',
+              'Verified Maids',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -134,7 +134,7 @@ class _MobileShellState extends State<MobileShell> {
             context.go(_tabs[index].route);
           },
           backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-          indicatorColor: AppColors.gold.withValues(alpha: 0.15),
+          indicatorColor: isDark ? AppColors.gold.withValues(alpha: 0.15) : AppColors.navyBlue,
           height: 68,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations:

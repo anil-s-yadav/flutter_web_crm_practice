@@ -143,7 +143,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.history, size: 20, color: AppColors.navyBlue),
+                      const Icon(Icons.history, size: 20, color: AppColors.gold),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

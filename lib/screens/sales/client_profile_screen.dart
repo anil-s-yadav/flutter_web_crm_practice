@@ -20,6 +20,7 @@ class ClientProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
+    final isMobile = context.media.width < 800;
 
     if (!state.isInitialized) {
       return const Center(child: CircularProgressIndicator());
@@ -58,20 +59,22 @@ class ClientProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextButton.icon(
-              onPressed: () {
-                context.pop();
-              },
-              icon: const Icon(Icons.arrow_back_ios, size: 18),
-              label: Text(
-                'Go Back',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            if (!isMobile) ...[
+              TextButton.icon(
+                onPressed: () {
+                  context.pop();
+                },
+                icon: const Icon(Icons.arrow_back_ios, size: 18),
+                label: Text(
+                  'Go Back',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
               ),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.navyBlue,
-              ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
             _buildClientHeader(client, isDark),
             const SizedBox(height: 24),
             Row(
@@ -282,7 +285,7 @@ class ClientProfileScreen extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
                 backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
-                child: const Icon(Icons.person, color: AppColors.navyBlue),
+                child: const Icon(Icons.person, color: AppColors.gold),
               ),
               title: Text(
                 candidate.fullName,

@@ -56,7 +56,7 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Verified Candidates CRM',
+      title: 'Verified Maids CRM',
       theme: MaterialTheme(textTheme).light(),
       darkTheme: MaterialTheme(textTheme).dark(),
       themeMode: themeProvider.themeMode,

@@ -29,7 +29,7 @@ class LearningScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Use this section to understand standard abbreviations, scripts, and FAQs used across Verified Candidates CRM.',
+              'Use this section to understand standard abbreviations, scripts, and FAQs used across Verified Maids CRM.',
               style: GoogleFonts.poppins(fontSize: 14, color: isDark ? AppColors.grey400 : AppColors.grey600)
             ),
             const SizedBox(height: 32),
@@ -73,7 +73,7 @@ class LearningScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildScriptCard(
               'Initial Interview (Hindi)',
-              'Namaste! Main Verified Candidates se baat kar rahi hoon. Kya aap abhi kaam dhundh rahe hain? Humare paas kaafi requirements hain. Kya aap humare office aakar verification process start kar sakte hain?',
+              'Namaste! Main Verified Maids se baat kar rahi hoon. Kya aap abhi kaam dhundh rahe hain? Humare paas kaafi requirements hain. Kya aap humare office aakar verification process start kar sakte hain?',
               isDark
             ),
             const SizedBox(height: 12),
@@ -177,7 +177,7 @@ class LearningScreen extends StatelessWidget {
         data: ThemeData(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: Text(question, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? AppColors.white : AppColors.textPrimaryLight)),
-          iconColor: AppColors.navyBlue,
+          iconColor: AppColors.gold,
           collapsedIconColor: AppColors.grey500,
           childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [

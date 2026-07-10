@@ -86,17 +86,19 @@ class CandidateProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_ios, size: 18),
-                  label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.navyBlue),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+            if (!isMobile) ...[
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios, size: 18),
+                    label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    style: TextButton.styleFrom(foregroundColor: isDark ? AppColors.white : AppColors.navyBlue),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             if (isMobile)
               _buildMobileLayout(context, candidate, state, isDark, relevantLogs)
             else if (isTablet)
@@ -112,7 +114,7 @@ class CandidateProfileScreen extends StatelessWidget {
   Widget _buildMobileLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
     return Column(
       children: [
-        _buildProfileHeader(candidate, isDark),
+        _buildProfileHeader(context, candidate, isDark),
         const SizedBox(height: 16),
         _buildTopActions(context, state, candidate),
         const SizedBox(height: 24),
@@ -145,7 +147,7 @@ class CandidateProfileScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildProfileHeader(candidate, isDark),
+        _buildProfileHeader(context, candidate, isDark),
         const SizedBox(height: 16),
         _buildTopActions(context, state, candidate),
         const SizedBox(height: 24),
@@ -189,7 +191,7 @@ class CandidateProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildProfileHeader(candidate, isDark),
+              _buildProfileHeader(context, candidate, isDark),
               const SizedBox(height: 16),
               _buildTopActions(context, state, candidate),
               const SizedBox(height: 16),
@@ -379,15 +381,18 @@ class CandidateProfileScreen extends StatelessWidget {
             children: [
               const Icon(Icons.work_history, color: AppColors.successGreen),
               const SizedBox(width: 8),
-              Text(
-                'Active Placement Dashboard',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.white : AppColors.navyBlue,
+              Expanded(
+                child: Text(
+                  'Active Placement Dashboard',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
               TextButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +407,7 @@ class CandidateProfileScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.navyBlue,
+                  foregroundColor: isDark ? AppColors.goldLight : AppColors.navyBlue,
                 ),
               ),
             ],
@@ -550,7 +555,7 @@ class CandidateProfileScreen extends StatelessWidget {
     return '${(diffDays / 30).round()} Months';
   }
 
-  Widget _buildProfileHeader(CandidateModel candidate, bool isDark) {
+  Widget _buildProfileHeader(BuildContext context, CandidateModel candidate, bool isDark) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -620,6 +625,17 @@ class CandidateProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            if (candidate.status == CandidateStatus.newlyAdded)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+                tooltip: 'Edit Profile',
+                onPressed: () {
+                  final state = Provider.of<GlobalAppState>(context, listen: false);
+                  final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
+                  context.push('$routePrefix/candidates/${candidate.id}/edit');
+                },
+              ),
           ],
         ),
       ),

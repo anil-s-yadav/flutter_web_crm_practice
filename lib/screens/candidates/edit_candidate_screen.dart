@@ -73,14 +73,17 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
       if (_name != _candidate.fullName) changes.add('Name');
       if (_phone != _candidate.phone) changes.add('Phone');
       if (_age != _candidate.age) changes.add('Age');
-      if (_city != _candidate.city || _address != _candidate.address)
+      if (_city != _candidate.city || _address != _candidate.address) {
         changes.add('Address');
+      }
       if (_religion != _candidate.religion) changes.add('Religion');
       if (_education != _candidate.education) changes.add('Education');
       if (_category != _candidate.category) changes.add('Category');
-      if (_languages.join(',') != _candidate.languages.join(','))
+      if (_languages.join(',') != _candidate.languages.join(',')) {
         changes.add('Languages');
-      if (_experienceYears != _candidate.experienceYears) changes.add('Experience');
+      }
+      if (_experienceYears != _candidate.experienceYears)
+        changes.add('Experience');
       if (_expectedSalary != _candidate.expectedSalary) changes.add('Salary');
 
       if (changes.isEmpty) {
@@ -117,8 +120,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final isDark = context.themeRef.brightness == Brightness.dark;
     final languageOptions = [
@@ -132,26 +136,26 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Edit Candidate Details',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-        elevation: 0,
-        actions: [
-          TextButton.icon(
-            onPressed: _saveChanges,
-            icon: const Icon(Icons.save),
-            label: Text(
-              'Save',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-            style: TextButton.styleFrom(foregroundColor: AppColors.navyBlue),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: Text(
+      //     'Edit Candidate Details',
+      //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      //   ),
+      //   backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+      //   elevation: 0,
+      //   actions: [
+      //     TextButton.icon(
+      //       onPressed: _saveChanges,
+      //       icon: const Icon(Icons.save),
+      //       label: Text(
+      //         'Save',
+      //         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      //       ),
+      //       style: TextButton.styleFrom(foregroundColor: AppColors.navyBlue),
+      //     ),
+      //     const SizedBox(width: 16),
+      //   ],
+      // ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(

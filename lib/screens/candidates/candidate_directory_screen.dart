@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,7 +33,8 @@ class CandidateDirectoryScreen extends StatefulWidget {
   });
 
   @override
-  State<CandidateDirectoryScreen> createState() => _CandidateDirectoryScreenState();
+  State<CandidateDirectoryScreen> createState() =>
+      _CandidateDirectoryScreenState();
 }
 
 class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
@@ -43,6 +45,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   String? _selectedExperience;
   String? _selectedLocation;
   String? _selectedCategory;
+  bool _showMobileFilters = false;
+
+  int _activeReadyTabIndex = 0;
+  int _activeVerifyTabIndex = 0;
 
   void _onRowTap(CandidateModel candidate) {
     if (!widget.readOnly) {
@@ -61,10 +67,13 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
       case 'edit':
         final routePrefix =
             state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-        context.go('$routePrefix/candidates/${candidate.id}/edit');
+        context.push('$routePrefix/candidates/${candidate.id}/edit');
         break;
       case 'promote_verification':
-        state.advanceCandidatePipeline(candidate.id, CandidateStatus.verificationPending);
+        state.advanceCandidatePipeline(
+          candidate.id,
+          CandidateStatus.verificationPending,
+        );
         break;
       case 'promote_medical':
         state.updateCandidate(
@@ -83,7 +92,9 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             isPoliceVerified: true,
             isAadhaarVerified: true,
             isMedicalCleared:
-                candidate.status == CandidateStatus.medicalPending ? true : false,
+                candidate.status == CandidateStatus.medicalPending
+                    ? true
+                    : false,
             availableFrom: DateTime.now(),
           ),
           candidate.status == CandidateStatus.medicalPending
@@ -155,7 +166,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                   );
                   return;
                 }
-                state.blacklistCandidate(candidateId, noteController.text.trim());
+                state.blacklistCandidate(
+                  candidateId,
+                  noteController.text.trim(),
+                );
                 Navigator.pop(ctx);
               },
               style: ElevatedButton.styleFrom(
@@ -201,19 +215,23 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           if (_selectedExperience != null && _selectedExperience != 'All') {
             final exp = m.experienceYears;
             if (_selectedExperience == '0-1 Years' && exp > 1) return false;
-            if (_selectedExperience == '1-3 Years' && (exp <= 1 || exp > 3))
+            if (_selectedExperience == '1-3 Years' && (exp <= 1 || exp > 3)) {
               return false;
-            if (_selectedExperience == '3-5 Years' && (exp <= 3 || exp > 5))
+            }
+            if (_selectedExperience == '3-5 Years' && (exp <= 3 || exp > 5)) {
               return false;
+            }
             if (_selectedExperience == '5+ Years' && exp <= 5) return false;
           }
           if (_selectedLocation != null && _selectedLocation != 'All') {
-            if (m.city.toLowerCase() != _selectedLocation!.toLowerCase())
+            if (m.city.toLowerCase() != _selectedLocation!.toLowerCase()) {
               return false;
+            }
           }
           if (_selectedCategory != null && _selectedCategory != 'All') {
-            if (m.category.toLowerCase() != _selectedCategory!.toLowerCase())
+            if (m.category.toLowerCase() != _selectedCategory!.toLowerCase()) {
               return false;
+            }
           }
           return true;
         }).toList();
@@ -221,62 +239,89 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     // 2. Routing Logic based on Directory Type
     if (widget.type == CandidateDirectoryType.readyToPlace) {
       final policeAndAadhaar =
-          baseCandidates.where((m) => m.status == CandidateStatus.readyToPlace).toList();
+          baseCandidates
+              .where((m) => m.status == CandidateStatus.readyToPlace)
+              .toList();
       final medicalCleared =
           baseCandidates
               .where(
                 (m) =>
-                    m.status == CandidateStatus.readyToPlace && m.isMedicalCleared,
+                    m.status == CandidateStatus.readyToPlace &&
+                    m.isMedicalCleared,
               )
               .toList();
 
-      return DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            Container(
-              color: isDark ? AppColors.darkSurface : AppColors.grey200,
-              child: TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.navyBlue,
-                indicatorWeight: 3,
-                labelColor: isDark ? AppColors.white : AppColors.navyBlue,
-                unselectedLabelColor: AppColors.grey500,
-                labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                dividerColor:
-                    isDark ? AppColors.dividerDark : AppColors.grey200,
-                tabs: [
-                  Tab(
-                    text:
-                        'Police & Aadhaar Verified (${policeAndAadhaar.length})',
-                  ),
-                  Tab(text: 'Medical Cleared (${medicalCleared.length})'),
-                ],
+      final tabs = [
+        'Police & Aadhaar Verified (${policeAndAadhaar.length})',
+        'Medical Cleared (${medicalCleared.length})',
+      ];
+
+      return Column(
+        children: [
+          Container(
+            color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(tabs.length, (index) {
+                  final isSelected = _activeReadyTabIndex == index;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(
+                        tabs[index],
+                        style: GoogleFonts.poppins(
+                          color:
+                              isSelected
+                                  ? AppColors.navyBlue
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppColors.gold,
+                      backgroundColor:
+                          isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.white,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _activeReadyTabIndex = index;
+                        });
+                      },
+                    ),
+                  );
+                }),
               ),
             ),
-            _buildToolbar(isDark, policeAndAadhaar.length),
-            Expanded(
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _CandidateGridView(
-                    candidates: policeAndAadhaar,
-                    isDark: isDark,
-                    onRowTap: _onRowTap,
-                    onActionTap: _onActionTap,
-                  ),
-                  _CandidateGridView(
-                    candidates: medicalCleared,
-                    isDark: isDark,
-                    onRowTap: _onRowTap,
-                    onActionTap: _onActionTap,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+          _buildToolbar(context, isDark, policeAndAadhaar.length),
+          Expanded(
+            child:
+                _activeReadyTabIndex == 0
+                    ? _CandidateGridView(
+                      candidates: policeAndAadhaar,
+                      isDark: isDark,
+                      onRowTap: _onRowTap,
+                      onActionTap: _onActionTap,
+                    )
+                    : _CandidateGridView(
+                      candidates: medicalCleared,
+                      isDark: isDark,
+                      onRowTap: _onRowTap,
+                      onActionTap: _onActionTap,
+                    ),
+          ),
+        ],
       );
     }
 
@@ -290,56 +335,77 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
       final aadhaarPending =
           allPending.where((m) => !m.isAadhaarVerified).toList();
 
-      return DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            Container(
-              color: isDark ? AppColors.darkSurface : AppColors.grey100,
-              child: TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.navyBlue,
-                indicatorWeight: 3,
-                labelColor: isDark ? AppColors.white : AppColors.navyBlue,
-                unselectedLabelColor: AppColors.grey500,
-                labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                dividerColor:
-                    isDark ? AppColors.dividerDark : AppColors.grey200,
-                tabs: [
-                  Tab(
-                    text:
-                        'Police Verification Pending (${policePending.length})',
-                  ),
-                  Tab(
-                    text:
-                        'Aadhaar Verification Pending (${aadhaarPending.length})',
-                  ),
-                ],
+      final tabs = [
+        'Police Verification Pending (${policePending.length})',
+        'Aadhaar Verification Pending (${aadhaarPending.length})',
+      ];
+
+      return Column(
+        children: [
+          Container(
+            color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(tabs.length, (index) {
+                  final isSelected = _activeVerifyTabIndex == index;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(
+                        tabs[index],
+                        style: GoogleFonts.poppins(
+                          color:
+                              isSelected
+                                  ? AppColors.navyBlue
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppColors.gold,
+                      backgroundColor:
+                          isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.white,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _activeVerifyTabIndex = index;
+                        });
+                      },
+                    ),
+                  );
+                }),
               ),
             ),
-            _buildToolbar(isDark, allPending.length),
-            Expanded(
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _CandidateGridView(
-                    candidates: policePending,
-                    isDark: isDark,
-                    onRowTap: _onRowTap,
-                    onActionTap: _onActionTap,
-                  ),
-                  _CandidateGridView(
-                    candidates: aadhaarPending,
-                    isDark: isDark,
-                    onRowTap: _onRowTap,
-                    onActionTap: _onActionTap,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+          _buildToolbar(context, isDark, allPending.length),
+          Expanded(
+            child:
+                _activeVerifyTabIndex == 0
+                    ? _CandidateGridView(
+                      candidates: policePending,
+                      isDark: isDark,
+                      onRowTap: _onRowTap,
+                      onActionTap: _onActionTap,
+                    )
+                    : _CandidateGridView(
+                      candidates: aadhaarPending,
+                      isDark: isDark,
+                      onRowTap: _onRowTap,
+                      onActionTap: _onActionTap,
+                    ),
+          ),
+        ],
       );
     }
 
@@ -348,7 +414,9 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     switch (widget.type) {
       case CandidateDirectoryType.newlyAdded:
         displayCandidates =
-            baseCandidates.where((m) => m.status == CandidateStatus.newlyAdded).toList();
+            baseCandidates
+                .where((m) => m.status == CandidateStatus.newlyAdded)
+                .toList();
         break;
       case CandidateDirectoryType.medicalPending:
         displayCandidates =
@@ -358,11 +426,15 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
         break;
       case CandidateDirectoryType.hired:
         displayCandidates =
-            baseCandidates.where((m) => m.status == CandidateStatus.placed).toList();
+            baseCandidates
+                .where((m) => m.status == CandidateStatus.placed)
+                .toList();
         break;
       case CandidateDirectoryType.blacklisted:
         displayCandidates =
-            baseCandidates.where((m) => m.status == CandidateStatus.blacklisted).toList();
+            baseCandidates
+                .where((m) => m.status == CandidateStatus.blacklisted)
+                .toList();
         break;
       default:
         break;
@@ -370,7 +442,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
 
     return Column(
       children: [
-        _buildToolbar(isDark, displayCandidates.length),
+        _buildToolbar(context, isDark, displayCandidates.length),
         Expanded(
           child: _CandidateGridView(
             candidates: displayCandidates,
@@ -383,9 +455,12 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     );
   }
 
-  Widget _buildToolbar(bool isDark, int count) {
+  Widget _buildToolbar(BuildContext context, bool isDark, int count) {
+    final isMobile = context.media.width < 900;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
         border: Border(
@@ -393,120 +468,286 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             color: isDark ? AppColors.dividerDark : AppColors.grey200,
           ),
         ),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.navyBlue.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${_indianFormat.format(count)} Candidates found',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
+      child:
+          isMobile
+              ? _buildMobileToolbar(isDark, count)
+              : _buildDesktopToolbar(isDark, count),
+    );
+  }
+
+  Widget _buildMobileToolbar(bool isDark, int count) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.navyBlue.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ),
-          ),
-          const Spacer(),
-          _buildFilterDropdown(
-            value: _selectedCategory,
-            hint: 'Category',
-            items: [
-              'All',
-              'Maid',
-              'Cook',
-              'Nanny',
-              'Caretaker',
-            ],
-            onChanged: (val) => setState(() => _selectedCategory = val),
-            isDark: isDark,
-          ),
-          const SizedBox(width: 8),
-          _buildFilterDropdown(
-            value: _selectedLanguage,
-            hint: 'Language',
-            items: [
-              'All',
-              'Hindi',
-              'Marathi',
-              'English',
-              'Tamil',
-              'Telugu',
-              'Gujarati',
-              'Bengali',
-            ],
-            onChanged: (val) => setState(() => _selectedLanguage = val),
-            isDark: isDark,
-          ),
-          const SizedBox(width: 8),
-          _buildFilterDropdown(
-            value: _selectedExperience,
-            hint: 'Experience',
-            items: ['All', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'],
-            onChanged: (val) => setState(() => _selectedExperience = val),
-            isDark: isDark,
-          ),
-          const SizedBox(width: 8),
-          _buildFilterDropdown(
-            value: _selectedLocation,
-            hint: 'Location',
-            items: [
-              'All',
-              'Andheri',
-              'Bandra',
-              'Borivali',
-              'Dadar',
-              'Ghatkopar',
-              'Juhu',
-              'Kurla',
-              'Powai',
-              'Thane',
-              'Worli',
-            ],
-            onChanged: (val) => setState(() => _selectedLocation = val),
-            isDark: isDark,
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 260,
-            height: 38,
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) {
-                setState(() => _searchQuery = val);
-              },
-              style: GoogleFonts.poppins(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Search candidates...',
-                hintStyle: GoogleFonts.poppins(
+              child: Text(
+                '${_indianFormat.format(count)} Candidates found',
+                style: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: AppColors.grey500,
-                ),
-                prefixIcon: const Icon(Icons.search, size: 18),
-                filled: true,
-                fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                  ),
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
                 ),
               ),
             ),
+            const Spacer(),
+            InkWell(
+              onTap:
+                  () =>
+                      setState(() => _showMobileFilters = !_showMobileFilters),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  color:
+                      _showMobileFilters
+                          ? (isDark ? AppColors.navyBlue : AppColors.grey200)
+                          : Colors.transparent,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.filter_list,
+                      size: 16,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Filters',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 38,
+          child: TextField(
+            controller: _searchController,
+            onChanged: (val) {
+              setState(() => _searchQuery = val);
+            },
+            style: GoogleFonts.poppins(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search candidates...',
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 13,
+                color: AppColors.grey500,
+              ),
+              prefixIcon: const Icon(Icons.search, size: 18),
+              filled: true,
+              fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (_showMobileFilters) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildFilterDropdown(
+                value: _selectedCategory,
+                hint: 'Category',
+                items: ['All', 'Maid', 'Cook', 'Nanny', 'Caretaker'],
+                onChanged: (val) => setState(() => _selectedCategory = val),
+                isDark: isDark,
+              ),
+              _buildFilterDropdown(
+                value: _selectedLanguage,
+                hint: 'Language',
+                items: [
+                  'All',
+                  'Hindi',
+                  'Marathi',
+                  'English',
+                  'Tamil',
+                  'Telugu',
+                  'Gujarati',
+                  'Bengali',
+                ],
+                onChanged: (val) => setState(() => _selectedLanguage = val),
+                isDark: isDark,
+              ),
+              _buildFilterDropdown(
+                value: _selectedExperience,
+                hint: 'Experience',
+                items: [
+                  'All',
+                  '0-1 Years',
+                  '1-3 Years',
+                  '3-5 Years',
+                  '5+ Years',
+                ],
+                onChanged: (val) => setState(() => _selectedExperience = val),
+                isDark: isDark,
+              ),
+              _buildFilterDropdown(
+                value: _selectedLocation,
+                hint: 'Location',
+                items: [
+                  'All',
+                  'Andheri',
+                  'Bandra',
+                  'Borivali',
+                  'Dadar',
+                  'Ghatkopar',
+                  'Juhu',
+                  'Kurla',
+                  'Powai',
+                  'Thane',
+                  'Worli',
+                ],
+                onChanged: (val) => setState(() => _selectedLocation = val),
+                isDark: isDark,
+              ),
+            ],
           ),
         ],
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopToolbar(bool isDark, int count) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.navyBlue.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '${_indianFormat.format(count)} Candidates found',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.white : AppColors.navyBlue,
+            ),
+          ),
+        ),
+        const Spacer(),
+        _buildFilterDropdown(
+          value: _selectedCategory,
+          hint: 'Category',
+          items: ['All', 'Maid', 'Cook', 'Nanny', 'Caretaker'],
+          onChanged: (val) => setState(() => _selectedCategory = val),
+          isDark: isDark,
+        ),
+        const SizedBox(width: 8),
+        _buildFilterDropdown(
+          value: _selectedLanguage,
+          hint: 'Language',
+          items: [
+            'All',
+            'Hindi',
+            'Marathi',
+            'English',
+            'Tamil',
+            'Telugu',
+            'Gujarati',
+            'Bengali',
+          ],
+          onChanged: (val) => setState(() => _selectedLanguage = val),
+          isDark: isDark,
+        ),
+        const SizedBox(width: 8),
+        _buildFilterDropdown(
+          value: _selectedExperience,
+          hint: 'Experience',
+          items: ['All', '0-1 Years', '1-3 Years', '3-5 Years', '5+ Years'],
+          onChanged: (val) => setState(() => _selectedExperience = val),
+          isDark: isDark,
+        ),
+        const SizedBox(width: 8),
+        _buildFilterDropdown(
+          value: _selectedLocation,
+          hint: 'Location',
+          items: [
+            'All',
+            'Andheri',
+            'Bandra',
+            'Borivali',
+            'Dadar',
+            'Ghatkopar',
+            'Juhu',
+            'Kurla',
+            'Powai',
+            'Thane',
+            'Worli',
+          ],
+          onChanged: (val) => setState(() => _selectedLocation = val),
+          isDark: isDark,
+        ),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 260,
+          height: 38,
+          child: TextField(
+            controller: _searchController,
+            onChanged: (val) {
+              setState(() => _searchQuery = val);
+            },
+            style: GoogleFonts.poppins(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search candidates...',
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 13,
+                color: AppColors.grey500,
+              ),
+              prefixIcon: const Icon(Icons.search, size: 18),
+              filled: true,
+              fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -608,7 +849,7 @@ class _CandidateGridView extends StatelessWidget {
                       isDark
                           ? AppColors.navyBlue.withValues(alpha: 0.1)
                           : AppColors.navyBlue.withValues(alpha: 0.04),
-                  sortIconColor: isDark ? AppColors.gold : AppColors.navyBlue,
+                  sortIconColor: AppColors.gold,
                 ),
                 child: SfDataGrid(
                   source: dataSource,
@@ -811,139 +1052,13 @@ class _CandidateGridView extends StatelessWidget {
       itemCount: candidates.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final candidate = candidates[index];
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isDark ? AppColors.dividerDark : AppColors.grey200,
-            ),
-          ),
-          color: isDark ? AppColors.darkSurface : AppColors.white,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => onRowTap(candidate),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isDark 
-                            ? AppColors.white.withValues(alpha: 0.1)
-                            : AppColors.navyBlue.withValues(alpha: 0.1),
-                        child: Text(
-                          candidate.fullName[0],
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.white : AppColors.navyBlue,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              candidate.fullName,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    isDark
-                                        ? AppColors.white
-                                        : AppColors.textPrimaryLight,
-                              ),
-                            ),
-                            Text(
-                              candidate.category,
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color:
-                                    isDark
-                                        ? AppColors.grey400
-                                        : AppColors.grey600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _buildStatusBadge(
-                        candidate.status.displayName,
-                        _candidateStatusColor(candidate.status),
-                      ),
-                      PopupMenuButton<String>(
-                        icon: Icon(
-                          Icons.more_vert,
-                          size: 20,
-                          color: isDark ? AppColors.grey400 : AppColors.grey600,
-                        ),
-                        onSelected: (action) => onActionTap(candidate, action),
-                        itemBuilder: (context) {
-                          final items = <PopupMenuEntry<String>>[];
-                          if (candidate.status == CandidateStatus.newlyAdded) {
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit Profile'),
-                              ),
-                            );
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'promote_verification',
-                                child: Text('Move to Verification'),
-                              ),
-                            );
-                          } else if (candidate.status ==
-                              CandidateStatus.verificationPending) {
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'promote_medical',
-                                child: Text('Promote to Medical'),
-                              ),
-                            );
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'promote_ready',
-                                child: Text('Promote to Ready (Skip Medical)'),
-                              ),
-                            );
-                          } else if (candidate.status == CandidateStatus.medicalPending) {
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'promote_ready',
-                                child: Text('Promote to Ready'),
-                              ),
-                            );
-                          }
-                          if (candidate.status != CandidateStatus.blacklisted &&
-                              candidate.status != CandidateStatus.placed) {
-                            items.add(
-                              const PopupMenuItem(
-                                value: 'blacklist',
-                                child: Text(
-                                  'Blacklist',
-                                  style: TextStyle(
-                                    color: AppColors.criticalRed,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          return items;
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _MobileCandidateCard(
+          candidate: candidates[index],
+          isDark: isDark,
+          onRowTap: onRowTap,
+          onActionTap: onActionTap,
+          statusBadgeBuilder: _buildStatusBadge,
+          statusColorBuilder: _candidateStatusColor,
         );
       },
     );
@@ -995,4 +1110,313 @@ class _CandidateGridView extends StatelessWidget {
     fontWeight: FontWeight.w600,
     color: AppColors.grey600,
   );
+}
+
+class _MobileCandidateCard extends StatefulWidget {
+  final CandidateModel candidate;
+  final bool isDark;
+  final Function(CandidateModel) onRowTap;
+  final Function(CandidateModel, String) onActionTap;
+  final Widget Function(String, Color) statusBadgeBuilder;
+  final Color Function(CandidateStatus) statusColorBuilder;
+
+  const _MobileCandidateCard({
+    required this.candidate,
+    required this.isDark,
+    required this.onRowTap,
+    required this.onActionTap,
+    required this.statusBadgeBuilder,
+    required this.statusColorBuilder,
+  });
+
+  @override
+  State<_MobileCandidateCard> createState() => _MobileCandidateCardState();
+}
+
+class _MobileCandidateCardState extends State<_MobileCandidateCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final candidate = widget.candidate;
+    final isDark = widget.isDark;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        ),
+      ),
+      color: isDark ? AppColors.darkSurface : AppColors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row (Always visible)
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor:
+                        isDark
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.1),
+                    child: Text(
+                      candidate.fullName[0],
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          candidate.fullName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        Text(
+                          candidate.category,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color:
+                                isDark ? AppColors.grey400 : AppColors.grey600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  widget.statusBadgeBuilder(
+                    candidate.status.displayName,
+                    widget.statusColorBuilder(candidate.status),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: isDark ? AppColors.grey400 : AppColors.grey600,
+                    ),
+                    onSelected:
+                        (action) => widget.onActionTap(candidate, action),
+                    itemBuilder: (context) {
+                      final items = <PopupMenuEntry<String>>[];
+                      if (candidate.status == CandidateStatus.newlyAdded) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit Profile'),
+                          ),
+                        );
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'promote_verification',
+                            child: Text('Move to Verification'),
+                          ),
+                        );
+                      } else if (candidate.status ==
+                          CandidateStatus.verificationPending) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'promote_medical',
+                            child: Text('Promote to Medical'),
+                          ),
+                        );
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'promote_ready',
+                            child: Text('Promote to Ready (Skip Medical)'),
+                          ),
+                        );
+                      } else if (candidate.status ==
+                          CandidateStatus.medicalPending) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'promote_ready',
+                            child: Text('Promote to Ready'),
+                          ),
+                        );
+                      }
+                      if (candidate.status != CandidateStatus.blacklisted &&
+                          candidate.status != CandidateStatus.placed) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'blacklist',
+                            child: Text(
+                              'Blacklist',
+                              style: TextStyle(color: AppColors.criticalRed),
+                            ),
+                          ),
+                        );
+                      }
+                      return items;
+                    },
+                  ),
+                ],
+              ),
+              // Expanded Area
+              if (_isExpanded) ...[
+                const SizedBox(height: 16),
+                Divider(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildDetailItem(
+                      'Experience',
+                      '${candidate.experienceYears} Yrs',
+                      isDark,
+                    ),
+                    _buildDetailItem(
+                      'Expected Salary',
+                      '₹${candidate.expectedSalary}',
+                      isDark,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildDetailItem('Education', candidate.education, isDark),
+                    _buildDetailItem(
+                      'Languages',
+                      candidate.languages.join(', '),
+                      isDark,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildGlassmorphismButton(
+                        icon: Icons.call,
+                        label: 'Call',
+                        isDark: isDark,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Calling +91 9876543210... (Dummy Number)',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildGlassmorphismButton(
+                        icon: Icons.visibility,
+                        label: 'View',
+                        isDark: isDark,
+                        baseColor: AppColors.gold,
+                        onTap: () => widget.onRowTap(candidate),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value, bool isDark) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: isDark ? AppColors.grey400 : AppColors.grey500,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isDark ? AppColors.white : AppColors.navyBlue,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassmorphismButton({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required VoidCallback onTap,
+    Color? baseColor,
+  }) {
+    final effectiveColor =
+        baseColor ?? (isDark ? AppColors.white : AppColors.gold);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: effectiveColor.withValues(alpha: isDark ? 0.1 : 0.08),
+              border: Border.all(
+                color: effectiveColor.withValues(alpha: isDark ? 0.2 : 0.15),
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 16, color: effectiveColor),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: effectiveColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

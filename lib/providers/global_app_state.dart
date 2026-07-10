@@ -248,6 +248,14 @@ class GlobalAppState extends ChangeNotifier {
     }
   }
 
+  void updateTask(ExecutiveTaskModel updatedTask) {
+    final idx = _tasks.indexWhere((t) => t.id == updatedTask.id);
+    if (idx != -1) {
+      _tasks[idx] = updatedTask;
+      notifyListeners();
+    }
+  }
+
   // --- Candidate Modifications ---
   void addCandidate(CandidateModel candidate) {
     _candidates.insert(0, candidate);

@@ -9,8 +9,15 @@ import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 
-class ClientListScreen extends StatelessWidget {
+class ClientListScreen extends StatefulWidget {
   const ClientListScreen({super.key});
+
+  @override
+  State<ClientListScreen> createState() => _ClientListScreenState();
+}
+
+class _ClientListScreenState extends State<ClientListScreen> {
+  String _selectedFilter = 'Leads Pipeline';
 
   @override
   Widget build(BuildContext context) {
@@ -34,34 +41,65 @@ class ClientListScreen extends StatelessWidget {
         c.status == ClientStatus.active || 
         c.status == ClientStatus.converted).toList();
 
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Container(
-            color: isDark ? AppColors.darkSurface : AppColors.white,
-            child: TabBar(
-              indicatorColor: AppColors.navyBlue,
-              labelColor: isDark ? AppColors.white : AppColors.navyBlue,
-              unselectedLabelColor: AppColors.grey500,
-              labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              tabs: [
-                Tab(text: 'Leads Pipeline (${leads.length})'),
-                Tab(text: 'Active Customers (${active.length})'),
-              ],
+    final filterOptions = [
+      'Leads Pipeline (${leads.length})',
+      'Active Customers (${active.length})'
+    ];
+
+    // Ensure selected filter exists
+    if (!filterOptions.contains(_selectedFilter) && _selectedFilter.startsWith('Leads Pipeline')) {
+      _selectedFilter = filterOptions[0];
+    } else if (!filterOptions.contains(_selectedFilter) && _selectedFilter.startsWith('Active Customers')) {
+      _selectedFilter = filterOptions[1];
+    } else if (!filterOptions.contains(_selectedFilter)) {
+      _selectedFilter = filterOptions[0];
+    }
+
+    return Column(
+      children: [
+        Container(
+          color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: filterOptions.map((filter) {
+                final isSelected = _selectedFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ChoiceChip(
+                    label: Text(
+                      filter,
+                      style: GoogleFonts.poppins(
+                        color: isSelected
+                            ? AppColors.navyBlue
+                            : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: AppColors.gold,
+                    backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedFilter = filter;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
             ),
           ),
-          Expanded(
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _ClientListView(clients: leads, isDark: isDark),
-                _ClientListView(clients: active, isDark: isDark),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: _selectedFilter.startsWith('Leads Pipeline')
+              ? _ClientListView(clients: leads, isDark: isDark)
+              : _ClientListView(clients: active, isDark: isDark),
+        ),
+      ],
     );
   }
 }

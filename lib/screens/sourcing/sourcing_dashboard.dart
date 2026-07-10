@@ -143,7 +143,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                     ),
                     _buildStatCard(
                       icon: Icons.people_outline,
-                      iconColor: AppColors.navyBlue,
+                      iconColor: AppColors.gold,
                       title: 'Total Candidates',
                       value: _indianFormat.format(_stats['totalCandidates'] as int),
                       isDark: isDark,
