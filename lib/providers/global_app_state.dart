@@ -7,6 +7,7 @@ import 'package:practice_app/models/executive_task_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/models/user_model.dart';
+import 'package:practice_app/models/notification_model.dart';
 
 class GlobalAppState extends ChangeNotifier {
   List<ClientModel> _clients = [];
@@ -15,6 +16,7 @@ class GlobalAppState extends ChangeNotifier {
   final List<TicketModel> _tickets = [];
   List<ExecutiveTaskModel> _tasks = [];
   final List<AuditLogModel> _auditLogs = [];
+  List<NotificationModel> _notifications = [];
 
   UserModel? _currentUser;
 
@@ -27,6 +29,8 @@ class GlobalAppState extends ChangeNotifier {
   List<TicketModel> get tickets => _tickets;
   List<ExecutiveTaskModel> get tasks => _tasks;
   List<AuditLogModel> get auditLogs => _auditLogs;
+  List<NotificationModel> get notifications => _notifications;
+  int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
   UserModel? get currentUser => _currentUser;
 
   Future<void> initializeData() async {
@@ -102,6 +106,53 @@ class GlobalAppState extends ChangeNotifier {
     _auditLogs.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     _isInitialized = true;
+
+    // Generate some dummy notifications
+    _notifications = [
+      NotificationModel(
+        id: '1',
+        title: 'New Client Inquiry',
+        message: 'The Sharma Family submitted a new inquiry for a Cook.',
+        type: NotificationType.info,
+        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+      ),
+      NotificationModel(
+        id: '2',
+        title: 'SLA Breach Warning',
+        message: 'Ticket #T-102 (Replacement) is 2 days away from SLA breach.',
+        type: NotificationType.warning,
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      ),
+      NotificationModel(
+        id: '3',
+        title: 'Candidate Medical Cleared',
+        message: 'Candidate Sunita Devi\'s medical check is now complete.',
+        type: NotificationType.success,
+        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+      ),
+      NotificationModel(
+        id: '4',
+        title: 'Urgent: Candidate Absconded',
+        message: 'Client reported candidate Radha Patil absconded today.',
+        type: NotificationType.urgent,
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+    ];
+
+    notifyListeners();
+  }
+
+  // --- Notification Methods ---
+  void markNotificationRead(String id) {
+    final index = _notifications.indexWhere((n) => n.id == id);
+    if (index != -1) {
+      _notifications[index] = _notifications[index].copyWith(isRead: true);
+      notifyListeners();
+    }
+  }
+
+  void markAllNotificationsRead() {
+    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
     notifyListeners();
   }
 
@@ -254,6 +305,17 @@ class GlobalAppState extends ChangeNotifier {
       _tasks[idx] = updatedTask;
       notifyListeners();
     }
+  }
+
+  // --- Client Modifications ---
+  void addClient(ClientModel client) {
+    _clients.insert(0, client);
+    logAction(
+      ActionType.create,
+      client.id,
+      'Added new client inquiry: ${client.fullName}',
+    );
+    notifyListeners();
   }
 
   // --- Candidate Modifications ---

@@ -8,201 +8,407 @@ import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:syncfusion_flutter_core/theme.dart';
+import 'package:practice_app/screens/clients/client_data_source.dart';
 
 class ClientListScreen extends StatefulWidget {
-  const ClientListScreen({super.key});
+  final ClientStatus? initialStatus;
+
+  const ClientListScreen({super.key, this.initialStatus});
 
   @override
   State<ClientListScreen> createState() => _ClientListScreenState();
 }
 
 class _ClientListScreenState extends State<ClientListScreen> {
-  String _selectedFilter = 'Leads Pipeline';
+  String _searchQuery = '';
+  ClientStatus? _selectedStatus;
+  ClientDataSource? _clientDataSource;
+
+  final _indianFormat = NumberFormat('#,##,###', 'en_IN');
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.initialStatus;
+  }
+
+  @override
+  void didUpdateWidget(covariant ClientListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialStatus != widget.initialStatus) {
+      setState(() {
+        _selectedStatus = widget.initialStatus;
+      });
+      _initializeDataSource();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeDataSource();
+  }
+
+  void _initializeDataSource() {
+    final state = Provider.of<GlobalAppState>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (!state.isInitialized) return;
+
+    final allMyClients = state.clients;
+
+    final filteredClients =
+        allMyClients.where((c) {
+          if (_selectedStatus != null && c.status != _selectedStatus) {
+            return false;
+          }
+          if (_searchQuery.isNotEmpty) {
+            final query = _searchQuery.toLowerCase();
+            return c.fullName.toLowerCase().contains(query) ||
+                c.phone.contains(query) ||
+                c.city.toLowerCase().contains(query) ||
+                c.id.toLowerCase().contains(query);
+          }
+          return true;
+        }).toList();
+
+    if (_clientDataSource == null) {
+      _clientDataSource = ClientDataSource(
+        context: context,
+        isDark: isDark,
+        clients: filteredClients,
+        onRowTap: (client) {
+          final routePrefix =
+              state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+          context.push('$routePrefix/clients/${client.id}');
+        },
+        showStatus: widget.initialStatus == null,
+      );
+    } else {
+      _clientDataSource!.isDark = isDark;
+      _clientDataSource!.updateData(filteredClients);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
 
-    if (!state.isInitialized) {
+    if (!state.isInitialized || _clientDataSource == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final allMyClients = state.currentUser?.role == UserRole.sales
-        ? state.clients.where((c) => c.assignedEmployeeId == '2').toList()
-        : state.clients;
-
-    final leads = allMyClients.where((c) => 
-        c.status == ClientStatus.newInquiry || 
-        c.status == ClientStatus.followUp || 
-        c.status == ClientStatus.noResponse).toList();
-        
-    final active = allMyClients.where((c) => 
-        c.status == ClientStatus.active || 
-        c.status == ClientStatus.converted).toList();
-
-    final filterOptions = [
-      'Leads Pipeline (${leads.length})',
-      'Active Customers (${active.length})'
-    ];
-
-    // Ensure selected filter exists
-    if (!filterOptions.contains(_selectedFilter) && _selectedFilter.startsWith('Leads Pipeline')) {
-      _selectedFilter = filterOptions[0];
-    } else if (!filterOptions.contains(_selectedFilter) && _selectedFilter.startsWith('Active Customers')) {
-      _selectedFilter = filterOptions[1];
-    } else if (!filterOptions.contains(_selectedFilter)) {
-      _selectedFilter = filterOptions[0];
-    }
-
-    return Column(
-      children: [
-        Container(
-          color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: filterOptions.map((filter) {
-                final isSelected = _selectedFilter == filter;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(
-                      filter,
-                      style: GoogleFonts.poppins(
-                        color: isSelected
-                            ? AppColors.navyBlue
-                            : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: AppColors.gold,
-                    backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedFilter = filter;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
+    return Scaffold(
+      backgroundColor:
+          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+      body: Column(
+        children: [
+          // Toolbar (Search & Filters)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            margin: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ),
-        ),
-        Expanded(
-          child: _selectedFilter.startsWith('Leads Pipeline')
-              ? _ClientListView(clients: leads, isDark: isDark)
-              : _ClientListView(clients: active, isDark: isDark),
-        ),
-      ],
-    );
-  }
-}
+            child: Row(
+              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 10,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.navyBlue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_indianFormat.format(_clientDataSource!.rows.length)} Clients found',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                  ),
+                ),
+                const Spacer(),
 
-class _ClientListView extends StatelessWidget {
-  final List<ClientModel> clients;
-  final bool isDark;
-
-  const _ClientListView({required this.clients, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    if (clients.isEmpty) {
-      return Center(
-        child: Text('No clients found in this category.',
-            style: GoogleFonts.poppins(color: isDark ? AppColors.grey400 : AppColors.grey600)),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: clients.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final client = clients[index];
-        final state = Provider.of<GlobalAppState>(context, listen: false);
-        final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
-
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
-          ),
-          color: isDark ? AppColors.darkSurface : AppColors.white,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => context.push('$routePrefix/clients/${client.id}'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: isDark 
-                        ? AppColors.white.withValues(alpha: 0.1)
-                        : AppColors.navyBlue.withValues(alpha: 0.1),
-                    child: Text(
-                      client.fullName[0],
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.navyBlue, 
-                        fontWeight: FontWeight.bold
+                SizedBox(
+                  width: 300,
+                  height: 38,
+                  child: TextField(
+                    onChanged: (val) {
+                      setState(() => _searchQuery = val);
+                      _initializeDataSource();
+                    },
+                    style: GoogleFonts.poppins(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Search clients...',
+                      hintStyle: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.grey500,
+                      ),
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      filled: true,
+                      fillColor:
+                          isDark ? AppColors.darkSurface : AppColors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '[VMC${client.id.padLeft(3, '0')}] ${client.fullName}',
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/sales/add_client'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Client'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyBlue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+                if (widget.initialStatus == null) ...[
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 200,
+                    height: 38,
+                    child: DropdownButtonFormField<ClientStatus?>(
+                      value: _selectedStatus,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 0,
                         ),
-                        Text(
-                          '${client.locality}, ${client.city} • ${client.preferredCandidateCategory} • ${DateFormat('MMM dd, yyyy').format(client.inquiryDate)}',
-                          style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500),
+                        filled: true,
+                        fillColor:
+                            isDark ? AppColors.darkSurface : AppColors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color:
+                                isDark
+                                    ? AppColors.dividerDark
+                                    : AppColors.grey300,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color:
+                                isDark
+                                    ? AppColors.dividerDark
+                                    : AppColors.grey300,
+                          ),
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('All Statuses'),
+                        ),
+                        ...ClientStatus.values.map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(s.displayName),
+                          ),
                         ),
                       ],
+                      onChanged: (val) {
+                        setState(() => _selectedStatus = val);
+                        _initializeDataSource();
+                      },
                     ),
                   ),
-                  _buildBadge(client.status.displayName, _statusColor(client.status)),
                 ],
+              ],
+            ),
+          ),
+          // DataGrid
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SfDataGridTheme(
+                  data: SfDataGridThemeData(
+                    headerColor:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
+                    gridLineColor:
+                        isDark ? AppColors.dividerDark : AppColors.grey200,
+                    gridLineStrokeWidth: 1,
+                    rowHoverColor:
+                        isDark
+                            ? AppColors.navyBlue.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.04),
+                    sortIconColor: AppColors.gold,
+                  ),
+                  child: SfDataGrid(
+                    source: _clientDataSource!,
+                    allowSorting: true,
+                    allowMultiColumnSorting: false,
+                    columnWidthMode: ColumnWidthMode.auto,
+                    headerRowHeight: 48,
+                    rowHeight: 56,
+                    gridLinesVisibility: GridLinesVisibility.both,
+                    headerGridLinesVisibility: GridLinesVisibility.both,
+                    columns: [
+                      GridColumn(
+                        columnName: 'id',
+                        visible: false,
+                        label: const SizedBox.shrink(),
+                      ),
+                      GridColumn(
+                        columnName: 'sr_no',
+                        width: 100,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Sr No', style: _headerStyle),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'date',
+                        width: 130,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Date', style: _headerStyle),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'client',
+                        maximumWidth: 300,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Client', style: _headerStyle),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'phone',
+                        width: 140,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Mobile', style: _headerStyle),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'requirement',
+                        width: 150,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Looking For', style: _headerStyle),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'budget',
+                        minimumWidth: 160,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Budget', style: _headerStyle),
+                        ),
+                      ),
+                      if (widget.initialStatus == null)
+                        GridColumn(
+                          columnName: 'status',
+                          minimumWidth: 160,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            alignment: Alignment.centerLeft,
+                            child: Text('Status', style: _headerStyle),
+                          ),
+                        ),
+                      GridColumn(
+                        columnName: 'actions',
+                        width: 120,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          child: Text('Actions', style: _headerStyle),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        );
-      },
+
+          // Pagination
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const IconButton(
+                  icon: Icon(Icons.chevron_left, size: 20),
+                  onPressed: null, // Stubbed for mock data
+                ),
+                Text(
+                  'Page 1 of 1',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const IconButton(
+                  icon: Icon(Icons.chevron_right, size: 20),
+                  onPressed: null, // Stubbed for mock data
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: color),
-      ),
-    );
-  }
-
-  Color _statusColor(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.newInquiry: return AppColors.stageInterviewed;
-      case ClientStatus.followUp: return AppColors.urgentAmber;
-      case ClientStatus.noResponse: return AppColors.criticalRed;
-      case ClientStatus.converted: return AppColors.successGreen;
-      case ClientStatus.active: return AppColors.successGreen;
-      case ClientStatus.notInterested: return AppColors.grey500;
-      case ClientStatus.churned: return AppColors.statusBlacklisted;
-    }
-  }
+  TextStyle get _headerStyle => GoogleFonts.poppins(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.grey600,
+  );
 }

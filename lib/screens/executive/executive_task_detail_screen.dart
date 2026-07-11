@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +7,6 @@ import 'package:practice_app/models/executive_task_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/utils/extensions.dart';
 
 class ExecutiveTaskDetailScreen extends StatelessWidget {
   final String taskId;
@@ -100,11 +98,14 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // Header Info
             Container(
               width: double.infinity,
@@ -521,6 +522,8 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+      ),
       ),
     );
   }

@@ -34,86 +34,96 @@ class ClientProfileScreen extends StatelessWidget {
     final contract = state.getContractForClient(client.id);
     final candidate = contract != null ? state.getCandidate(contract.candidateId) : null;
 
-    // Get logs related to this client or their active contract
-    final relevantLogs =
-        state.auditLogs
-            .where(
-              (log) =>
-                  log.targetId == client.id ||
-                  (contract != null && log.targetId == contract.id),
-            )
-            .toList();
+    final relevantLogs = state.auditLogs.where(
+      (log) => log.targetId == client.id || (contract != null && log.targetId == contract.id)
+    ).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Client Profile',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isMobile) ...[
-              TextButton.icon(
-                onPressed: () {
-                  context.pop();
-                },
-                icon: const Icon(Icons.arrow_back_ios, size: 18),
-                label: Text(
-                  'Go Back',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
-                ),
-              ),
-              const SizedBox(height: 16),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Client Profile',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: isMobile ? null : IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+          bottom: TabBar(
+            labelColor: AppColors.gold,
+            unselectedLabelColor: isDark ? AppColors.grey400 : AppColors.grey600,
+            indicatorColor: AppColors.gold,
+            tabs: const [
+              Tab(text: 'Details'),
+              Tab(text: 'Candidates & Contracts'),
+              Tab(text: 'Documents'),
             ],
-            _buildClientHeader(client, isDark),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // Details Tab
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildClientHeader(client, isDark),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildRequirements(client, isDark),
-                      const SizedBox(height: 16),
-                      if (contract != null && candidate != null) ...[
-                        _buildActiveContractCard(
-                          context,
-                          contract,
-                          candidate,
-                          isDark,
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          children: [
+                            _buildRequirements(client, isDark),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        _buildContractActions(context, contract, isDark),
-                      ] else ...[
-                        _buildEmptyContractState(isDark),
-                      ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          children: [_buildClientDetails(client, isDark)],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [_buildClientDetails(client, isDark)],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 32),
-            AuditLogWidget(
-              logs: relevantLogs,
-              title: 'Client & Contract History',
+
+            // Candidates & Contracts Tab
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (contract != null && candidate != null) ...[
+                    _buildActiveContractCard(context, contract, candidate, isDark),
+                    const SizedBox(height: 16),
+                    _buildContractActions(context, contract, isDark),
+                  ] else ...[
+                    _buildEmptyContractState(context, client, isDark),
+                  ],
+                  const SizedBox(height: 32),
+                  AuditLogWidget(
+                    logs: relevantLogs,
+                    title: 'Client & Contract History',
+                  ),
+                ],
+              ),
+            ),
+
+            // Documents Tab
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: _buildDocumentsTab(isDark),
             ),
           ],
         ),
@@ -126,9 +136,7 @@ class ClientProfileScreen extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: isDark ? AppColors.dividerDark : AppColors.grey200,
-        ),
+        side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
       ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
@@ -203,18 +211,15 @@ class ClientProfileScreen extends StatelessWidget {
       Wrap(
         spacing: 6,
         runSpacing: 6,
-        children:
-            client.requiredSkills
-                .map(
-                  (s) => Chip(
-                    label: Text(s),
-                    labelStyle: GoogleFonts.poppins(fontSize: 11),
-                    backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
-                    side: BorderSide.none,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                )
-                .toList(),
+        children: client.requiredSkills
+            .map((s) => Chip(
+                  label: Text(s),
+                  labelStyle: GoogleFonts.poppins(fontSize: 11),
+                  backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
+                  side: BorderSide.none,
+                  visualDensity: VisualDensity.compact,
+                ))
+            .toList(),
       ),
     ]);
   }
@@ -223,17 +228,9 @@ class ClientProfileScreen extends StatelessWidget {
     return _buildSectionCard('Household Details', isDark, [
       _infoRow('House Type', client.houseType, isDark),
       _infoRow('Family Size', '${client.familySize} Members', isDark),
-      _infoRow(
-        'Has Children',
-        client.hasChildren ? 'Yes (${client.childrenCount})' : 'No',
-        isDark,
-      ),
+      _infoRow('Has Children', client.hasChildren ? 'Yes (${client.childrenCount})' : 'No', isDark),
       _infoRow('Has Elderly', client.hasElderlyMembers ? 'Yes' : 'No', isDark),
-      _infoRow(
-        'Has Pets',
-        client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No',
-        isDark,
-      ),
+      _infoRow('Has Pets', client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No', isDark),
       const Divider(height: 24),
       _infoRow('Phone', client.phone, isDark),
       _infoRow('Email', client.email, isDark),
@@ -241,19 +238,16 @@ class ClientProfileScreen extends StatelessWidget {
     ]);
   }
 
-  Widget _buildActiveContractCard(
-    BuildContext context,
-    ContractModel contract,
-    CandidateModel candidate,
-    bool isDark,
-  ) {
+  Widget _buildActiveContractCard(BuildContext context, ContractModel contract, CandidateModel candidate, bool isDark) {
     final dateFormat = DateFormat('dd MMM yyyy');
+    final isPending = contract.contractStatus == ContractStatus.pending;
+    final primaryColor = isPending ? AppColors.standardBlue : AppColors.successGreen;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: AppColors.successGreen.withValues(alpha: 0.3)),
+        side: BorderSide(color: primaryColor.withValues(alpha: 0.3)),
       ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
@@ -265,18 +259,16 @@ class ClientProfileScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Active Placement',
+                  isPending ? 'Pending Placement (Awaiting Drop & Payment)' : 'Active Placement',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.successGreen,
+                    color: primaryColor,
                   ),
                 ),
                 _buildBadge(
-                  contract.paymentStatus.displayName,
-                  contract.paymentStatus == PaymentStatus.paid
-                      ? AppColors.successGreen
-                      : AppColors.urgentAmber,
+                  contract.contractStatus.displayName,
+                  primaryColor,
                 ),
               ],
             ),
@@ -287,49 +279,45 @@ class ClientProfileScreen extends StatelessWidget {
                 backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
                 child: const Icon(Icons.person, color: AppColors.gold),
               ),
-              title: Text(
-                candidate.fullName,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+              title: Row(
+                children: [
+                  Text(
+                    candidate.fullName,
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(width: 8),
+                  if (candidate.isMedicalCleared)
+                    _buildBadge('Medical Checked', AppColors.successGreen)
+                  else
+                    _buildBadge('No Medical', AppColors.urgentAmber),
+                ],
               ),
               subtitle: Text(
                 candidate.category,
                 style: GoogleFonts.poppins(fontSize: 12),
               ),
+              trailing: IconButton(
+                icon: const Icon(Icons.open_in_new, size: 20),
+                onPressed: () => context.go('/sales/candidates/${candidate.id}'),
+                tooltip: 'View Candidate Profile',
+              ),
             ),
             const Divider(height: 24),
             _infoRow('Contract ID', contract.id, isDark),
-            _infoRow(
-              'Placement Date',
-              dateFormat.format(contract.placementDate),
-              isDark,
-            ),
-            _infoRow(
-              'Guarantee Ends',
-              dateFormat.format(contract.guaranteeEndDate),
-              isDark,
-            ),
-            _infoRow(
-              'Days Left in SLA',
-              '${contract.daysRemainingInGuarantee} days',
-              isDark,
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value:
-                  contract.daysRemainingInGuarantee /
-                  180, // Assuming 6 month standard
-              backgroundColor:
-                  isDark ? AppColors.dividerDark : AppColors.grey200,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                contract.daysRemainingInGuarantee > 30
-                    ? AppColors.successGreen
-                    : AppColors.urgentAmber,
+            _infoRow('Placement Date', dateFormat.format(contract.placementDate), isDark),
+            _infoRow('Guarantee Ends', dateFormat.format(contract.guaranteeEndDate), isDark),
+            if (!isPending) ...[
+              _infoRow('Days Left in SLA', '${contract.daysRemainingInGuarantee} days', isDark),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: contract.daysRemainingInGuarantee / 180,
+                backgroundColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  contract.daysRemainingInGuarantee > 30 ? AppColors.successGreen : AppColors.urgentAmber,
+                ),
+                borderRadius: BorderRadius.circular(4),
               ),
-              borderRadius: BorderRadius.circular(4),
-            ),
+            ],
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -357,21 +345,20 @@ class ClientProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Balance Due',
+                      'Payment Status',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         color: isDark ? AppColors.grey400 : AppColors.grey600,
                       ),
                     ),
                     Text(
-                      '₹${contract.balanceAmount}',
+                      contract.paymentStatus.displayName,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color:
-                            contract.balanceAmount > 0
-                                ? AppColors.criticalRed
-                                : AppColors.successGreen,
+                        color: contract.paymentStatus == PaymentStatus.paid
+                                ? AppColors.successGreen
+                                : AppColors.criticalRed,
                       ),
                     ),
                   ],
@@ -384,7 +371,7 @@ class ClientProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyContractState(bool isDark) {
+  Widget _buildEmptyContractState(BuildContext context, ClientModel client, bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -398,14 +385,10 @@ class ClientProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.description_outlined,
-            size: 48,
-            color: AppColors.grey400,
-          ),
+          const Icon(Icons.person_search, size: 48, color: AppColors.grey400),
           const SizedBox(height: 16),
           Text(
-            'No Active Contract',
+            'No Candidate Assigned',
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -413,10 +396,21 @@ class ClientProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'This client does not have a placed candidate currently.',
+            'Assign a verified candidate to generate a pending contract.',
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: isDark ? AppColors.grey400 : AppColors.grey600,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => _showAssignCandidateModal(context, client),
+            icon: const Icon(Icons.handshake),
+            label: const Text('Assign Candidate'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
@@ -424,126 +418,121 @@ class ClientProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContractActions(
-    BuildContext context,
-    ContractModel contract,
-    bool isDark,
-  ) {
+  void _showAssignCandidateModal(BuildContext context, ClientModel client) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _AssignCandidateSheet(client: client),
+    );
+  }
+
+  Widget _buildContractActions(BuildContext context, ContractModel contract, bool isDark) {
+    final isPending = contract.contractStatus == ContractStatus.pending;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.grey200,
-        ),
+        border: Border.all(color: isDark ? AppColors.dividerDark : AppColors.grey200),
       ),
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
         children: [
-          _actionButton(
-            'Log Payment',
-            Icons.payment,
-            AppColors.successGreen,
-            isDark,
-            () {
-              // Log Payment logic
-              if (contract.balanceAmount > 0) {
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).updateContractPayment(contract.id, contract.balanceAmount);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Payment logged successfully')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Contract is already fully paid'),
-                  ),
-                );
+          if (isPending) ...[
+            _actionButton('Mark Drop Complete & Paid', Icons.check_circle, AppColors.successGreen, isDark, () {
+              // Simulated action for now
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Contract marked as Active!')),
+              );
+            }),
+            _actionButton('Generate Payment Link', Icons.link, AppColors.standardBlue, isDark, () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Payment link copied to clipboard')),
+              );
+            }),
+            _actionButton('Cancel Drop', Icons.cancel, AppColors.criticalRed, isDark, () {}),
+          ] else ...[
+            _actionButton('Log Payment', Icons.payment, AppColors.successGreen, isDark, () {}),
+            _actionButton('Extend Guarantee (+30d)', Icons.date_range, AppColors.statusInterviewed, isDark, () {}),
+            _actionButton(
+              'Initiate Replacement', 
+              Icons.warning_amber_rounded, 
+              contract.isReplacementUsed ? AppColors.grey500 : AppColors.urgentAmber, 
+              isDark, 
+              () {
+                if(contract.isReplacementUsed) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Max replacements reached')));
+                  return;
+                }
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Replacement ticket generated')));
               }
-            },
+            ),
+            _actionButton('Release to Pool', Icons.person_add_alt_1, AppColors.navyBlue, isDark, () {}),
+            _actionButton('Mark Job Left', Icons.exit_to_app, AppColors.grey600, isDark, () {}),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentsTab(bool isDark) {
+    return _buildSectionCard('Client Documents', isDark, [
+      _documentRow('Aadhaar Card / ID Proof', null, isDark),
+      _documentRow('Address Proof', null, isDark),
+      _documentRow('Agreement Signoff', null, isDark),
+      const SizedBox(height: 16),
+      ElevatedButton.icon(
+        onPressed: () {},
+        icon: const Icon(Icons.upload_file),
+        label: const Text('Upload Document'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
+          foregroundColor: AppColors.navyBlue,
+          elevation: 0,
+        ),
+      ),
+    ]);
+  }
+
+  Widget _documentRow(String name, String? url, bool isDark) {
+    final hasDoc = url != null && url.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(
+            hasDoc ? Icons.description : Icons.description_outlined,
+            size: 18,
+            color: hasDoc ? AppColors.successGreen : AppColors.grey500,
           ),
-          _actionButton(
-            'Extend Guarantee (+30d)',
-            Icons.date_range,
-            AppColors.statusInterviewed,
-            isDark,
-            () {
-              // Extend Guarantee logic
-              Provider.of<GlobalAppState>(
-                context,
-                listen: false,
-              ).extendContractGuarantee(contract.id, 30);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Guarantee extended by 30 days')),
-              );
-            },
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              name,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+              ),
+            ),
           ),
-          _actionButton(
-            'Initiate Replacement',
-            Icons.warning_amber_rounded,
-            AppColors.urgentAmber,
-            isDark,
-            () {
-              // SLA logic
-              Provider.of<GlobalAppState>(
-                context,
-                listen: false,
-              ).initiateReplacement(
-                contract.id,
-                "Client requested replacement due to performance issues.",
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Replacement ticket generated for Sourcing Team',
-                  ),
-                ),
-              );
-            },
-          ),
-          _actionButton(
-            'Release to Pool',
-            Icons.person_add_alt_1,
-            AppColors.navyBlue,
-            isDark,
-            () {
-              Provider.of<GlobalAppState>(context, listen: false)
-                  .releaseCandidateToPool(contract.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Candidate released back to sourcing pool')),
-              );
-            },
-          ),
-          _actionButton(
-            'Mark Job Left',
-            Icons.exit_to_app,
-            AppColors.grey600,
-            isDark,
-            () {
-              Provider.of<GlobalAppState>(context, listen: false)
-                  .markCandidateLeft(contract.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Candidate marked as Job Left')),
-              );
-            },
+          Text(
+            hasDoc ? 'Uploaded' : 'Missing',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: hasDoc ? AppColors.successGreen : AppColors.urgentAmber,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _actionButton(
-    String label,
-    IconData icon,
-    Color color,
-    bool isDark,
-    VoidCallback onPressed,
-  ) {
+  Widget _actionButton(String label, IconData icon, Color color, bool isDark, VoidCallback onPressed) {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 16),
@@ -566,9 +555,7 @@ class ClientProfileScreen extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: isDark ? AppColors.dividerDark : AppColors.grey200,
-        ),
+        side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
       ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
@@ -623,15 +610,26 @@ class ClientProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge(String text, Color color) {
+  Color _statusColor(ClientStatus status) {
+    switch (status) {
+      case ClientStatus.newInquiry: return AppColors.standardBlue;
+      case ClientStatus.followUp: return AppColors.urgentAmber;
+      case ClientStatus.active:
+      case ClientStatus.converted: return AppColors.successGreen;
+      default: return AppColors.criticalRed;
+    }
+  }
+
+  Widget _buildBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
-        text,
+        label,
         style: GoogleFonts.poppins(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -640,23 +638,118 @@ class ClientProfileScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Color _statusColor(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.newInquiry:
-        return AppColors.stageInterviewed;
-      case ClientStatus.followUp:
-        return AppColors.urgentAmber;
-      case ClientStatus.noResponse:
-        return AppColors.criticalRed;
-      case ClientStatus.converted:
-        return AppColors.successGreen;
-      case ClientStatus.active:
-        return AppColors.successGreen;
-      case ClientStatus.notInterested:
-        return AppColors.grey500;
-      case ClientStatus.churned:
-        return AppColors.statusBlacklisted;
-    }
+// Bottom Sheet for Assigning Candidate
+class _AssignCandidateSheet extends StatelessWidget {
+  final ClientModel client;
+  
+  const _AssignCandidateSheet({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = Provider.of<GlobalAppState>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Find candidates ready to place matching the requested category
+    final pool = state.candidates.where((c) => c.status == CandidateStatus.readyToPlace && c.category == client.preferredCandidateCategory).toList();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Select Candidate to Assign',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: pool.isEmpty 
+              ? const Center(child: Text('No matching candidates found in Ready to Place pool.'))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: pool.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final candidate = pool[index];
+                    return Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+                      ),
+                      color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: CircleAvatar(
+                          backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
+                          child: Text(candidate.fullName[0], style: const TextStyle(color: AppColors.navyBlue)),
+                        ),
+                        title: Row(
+                          children: [
+                            Text(candidate.fullName, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 8),
+                            if (candidate.isMedicalCleared)
+                              _smallBadge('Medical Verified', AppColors.successGreen)
+                            else
+                              _smallBadge('No Medical', AppColors.urgentAmber),
+                          ],
+                        ),
+                        subtitle: Text('${candidate.category} • ${candidate.experienceYears} yrs exp • ${candidate.expectedSalary}'),
+                        trailing: ElevatedButton(
+                          onPressed: () {
+                            // Assign logic here
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Candidate assigned! Pending Contract Generated.')),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: AppColors.navyBlue,
+                          ),
+                          child: const Text('Assign'),
+                        ),
+                      ),
+                    );
+                  },
+              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _smallBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
   }
 }

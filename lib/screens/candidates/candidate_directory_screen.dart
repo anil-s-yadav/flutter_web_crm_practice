@@ -261,7 +261,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           Container(
             color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -345,7 +345,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           Container(
             color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -843,8 +843,9 @@ class _CandidateGridView extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: SfDataGridTheme(
                 data: SfDataGridThemeData(
-                  headerColor:
-                      isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                  headerColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                  gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  gridLineStrokeWidth: 1,
                   rowHoverColor:
                       isDark
                           ? AppColors.navyBlue.withValues(alpha: 0.1)
@@ -855,7 +856,7 @@ class _CandidateGridView extends StatelessWidget {
                   source: dataSource,
                   allowSorting: true,
                   allowMultiColumnSorting: false,
-                  columnWidthMode: ColumnWidthMode.fill,
+                  columnWidthMode: ColumnWidthMode.auto,
                   gridLinesVisibility: GridLinesVisibility.both,
                   headerGridLinesVisibility: GridLinesVisibility.both,
                   columns: <GridColumn>[

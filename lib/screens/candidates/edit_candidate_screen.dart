@@ -82,8 +82,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
       if (_languages.join(',') != _candidate.languages.join(',')) {
         changes.add('Languages');
       }
-      if (_experienceYears != _candidate.experienceYears)
+      if (_experienceYears != _candidate.experienceYears) {
         changes.add('Experience');
+      }
       if (_expectedSalary != _candidate.expectedSalary) changes.add('Salary');
 
       if (changes.isEmpty) {

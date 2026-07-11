@@ -99,6 +99,30 @@ class CandidateDataSource extends DataGridSource {
   List<DataGridRow> get rows => _dataGridRows;
 
   @override
+  int compare(DataGridRow? a, DataGridRow? b, SortColumnDetails sortColumn) {
+    if (sortColumn.name == 'candidate' || sortColumn.name == 'actions') {
+      final value1 = a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateModel?;
+      final value2 = b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateModel?;
+      if (value1 == null || value2 == null) return 0;
+      if (sortColumn.sortDirection == DataGridSortDirection.ascending) {
+        return value1.fullName.compareTo(value2.fullName);
+      } else {
+        return value2.fullName.compareTo(value1.fullName);
+      }
+    } else if (sortColumn.name == 'status') {
+      final value1 = a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateStatus?;
+      final value2 = b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateStatus?;
+      if (value1 == null || value2 == null) return 0;
+      if (sortColumn.sortDirection == DataGridSortDirection.ascending) {
+        return value1.name.compareTo(value2.name);
+      } else {
+        return value2.name.compareTo(value1.name);
+      }
+    }
+    return super.compare(a, b, sortColumn);
+  }
+
+  @override
   DataGridRowAdapter buildRow(DataGridRow row) {
     final CandidateModel candidate =
         row.getCells().firstWhere((c) => c.columnName == 'candidate').value

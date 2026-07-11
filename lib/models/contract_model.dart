@@ -2,7 +2,7 @@ import 'dart:convert';
 
 enum PaymentStatus { pending, partial, paid, overdue }
 
-enum ContractStatus { active, completed, replaced, cancelled }
+enum ContractStatus { pending, active, completed, replaced, cancelled }
 
 extension PaymentStatusExtension on PaymentStatus {
   String get displayName {
@@ -29,6 +29,8 @@ extension PaymentStatusExtension on PaymentStatus {
 extension ContractStatusExtension on ContractStatus {
   String get displayName {
     switch (this) {
+      case ContractStatus.pending:
+        return 'Pending';
       case ContractStatus.active:
         return 'Active';
       case ContractStatus.completed:
@@ -43,7 +45,7 @@ extension ContractStatusExtension on ContractStatus {
   static ContractStatus fromString(String value) {
     return ContractStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => ContractStatus.active
+      orElse: () => ContractStatus.pending
     );
   }
 }

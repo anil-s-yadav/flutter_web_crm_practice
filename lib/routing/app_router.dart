@@ -3,11 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:practice_app/auth/login_screen.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/layouts/desktop_shell.dart';
-import 'package:practice_app/layouts/mobile_shell.dart';
 import 'package:practice_app/layouts/executive_shell.dart';
 import 'package:practice_app/screens/admin/admin_dashboard.dart';
 import 'package:practice_app/screens/admin/admin_audit_trail_screen.dart';
 import 'package:practice_app/screens/sales/sales_dashboard.dart';
+import 'package:practice_app/screens/sales/add_client_screen.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
 import 'package:practice_app/screens/shared/learning_screen.dart';
 import 'package:practice_app/screens/executive/executive_dashboard.dart';
@@ -22,6 +22,7 @@ import 'package:practice_app/screens/contracts/contract_list_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_list_screen.dart';
 import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
 import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
+import 'package:practice_app/models/client_model.dart';
 
 class AppRouter {
   static GoRouter createRouter() {
@@ -53,39 +54,59 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/candidates/ready',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.readyToPlace,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/new',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.newlyAdded),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.newlyAdded,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/verification',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.verificationPending),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.verificationPending,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/medical',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.medicalPending),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.medicalPending,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/hired',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.hired),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.hired,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/blacklisted',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.blacklisted),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.blacklisted,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/:id',
               builder:
-                  (context, state) =>
-                      CandidateProfileScreen(candidateId: state.pathParameters['id']!),
+                  (context, state) => CandidateProfileScreen(
+                    candidateId: state.pathParameters['id']!,
+                  ),
             ),
             GoRoute(
               path: '/admin/candidates/:id/edit',
-              builder: (context, state) => EditCandidateScreen(
-                candidateId: state.pathParameters['id']!,
-              ),
+              builder:
+                  (context, state) => EditCandidateScreen(
+                    candidateId: state.pathParameters['id']!,
+                  ),
             ),
             GoRoute(
               path: '/admin/clients',
@@ -98,8 +119,9 @@ class AppRouter {
             GoRoute(
               path: '/admin/clients/:id',
               builder:
-                  (context, state) =>
-                      ClientProfileScreen(clientId: state.pathParameters['id']!),
+                  (context, state) => ClientProfileScreen(
+                    clientId: state.pathParameters['id']!,
+                  ),
             ),
             GoRoute(
               path: '/admin/contracts',
@@ -131,19 +153,39 @@ class AppRouter {
               builder: (context, state) => const SalesDashboard(),
             ),
             GoRoute(
+              path: '/sales/add_client',
+              builder: (context, state) => const AddClientScreen(),
+            ),
+            GoRoute(
               path: '/sales/clients',
               builder: (context, state) => const ClientListScreen(),
             ),
             GoRoute(
+              path: '/sales/clients/new',
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.newInquiry),
+            ),
+            GoRoute(
+              path: '/sales/clients/followup',
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.followUp),
+            ),
+            GoRoute(
+              path: '/sales/clients/active',
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.active),
+            ),
+            GoRoute(
               path: '/sales/clients/:id',
               builder:
-                  (context, state) =>
-                      ClientProfileScreen(clientId: state.pathParameters['id']!),
+                  (context, state) => ClientProfileScreen(
+                    clientId: state.pathParameters['id']!,
+                  ),
             ),
             GoRoute(
               path: '/sales/candidates',
               builder:
-                  (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace, readOnly: true),
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.readyToPlace,
+                    readOnly: true,
+                  ),
             ),
             GoRoute(
               path: '/sales/contracts',
@@ -177,39 +219,59 @@ class AppRouter {
             ),
             GoRoute(
               path: '/sourcing/candidates/ready',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.readyToPlace),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.readyToPlace,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/new',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.newlyAdded),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.newlyAdded,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/verification',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.verificationPending),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.verificationPending,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/medical',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.medicalPending),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.medicalPending,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/hired',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.hired),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.hired,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/blacklisted',
-              builder: (context, state) => const CandidateDirectoryScreen(type: CandidateDirectoryType.blacklisted),
+              builder:
+                  (context, state) => const CandidateDirectoryScreen(
+                    type: CandidateDirectoryType.blacklisted,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/:id',
-              builder: (context, state) => CandidateProfileScreen(
-                candidateId: state.pathParameters['id']!,
-              ),
+              builder:
+                  (context, state) => CandidateProfileScreen(
+                    candidateId: state.pathParameters['id']!,
+                  ),
             ),
             GoRoute(
               path: '/sourcing/candidates/:id/edit',
-              builder: (context, state) => EditCandidateScreen(
-                candidateId: state.pathParameters['id']!,
-              ),
+              builder:
+                  (context, state) => EditCandidateScreen(
+                    candidateId: state.pathParameters['id']!,
+                  ),
             ),
           ],
         ),
@@ -231,9 +293,10 @@ class AppRouter {
             ),
             GoRoute(
               path: '/executive/tasks/:id',
-              builder: (context, state) => ExecutiveTaskDetailScreen(
-                taskId: state.pathParameters['id']!,
-              ),
+              builder:
+                  (context, state) => ExecutiveTaskDetailScreen(
+                    taskId: state.pathParameters['id']!,
+                  ),
             ),
           ],
         ),

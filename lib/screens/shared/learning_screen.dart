@@ -13,7 +13,10 @@ class LearningScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Learning Center', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(
+          'Learning Center',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -25,17 +28,28 @@ class LearningScreen extends StatelessWidget {
           children: [
             Text(
               'Reference Guide & Standard Operating Procedures',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.navyBlue)
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Use this section to understand standard abbreviations, scripts, and FAQs used across Verified Maids CRM.',
-              style: GoogleFonts.poppins(fontSize: 14, color: isDark ? AppColors.grey400 : AppColors.grey600)
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: isDark ? AppColors.grey400 : AppColors.grey600,
+              ),
             ),
             const SizedBox(height: 32),
-            
+
             // Language Abbreviations
-            _buildSectionHeader('Language Abbreviations', Icons.translate, isDark),
+            _buildSectionHeader(
+              'Language Abbreviations',
+              Icons.translate,
+              isDark,
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 16,
@@ -69,34 +83,42 @@ class LearningScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Sourcing Scripts
-            _buildSectionHeader('Standard Scripts (Sourcing)', Icons.record_voice_over, isDark),
+            _buildSectionHeader(
+              'Standard Scripts (Sourcing)',
+              Icons.record_voice_over,
+              isDark,
+            ),
             const SizedBox(height: 16),
             _buildScriptCard(
               'Initial Interview (Hindi)',
               'Namaste! Main Verified Maids se baat kar rahi hoon. Kya aap abhi kaam dhundh rahe hain? Humare paas kaafi requirements hain. Kya aap humare office aakar verification process start kar sakte hain?',
-              isDark
+              isDark,
             ),
             const SizedBox(height: 12),
             _buildScriptCard(
               'Medical Checkup Reminder',
               'Aapka police aur aadhaar verification complete ho gaya hai. Agla step medical checkup hai. Kripya apna medical clearance certificate jama karein taaki hum aapko jald se jald kaam dila sakein.',
-              isDark
+              isDark,
             ),
             const SizedBox(height: 32),
 
             // FAQs
-            _buildSectionHeader('Frequently Asked Questions (Internal)', Icons.help_outline, isDark),
+            _buildSectionHeader(
+              'Frequently Asked Questions (Internal)',
+              Icons.help_outline,
+              isDark,
+            ),
             const SizedBox(height: 16),
             _buildFaqCard(
               'When should a candidate be moved to "Ready to Place"?',
               'A candidate should only be moved to "Ready to Place" after their Aadhaar and Police verification are completed. Medical clearance is highly recommended but can be bypassed if the client agrees.',
-              isDark
+              isDark,
             ),
             const SizedBox(height: 12),
             _buildFaqCard(
               'What happens when a candidate is blacklisted?',
               'When a candidate is blacklisted, they are permanently hidden from client placement views. A permanent note MUST be logged explaining the reason (e.g., theft, absconding, forged documents).',
-              isDark
+              isDark,
             ),
           ],
         ),
@@ -109,19 +131,32 @@ class LearningScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 24, color: AppColors.gold),
         const SizedBox(width: 12),
-        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.textPrimaryLight)),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildAbbreviationCard(String shortForm, String fullForm, bool isDark) {
+  Widget _buildAbbreviationCard(
+    String shortForm,
+    String fullForm,
+    bool isDark,
+  ) {
     return Container(
       width: 150,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,10 +167,19 @@ class LearningScreen extends StatelessWidget {
               color: AppColors.navyBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(shortForm, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppColors.navyBlue)),
+            child: Text(
+              shortForm,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(height: 8),
-          Text(fullForm, style: GoogleFonts.poppins(fontSize: 13, color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight)),
+          Text(
+            fullForm,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+            ),
+          ),
         ],
       ),
     );
@@ -144,23 +188,43 @@ class LearningScreen extends StatelessWidget {
   Widget _buildScriptCard(String title, String content, bool isDark) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        ),
+      ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.navyBlue)),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border(left: BorderSide(color: AppColors.gold, width: 4)),
+                border: Border(
+                  left: BorderSide(color: AppColors.gold, width: 4),
+                ),
               ),
-              child: Text(content, style: GoogleFonts.poppins(fontSize: 13, fontStyle: FontStyle.italic, color: isDark ? AppColors.grey400 : AppColors.grey700)),
+              child: Text(
+                content,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                  color: isDark ? AppColors.grey400 : AppColors.grey700,
+                ),
+              ),
             ),
           ],
         ),
@@ -171,17 +235,39 @@ class LearningScreen extends StatelessWidget {
   Widget _buildFaqCard(String question, String answer, bool isDark) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        ),
+      ),
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Theme(
         data: ThemeData(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          title: Text(question, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? AppColors.white : AppColors.textPrimaryLight)),
+          title: Text(
+            question,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+            ),
+          ),
           iconColor: AppColors.gold,
           collapsedIconColor: AppColors.grey500,
-          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          childrenPadding: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: 16,
+          ),
           children: [
-            Text(answer, style: GoogleFonts.poppins(fontSize: 13, color: isDark ? AppColors.grey400 : AppColors.grey600)),
+            Text(
+              answer,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: isDark ? AppColors.grey400 : AppColors.grey600,
+              ),
+            ),
           ],
         ),
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:provider/provider.dart';
@@ -20,27 +19,43 @@ class ExecutiveDashboard extends StatelessWidget {
 
     final stats = MockDataGenerator.getExecutiveStats();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          Text(
-            "Drop Metrics",
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int columns = 2;
+        double aspect = 1.1;
+
+        if (constraints.maxWidth >= 1200) {
+          columns = 4;
+          aspect = 1.6;
+        } else if (constraints.maxWidth >= 900) {
+          columns = 3;
+          aspect = 1.4;
+        } else if (constraints.maxWidth >= 600) {
+          columns = 3;
+          aspect = 1.2;
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 8),
+              Text(
+                "Drop Metrics",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              GridView.count(
+                crossAxisCount: columns,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: aspect,
+                children: [
               _MetricCard(
                 title: "Today's Status",
                 value: "${stats['todaysPendingDrops']} Pending",
@@ -87,6 +102,8 @@ class ExecutiveDashboard extends StatelessWidget {
           ),
         ],
       ),
+    );
+    },
     );
   }
 }
@@ -168,9 +185,10 @@ class _MetricCard extends StatelessWidget {
                 subtitle,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                  color:
+                      isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

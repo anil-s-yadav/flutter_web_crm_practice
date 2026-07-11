@@ -15,10 +15,13 @@ class ExecutiveProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
             const SizedBox(height: 20),
             Center(
               child: CircleAvatar(
@@ -154,6 +157,8 @@ class ExecutiveProfileScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }

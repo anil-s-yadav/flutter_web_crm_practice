@@ -698,11 +698,14 @@ class CandidateProfileScreen extends StatelessWidget {
                   );
                 }
                 final stepIndex = i ~/ 2;
-                bool isComplete = stepIndex < progress;
+                bool isComplete = stepIndex < progress - 1 || progress >= 4;
+                bool isActive = stepIndex == progress - 1 && progress < 4;
                 bool isSkipped = false;
                 
-                if (stepIndex == 2 && progress > 2 && !candidate.isMedicalCleared) {
+                // If past Medical (progress > 3) and medical not cleared, it was skipped
+                if (stepIndex == 2 && progress > 3 && !candidate.isMedicalCleared) {
                   isComplete = false;
+                  isActive = false;
                   isSkipped = true;
                 }
 
@@ -715,16 +718,22 @@ class CandidateProfileScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isSkipped 
                             ? (isDark ? AppColors.grey700 : AppColors.grey200)
-                            : (isComplete
+                            : ((isComplete || isActive)
                                 ? colors[stepIndex]
                                 : (isDark
                                     ? AppColors.grey700
                                     : AppColors.grey300)),
-                        border: isSkipped ? Border.all(color: AppColors.grey400, width: 2) : null,
+                        border: isSkipped 
+                            ? Border.all(color: AppColors.grey400, width: 2) 
+                            : (isActive ? Border.all(color: isDark ? Colors.white : AppColors.navyBlue, width: 2) : null),
                       ),
                       child: Icon(
-                        isSkipped ? Icons.double_arrow : (isComplete ? Icons.check : Icons.circle),
-                        size: isSkipped ? 16 : (isComplete ? 18 : 8),
+                        isSkipped 
+                            ? Icons.double_arrow 
+                            : (isComplete 
+                                ? Icons.check 
+                                : (isActive ? Icons.hourglass_empty : Icons.circle)),
+                        size: isSkipped ? 16 : (isComplete ? 18 : (isActive ? 16 : 8)),
                         color: isSkipped ? AppColors.grey500 : AppColors.white,
                       ),
                     ),
@@ -734,10 +743,10 @@ class CandidateProfileScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight:
-                            (isComplete || isSkipped) ? FontWeight.w600 : FontWeight.w400,
+                            (isComplete || isActive || isSkipped) ? FontWeight.w600 : FontWeight.w400,
                         color: isSkipped 
                             ? AppColors.grey500
-                            : (isComplete
+                            : ((isComplete || isActive)
                                 ? colors[stepIndex]
                                 : (isDark
                                     ? AppColors.grey500
@@ -1131,11 +1140,13 @@ class CandidateProfileScreen extends StatelessWidget {
             color: isVerified ? AppColors.successGreen : AppColors.criticalRed,
           ),
           const SizedBox(width: 10),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+              ),
             ),
           ),
         ],

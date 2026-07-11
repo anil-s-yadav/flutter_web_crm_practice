@@ -122,7 +122,7 @@ class MockDataGenerator {
     final workTypes = ['Live-in', '12-hour', '24-hour', 'Part-time'];
 
     return CandidateModel(
-      id: 'M${(index + 1).toString().padLeft(6, '0')}',
+      id: 'VMC${1001 + index}',
       fullName: fullName,
       age: age,
       phone: '98${(10000000 + index % 90000000).toString().padLeft(8, '0')}',
@@ -141,7 +141,7 @@ class MockDataGenerator {
       isMedicalCleared: isMedicalCleared,
       isPoliceVerified: isPoliceVerified,
       isAadhaarVerified: isAadhaarVerified,
-      currentPlacementId: status == CandidateStatus.placed ? 'C${(rng.nextInt(totalContracts) + 1).toString().padLeft(6, '0')}' : null,
+      currentPlacementId: status == CandidateStatus.placed ? 'CTX${3001 + rng.nextInt(totalContracts)}' : null,
       addedBy: '${_maleFirstNames[rng.nextInt(_maleFirstNames.length)]} ${_lastNames[rng.nextInt(_lastNames.length)]}',
       dateAdded: DateTime.now().subtract(Duration(days: rng.nextInt(730) + 30)),
       dateVerificationSent: status.index >= CandidateStatus.verificationPending.index ? DateTime.now().subtract(Duration(days: rng.nextInt(30) + 20)) : null,
@@ -187,7 +187,7 @@ class MockDataGenerator {
     final budgetEnd = budgetBase + 5000 + rng.nextInt(10000);
 
     return ClientModel(
-      id: 'CL${(index + 1).toString().padLeft(6, '0')}',
+      id: 'CLI${2001 + index}',
       fullName: fullName,
       phone: '98${(20000000 + index % 80000000).toString().padLeft(8, '0')}',
       altPhone: rng.nextBool() ? '91${(30000000 + rng.nextInt(70000000)).toString().padLeft(8, '0')}' : null,
@@ -206,7 +206,7 @@ class MockDataGenerator {
       requiredSkills: shuffledSkills.take(numSkills).toList(),
       budgetRange: '\u20B9${budgetBase ~/ 1000}K - \u20B9${budgetEnd ~/ 1000}K',
       status: status,
-      assignedEmployeeId: 'EMP${(rng.nextInt(20) + 1).toString().padLeft(3, '0')}',
+      assignedEmployeeId: 'EMP${5001 + rng.nextInt(20)}',
       source: _sources[rng.nextInt(_sources.length)],
       inquiryDate: DateTime.now().subtract(Duration(days: rng.nextInt(365))),
       remarks: rng.nextDouble() < 0.3 ? 'Follow up needed' : null
@@ -236,7 +236,7 @@ class MockDataGenerator {
         : ContractStatus.active;
 
     return ContractModel(
-      id: 'CON${(index + 1).toString().padLeft(6, '0')}',
+      id: 'CTX${3001 + index}',
       clientId: client.id,
       candidateId: candidate.id,
       clientName: client.fullName,
@@ -291,7 +291,7 @@ class MockDataGenerator {
     final title = titleList[rng.nextInt(titleList.length)];
 
     return TicketModel(
-      id: 'TKT${(index + 1).toString().padLeft(6, '0')}',
+      id: 'TKT${4001 + index}',
       title: title,
       description: 'Ticket raised by ${client.fullName} regarding ${candidate.fullName}. $title.',
       priority: priority,

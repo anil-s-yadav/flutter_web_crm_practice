@@ -8,7 +8,6 @@ import 'package:practice_app/models/executive_task_model.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:intl/intl.dart';
 
 class ExecutiveTasksScreen extends StatefulWidget {
   const ExecutiveTasksScreen({super.key});
@@ -25,81 +24,95 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<GlobalAppState>(context);
     final tasks = appState.tasks;
-    
+
     // Grouping In Progress with Pending
-    final filteredTasks = tasks.where((t) {
-      if (_selectedFilter == 'Pending') {
-        return t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
-      } else {
-        return t.status == TaskStatus.completed;
-      }
-    }).toList();
-    
+    final filteredTasks =
+        tasks.where((t) {
+          if (_selectedFilter == 'Pending') {
+            return t.status != TaskStatus.completed &&
+                t.status != TaskStatus.cancelled;
+          } else {
+            return t.status == TaskStatus.completed;
+          }
+        }).toList();
+
     final isDesktop = context.media.width >= 800;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _filters.map((filter) {
-                  final isSelected = _selectedFilter == filter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        filter,
-                        style: GoogleFonts.poppins(
-                          color: isSelected
-                              ? AppColors.navyBlue
-                              : (isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight),
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                children:
+                    _filters.map((filter) {
+                      final isSelected = _selectedFilter == filter;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Text(
+                            filter,
+                            style: GoogleFonts.poppins(
+                              color:
+                                  isSelected
+                                      ? AppColors.navyBlue
+                                      : (isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondaryLight),
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: AppColors.gold,
+                          backgroundColor:
+                              isDark
+                                  ? AppColors.darkSurfaceVariant
+                                  : AppColors.white,
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedFilter = filter;
+                            });
+                          },
                         ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.gold,
-                      backgroundColor:
-                          isDark ? AppColors.darkSurfaceVariant : AppColors.white,
-                      onSelected: (selected) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: filteredTasks.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No tasks found',
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey[600],
-                          fontSize: 16,
+              child:
+                  filteredTasks.isEmpty
+                      ? Center(
+                        child: Text(
+                          'No tasks found',
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                          ),
                         ),
+                      )
+                      : ListView.builder(
+                        itemCount: filteredTasks.length,
+                        itemBuilder: (context, index) {
+                          return _buildTaskCard(filteredTasks[index], appState);
+                        },
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredTasks.length,
-                      itemBuilder: (context, index) {
-                        return _buildTaskCard(filteredTasks[index], appState);
-                      },
-                    ),
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }
@@ -119,9 +132,10 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isDark
-            ? BorderSide(color: Colors.white.withValues(alpha: 0.1))
-            : BorderSide.none,
+        side:
+            isDark
+                ? BorderSide(color: Colors.white.withValues(alpha: 0.1))
+                : BorderSide.none,
       ),
       color: isDark ? AppColors.cardDark : AppColors.cardLight,
       margin: const EdgeInsets.only(bottom: 16),
@@ -144,18 +158,28 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
               const SizedBox(height: 8),
               Text(
                 'Client: ${task.clientName}',
-                style: GoogleFonts.poppins(fontSize: 14, color: AppColors.grey500),
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: AppColors.grey500,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, size: 18, color: AppColors.gold),
+                  const Icon(
+                    Icons.location_on,
+                    size: 18,
+                    color: AppColors.gold,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       task.clientAddress,
-                      style: GoogleFonts.poppins(fontSize: 14, color: isDark ? AppColors.white : AppColors.navyBlue),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
                     ),
                   ),
                 ],
@@ -166,10 +190,18 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        final encodedAddress = Uri.encodeComponent(task.clientAddress);
-                        _launchUrl('https://www.google.com/maps/search/?api=1&query=$encodedAddress');
+                        final encodedAddress = Uri.encodeComponent(
+                          task.clientAddress,
+                        );
+                        _launchUrl(
+                          'https://www.google.com/maps/search/?api=1&query=$encodedAddress',
+                        );
                       },
-                      icon: const Icon(Icons.navigation, size: 16, color: AppColors.white),
+                      icon: const Icon(
+                        Icons.navigation,
+                        size: 16,
+                        color: AppColors.white,
+                      ),
                       label: const Text('Navigate'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.navyBlue,
@@ -184,7 +216,11 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
                       onPressed: () {
                         _launchUrl('tel:${task.clientPhone}');
                       },
-                      icon: const Icon(Icons.call, size: 16, color: AppColors.white),
+                      icon: const Icon(
+                        Icons.call,
+                        size: 16,
+                        color: AppColors.white,
+                      ),
                       label: const Text('Call'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.gold,

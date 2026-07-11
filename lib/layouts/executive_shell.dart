@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/auth/user_manager.dart';
-import 'package:provider/provider.dart';
 import 'package:practice_app/theme/theme_provider.dart';
+import 'package:practice_app/screens/shared/notification_panel.dart';
+import 'package:practice_app/providers/global_app_state.dart';
+import 'package:provider/provider.dart';
 
 class ExecutiveShell extends StatefulWidget {
   final Widget child;
@@ -61,15 +62,19 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
   }
 
   bool _isRootRoute(String location) {
-    return location == '/executive' || location == '/executive/tasks' || location == '/executive/profile';
+    return location == '/executive' ||
+        location == '/executive/tasks' ||
+        location == '/executive/profile';
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentLocation = GoRouterState.of(context).uri.toString();
+    final appState = Provider.of<GlobalAppState>(context);
 
     return Scaffold(
+      endDrawer: const NotificationPanel(),
       appBar: AppBar(
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.goldDark,
         foregroundColor: isDark ? AppColors.white : AppColors.goldDark,
@@ -78,18 +83,19 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
           style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         automaticallyImplyLeading: !_isRootRoute(currentLocation),
-        leading: !_isRootRoute(currentLocation)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/executive/tasks');
-                  }
-                },
-              )
-            : null,
+        leading:
+            !_isRootRoute(currentLocation)
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/executive/tasks');
+                    }
+                  },
+                )
+                : null,
         actions: [
           IconButton(
             tooltip: isDark ? 'Light Mode' : 'Dark Mode',
@@ -98,11 +104,30 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
               context.read<ThemeProvider>().toggleTheme(!isDark);
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 22),
-            onPressed: () {},
+          Builder(
+            builder: (context) {
+              return Badge(
+                isLabelVisible: appState.unreadNotificationCount > 0,
+                label: Text(
+                  appState.unreadNotificationCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: AppColors.errorRed,
+                offset: const Offset(-8, 8),
+                child: IconButton(
+                  icon: const Icon(Icons.notifications_outlined, size: 22),
+                  onPressed: () {
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
+              );
+            },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: widget.child,

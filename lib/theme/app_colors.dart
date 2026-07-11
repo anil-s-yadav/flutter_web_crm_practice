@@ -74,7 +74,7 @@ class AppColors {
 
   // ─── Divider ───
   static const Color dividerLight = Color(0xFFE0DCD4);    // Warm divider
-  static const Color dividerDark = Color(0xFF2A3648);      // Navy-tinted dark divider
+  static const Color dividerDark = Color(0xFF3E5166);      // Lighter navy-tinted divider for better visibility
 
   // ─── Dark mode surfaces ───
   static const Color darkSurface = Color(0xFF24364A);     // Navy-tinted, not pure grey

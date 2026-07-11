@@ -9,6 +9,8 @@ import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/utils/fullscreen.dart';
+import 'package:practice_app/screens/shared/notification_panel.dart';
+import 'package:practice_app/providers/global_app_state.dart';
 
 class DesktopShell extends StatefulWidget {
   final Widget child;
@@ -79,6 +81,12 @@ class _DesktopShellState extends State<DesktopShell> {
       case UserRole.sales:
         return [
           _SidebarItem(
+            icon: Icons.person_add_alt_1_outlined,
+            activeIcon: Icons.person_add_alt_1,
+            label: 'Add Client',
+            route: '/sales/add_client',
+          ),
+          _SidebarItem(
             icon: Icons.dashboard_outlined,
             activeIcon: Icons.dashboard,
             label: 'Dashboard',
@@ -87,20 +95,38 @@ class _DesktopShellState extends State<DesktopShell> {
           _SidebarItem(
             icon: Icons.business_outlined,
             activeIcon: Icons.business,
-            label: 'Clients',
+            label: 'All Clients',
             route: '/sales/clients',
           ),
           _SidebarItem(
-            icon: Icons.people_outline,
-            activeIcon: Icons.people,
-            label: 'Candidate Pool',
-            route: '/sales/candidates',
+            icon: Icons.new_releases_outlined,
+            activeIcon: Icons.new_releases,
+            label: 'New Inquiries',
+            route: '/sales/clients/new',
+          ),
+          _SidebarItem(
+            icon: Icons.record_voice_over_outlined,
+            activeIcon: Icons.record_voice_over,
+            label: 'Follow Ups',
+            route: '/sales/clients/followup',
+          ),
+          _SidebarItem(
+            icon: Icons.check_circle_outline,
+            activeIcon: Icons.check_circle,
+            label: 'Converted (Active)',
+            route: '/sales/clients/active',
           ),
           _SidebarItem(
             icon: Icons.description_outlined,
             activeIcon: Icons.description,
             label: 'Contracts',
             route: '/sales/contracts',
+          ),
+          _SidebarItem(
+            icon: Icons.people_outline,
+            activeIcon: Icons.people,
+            label: 'Candidate Pool',
+            route: '/sales/candidates',
           ),
           _SidebarItem(
             icon: Icons.confirmation_number_outlined,
@@ -203,6 +229,15 @@ class _DesktopShellState extends State<DesktopShell> {
         route == '/executive') {
       return currentLocation == route;
     }
+
+    if (route == '/sales/clients') {
+      return currentLocation == route ||
+          (currentLocation.startsWith('/sales/clients/') &&
+              !currentLocation.startsWith('/sales/clients/new') &&
+              !currentLocation.startsWith('/sales/clients/followup') &&
+              !currentLocation.startsWith('/sales/clients/active'));
+    }
+
     return currentLocation.startsWith(route);
   }
 
@@ -216,6 +251,7 @@ class _DesktopShellState extends State<DesktopShell> {
 
     if (isNarrow) {
       return Scaffold(
+        endDrawer: const NotificationPanel(),
         appBar: _buildAppBar(context, isDark, currentLocation, timerProvider),
         drawer: _buildDrawer(isDark, currentLocation, user),
         body: widget.child,
@@ -223,6 +259,7 @@ class _DesktopShellState extends State<DesktopShell> {
     }
 
     return Scaffold(
+      endDrawer: const NotificationPanel(),
       body: Row(
         children: [
           // Sidebar
@@ -262,9 +299,29 @@ class _DesktopShellState extends State<DesktopShell> {
             icon: const Icon(Icons.fullscreen, size: 22),
             onPressed: toggleFullScreen,
           ),
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, size: 22),
-          onPressed: () {},
+        Builder(
+          builder: (context) {
+            final appState = Provider.of<GlobalAppState>(context);
+            return Badge(
+              isLabelVisible: appState.unreadNotificationCount > 0,
+              label: Text(
+                appState.unreadNotificationCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: AppColors.errorRed,
+              offset: const Offset(-8, 8),
+              child: IconButton(
+                icon: const Icon(Icons.notifications_outlined, size: 22),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+              ),
+            );
+          },
         ),
         const SizedBox(width: 8),
       ],
@@ -658,16 +715,33 @@ class _DesktopShellState extends State<DesktopShell> {
           const SizedBox(width: 4),
 
           // Notifications
-          IconButton(
-            icon: Badge(
-              smallSize: 8,
-              child: Icon(
-                Icons.notifications_outlined,
-                size: 22,
-                color: isDark ? AppColors.grey300 : AppColors.navyBlue,
-              ),
-            ),
-            onPressed: () {},
+          Builder(
+            builder: (context) {
+              final appState = Provider.of<GlobalAppState>(context);
+              return Badge(
+                isLabelVisible: appState.unreadNotificationCount > 0,
+                label: Text(
+                  appState.unreadNotificationCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: AppColors.errorRed,
+                offset: const Offset(-8, 8),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.notifications_outlined,
+                    size: 22,
+                    color: isDark ? AppColors.grey300 : AppColors.navyBlue,
+                  ),
+                  onPressed: () {
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -723,10 +797,12 @@ class _DesktopShellState extends State<DesktopShell> {
     // Sourcing / Admin specific routes
     if (location.endsWith('/learning')) return 'Learning Center';
     if (location.endsWith('/add_candidate')) return 'Add Candidate';
+    if (location.endsWith('/add_client')) return 'Add Client';
     if (location.endsWith('/candidates/ready')) return 'Ready to Place';
     if (location.endsWith('/candidates/new')) return 'Newly Added';
-    if (location.endsWith('/candidates/verification'))
+    if (location.endsWith('/candidates/verification')) {
       return 'Verification Pending';
+    }
     if (location.endsWith('/candidates/medical')) return 'Medical Pending';
     if (location.endsWith('/candidates/hired')) return 'Hired Candidates';
     if (location.endsWith('/candidates/blacklisted')) {
@@ -737,6 +813,9 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location.endsWith('/candidates')) return 'Candidate Directory';
     if (location.contains('/candidates/')) return 'Candidate Profile';
     if (location.endsWith('/clients')) return 'Clients';
+    if (location.endsWith('/clients/new')) return 'New Inquiries';
+    if (location.endsWith('/clients/followup')) return 'Follow Ups';
+    if (location.endsWith('/clients/active')) return 'Converted (Active)';
     if (location.contains('/clients/')) return 'Client Profile';
     if (location.endsWith('/contracts')) return 'Contracts';
     if (location.endsWith('/tickets')) return 'Tickets';
