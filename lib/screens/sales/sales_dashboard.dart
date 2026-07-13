@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/theme/app_colors.dart';
@@ -33,27 +32,140 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final isTablet = width > 700;
 
     // Filter data for Sales user
-    final myClients = state.currentUser?.role == UserRole.sales
-        ? state.clients.where((c) => c.assignedEmployeeId == '2').toList()
-        : state.clients;
+    final myClients =
+        state.currentUser?.role == UserRole.sales
+            ? state.clients.where((c) => c.assignedEmployeeId == '2').toList()
+            : state.clients;
 
-    final myContracts = state.currentUser?.role == UserRole.sales
-        ? state.contracts.where((c) => c.createdBy == 'Priya Mehta').toList()
-        : state.contracts;
+    final myContracts =
+        state.currentUser?.role == UserRole.sales
+            ? state.contracts
+                .where((c) => c.createdBy == 'Priya Mehta')
+                .toList()
+            : state.contracts;
 
     // Pipeline Stats
-    final newInquiries = myClients.where((c) => c.status == ClientStatus.newInquiry).length;
-    final followUps = myClients.where((c) => c.status == ClientStatus.followUp).length;
-    final negotiating = 0; // Assuming we use followUps or define a negotiating stage later
-    final converted = myClients.where((c) => c.status == ClientStatus.converted || c.status == ClientStatus.active).length;
+    final newInquiries =
+        myClients.where((c) => c.status == ClientStatus.newInquiry).length;
+    final followUps =
+        myClients.where((c) => c.status == ClientStatus.followUp).length;
+    final negotiating =
+        0; // Assuming we use followUps or define a negotiating stage later
+    final converted =
+        myClients
+            .where(
+              (c) =>
+                  c.status == ClientStatus.converted ||
+                  c.status == ClientStatus.active,
+            )
+            .length;
     final totalPipeline = newInquiries + followUps + negotiating;
 
     // Other Stats
-    final activeContracts = myContracts.where((c) => c.contractStatus == ContractStatus.active).length;
-    final slaCountdowns = myContracts.where((c) => c.isGuaranteeActive && c.daysRemainingInGuarantee < 30).length;
-    final monthlyRevenue = myContracts
-        .where((c) => c.placementDate.month == DateTime.now().month)
+    final now = DateTime.now();
+    final currentMonth = now.month;
+    final currentYear = now.year;
+
+    final lastMonthDate = DateTime(now.year, now.month - 1, 1);
+    final lastMonth = lastMonthDate.month;
+    final lastMonthYear = lastMonthDate.year;
+
+    final slaCountdowns =
+        myContracts
+            .where(
+              (c) => c.isGuaranteeActive && c.daysRemainingInGuarantee < 30,
+            )
+            .length;
+
+    final currentMonthRevenue = myContracts
+        .where(
+          (c) =>
+              c.placementDate.month == currentMonth &&
+              c.placementDate.year == currentYear,
+        )
         .fold<double>(0, (sum, c) => sum + c.amountPaid);
+
+    final lastMonthRevenue = myContracts
+        .where(
+          (c) =>
+              c.placementDate.month == lastMonth &&
+              c.placementDate.year == lastMonthYear,
+        )
+        .fold<double>(0, (sum, c) => sum + c.amountPaid);
+
+    final currentMonthClosed =
+        myContracts
+            .where(
+              (c) =>
+                  c.placementDate.month == currentMonth &&
+                  c.placementDate.year == currentYear,
+            )
+            .length;
+
+    final lastMonthClosed =
+        myContracts
+            .where(
+              (c) =>
+                  c.placementDate.month == lastMonth &&
+                  c.placementDate.year == lastMonthYear,
+            )
+            .length;
+
+    // Additional Stats calculations
+    final currentMonthInquiries =
+        myClients
+            .where(
+              (c) =>
+                  c.inquiryDate.month == currentMonth &&
+                  c.inquiryDate.year == currentYear,
+            )
+            .length;
+    final lastMonthInquiries =
+        myClients
+            .where(
+              (c) =>
+                  c.inquiryDate.month == lastMonth &&
+                  c.inquiryDate.year == lastMonthYear,
+            )
+            .length;
+
+    final currentConversionRate =
+        currentMonthInquiries > 0
+            ? ((currentMonthClosed / currentMonthInquiries) * 100)
+            : 0.0;
+    final lastConversionRate =
+        lastMonthInquiries > 0
+            ? ((lastMonthClosed / lastMonthInquiries) * 100)
+            : 0.0;
+
+    final currentAvgDeal =
+        currentMonthClosed > 0
+            ? (currentMonthRevenue / currentMonthClosed)
+            : 0.0;
+    final lastAvgDeal =
+        lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
+
+    final followUpClients =
+        myClients.where((c) => c.status == ClientStatus.followUp).toList()
+          ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
+
+    final recentWins = List<ContractModel>.from(myContracts)
+      ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
+    final topWins = recentWins.take(5).toList();
+
+    // Top Categories
+    final categoryCounts = <String, int>{};
+    for (var client in myClients.where(
+      (c) =>
+          c.status == ClientStatus.converted || c.status == ClientStatus.active,
+    )) {
+      categoryCounts[client.preferredCandidateCategory] =
+          (categoryCounts[client.preferredCandidateCategory] ?? 0) + 1;
+    }
+    final sortedCategories =
+        categoryCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+    final topCategories = sortedCategories.take(4).toList();
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -82,9 +194,28 @@ class _SalesDashboardState extends State<SalesDashboard> {
               color: isDark ? AppColors.darkSurface : AppColors.white,
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: isTablet
-                    ? Row(children: _buildPipelineSteps(isDark, true, newInquiries, followUps, converted, totalPipeline))
-                    : Column(children: _buildPipelineSteps(isDark, false, newInquiries, followUps, converted, totalPipeline)),
+                child:
+                    isTablet
+                        ? Row(
+                          children: _buildPipelineSteps(
+                            isDark,
+                            true,
+                            newInquiries,
+                            followUps,
+                            converted,
+                            totalPipeline,
+                          ),
+                        )
+                        : Column(
+                          children: _buildPipelineSteps(
+                            isDark,
+                            false,
+                            newInquiries,
+                            followUps,
+                            converted,
+                            totalPipeline,
+                          ),
+                        ),
               ),
             ),
             const SizedBox(height: 24),
@@ -94,32 +225,53 @@ class _SalesDashboardState extends State<SalesDashboard> {
               builder: (context, constraints) {
                 final isDesktop = constraints.maxWidth > 900;
                 final isTablet = constraints.maxWidth > 600 && !isDesktop;
-                
+
                 final revenueCard = _buildStatCard(
                   icon: Icons.currency_rupee,
                   iconColor: AppColors.gold,
                   title: 'Monthly Revenue',
-                  value: '₹${_indianFormat.format(monthlyRevenue)}',
+                  value: '₹${_indianFormat.format(currentMonthRevenue)}',
                   isDark: isDark,
-                  subtitle: 'Generated this month',
+                  subtitle:
+                      'Last month: ₹${_indianFormat.format(lastMonthRevenue)}',
                 );
 
                 final contractsCard = _buildStatCard(
-                  icon: Icons.description_outlined,
+                  icon: Icons.handshake_outlined,
                   iconColor: AppColors.successGreen,
-                  title: 'Active Contracts',
-                  value: _indianFormat.format(activeContracts),
+                  title: 'Closed Contracts',
+                  value: _indianFormat.format(currentMonthClosed),
                   isDark: isDark,
-                  subtitle: 'Currently running',
+                  subtitle:
+                      'Last month: ${_indianFormat.format(lastMonthClosed)}',
                 );
 
                 final slaCard = _buildStatCard(
                   icon: Icons.timer_outlined,
                   iconColor: AppColors.urgentAmber,
-                  title: 'Expiring Guarantees',
+                  title: 'Expiring Contracts',
                   value: _indianFormat.format(slaCountdowns),
                   isDark: isDark,
-                  subtitle: '< 30 days left',
+                  subtitle: '< 1 month left',
+                );
+
+                final conversionCard = _buildStatCard(
+                  icon: Icons.trending_up,
+                  iconColor: AppColors.infoBlue,
+                  title: 'Conversion Rate',
+                  value: '${currentConversionRate.toStringAsFixed(1)}%',
+                  isDark: isDark,
+                  subtitle:
+                      'Last month: ${lastConversionRate.toStringAsFixed(1)}%',
+                );
+
+                final avgDealCard = _buildStatCard(
+                  icon: Icons.monetization_on_outlined,
+                  iconColor: AppColors.successGreen,
+                  title: 'Avg Deal Value',
+                  value: '₹${_indianFormat.format(currentAvgDeal)}',
+                  isDark: isDark,
+                  subtitle: 'Last month: ₹${_indianFormat.format(lastAvgDeal)}',
                 );
 
                 if (isDesktop) {
@@ -129,7 +281,9 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       const SizedBox(width: 16),
                       Expanded(child: contractsCard),
                       const SizedBox(width: 16),
-                      Expanded(child: slaCard),
+                      Expanded(child: conversionCard),
+                      const SizedBox(width: 16),
+                      Expanded(child: avgDealCard),
                     ],
                   );
                 } else if (isTablet) {
@@ -143,7 +297,13 @@ class _SalesDashboardState extends State<SalesDashboard> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      slaCard,
+                      Row(
+                        children: [
+                          Expanded(child: conversionCard),
+                          const SizedBox(width: 16),
+                          Expanded(child: avgDealCard),
+                        ],
+                      ),
                     ],
                   );
                 } else {
@@ -153,7 +313,9 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       const SizedBox(height: 16),
                       contractsCard,
                       const SizedBox(height: 16),
-                      slaCard,
+                      conversionCard,
+                      const SizedBox(height: 16),
+                      avgDealCard,
                     ],
                   );
                 }
@@ -161,20 +323,42 @@ class _SalesDashboardState extends State<SalesDashboard> {
             ),
             const SizedBox(height: 32),
 
-            // Main Content Area: Recent Inquiries Table
-            Text(
-              'Recent Inquiries',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
+            // Two Column Layout
+            if (isDesktop)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: _buildFollowUpList(context, followUpClients, isDark),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      children: [
+                        _buildRecentWins(context, topWins, isDark),
+                        const SizedBox(height: 24),
+                        _buildTopCategories(context, topCategories, isDark),
+                        const SizedBox(height: 24),
+                        _buildUpcomingRenewals(context, myContracts, isDark),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  _buildFollowUpList(context, followUpClients, isDark),
+                  const SizedBox(height: 24),
+                  _buildRecentWins(context, topWins, isDark),
+                  const SizedBox(height: 24),
+                  _buildTopCategories(context, topCategories, isDark),
+                  const SizedBox(height: 24),
+                  _buildUpcomingRenewals(context, myContracts, isDark),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            _RecentInquiriesTable(clients: myClients),
-            
-            const SizedBox(height: 32),
-            _buildUpcomingRenewals(context, myContracts, isDark),
           ],
         ),
       ),
@@ -207,7 +391,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
       _PipelineStep(
         title: 'Converted',
         count: converted,
-        total: totalPipeline > 0 ? totalPipeline : 1, // Avoid div/0 but keep logic simple
+        total:
+            totalPipeline > 0
+                ? totalPipeline
+                : 1, // Avoid div/0 but keep logic simple
         color: AppColors.successGreen,
         icon: Icons.handshake,
       ),
@@ -226,21 +413,21 @@ class _SalesDashboardState extends State<SalesDashboard> {
         children.add(
           isHorizontal
               ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Icon(
-                    Icons.arrow_forward_ios,
-                    color: isDark ? AppColors.grey700 : AppColors.grey300,
-                    size: 20,
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Icon(
-                    Icons.arrow_downward,
-                    color: isDark ? AppColors.grey700 : AppColors.grey300,
-                    size: 20,
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  color: isDark ? AppColors.grey700 : AppColors.grey300,
+                  size: 20,
                 ),
+              )
+              : Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Icon(
+                  Icons.arrow_downward,
+                  color: isDark ? AppColors.grey700 : AppColors.grey300,
+                  size: 20,
+                ),
+              ),
         );
       }
     }
@@ -302,7 +489,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: percentage,
-              backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey200,
+              backgroundColor:
+                  isDark ? AppColors.darkSurfaceVariant : AppColors.grey200,
               valueColor: AlwaysStoppedAnimation<Color>(step.color),
               minHeight: 6,
             ),
@@ -373,7 +561,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                         color: isDark ? AppColors.grey500 : AppColors.grey500,
                       ),
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),
@@ -388,12 +576,17 @@ class _SalesDashboardState extends State<SalesDashboard> {
     List<ContractModel> myContracts,
     bool isDark,
   ) {
-    final upcomingRenewals = myContracts.where((c) {
-      if (c.contractStatus != ContractStatus.active) return false;
-      final expiryDate = DateTime(c.placementDate.year, c.placementDate.month + 11, c.placementDate.day);
-      final daysToExpiry = expiryDate.difference(DateTime.now()).inDays;
-      return daysToExpiry >= 0 && daysToExpiry <= 30;
-    }).toList();
+    final upcomingRenewals =
+        myContracts.where((c) {
+          if (c.contractStatus != ContractStatus.active) return false;
+          final expiryDate = DateTime(
+            c.placementDate.year,
+            c.placementDate.month + 11,
+            c.placementDate.day,
+          );
+          final daysToExpiry = expiryDate.difference(DateTime.now()).inDays;
+          return daysToExpiry >= 0 && daysToExpiry <= 30;
+        }).toList();
 
     if (upcomingRenewals.isEmpty) return const SizedBox.shrink();
 
@@ -402,7 +595,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
       children: [
         Row(
           children: [
-            const Icon(Icons.event_busy, color: AppColors.urgentAmber, size: 20),
+            const Icon(
+              Icons.event_busy,
+              color: AppColors.urgentAmber,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               'Upcoming Renewals (30 Days)',
@@ -437,7 +634,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
           itemCount: upcomingRenewals.length,
           itemBuilder: (context, index) {
             final contract = upcomingRenewals[index];
-            final expiryDate = DateTime(contract.placementDate.year, contract.placementDate.month + 11, contract.placementDate.day);
+            final expiryDate = DateTime(
+              contract.placementDate.year,
+              contract.placementDate.month + 11,
+              contract.placementDate.day,
+            );
             final daysLeft = expiryDate.difference(DateTime.now()).inDays;
 
             return Card(
@@ -445,19 +646,27 @@ class _SalesDashboardState extends State<SalesDashboard> {
               margin: const EdgeInsets.only(bottom: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+                side: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
               ),
               color: isDark ? AppColors.darkSurface : AppColors.white,
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: AppColors.urgentAmber.withValues(alpha: 0.1),
-                  child: const Icon(Icons.warning_amber_rounded, color: AppColors.urgentAmber, size: 20),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.urgentAmber,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   contract.clientName,
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text('Candidate: ${contract.candidateName} • Expires in $daysLeft days'),
+                subtitle: Text(
+                  'Candidate: ${contract.candidateName} • Expires in $daysLeft days',
+                ),
                 trailing: TextButton(
                   onPressed: () {},
                   child: const Text('Follow Up'),
@@ -465,6 +674,281 @@ class _SalesDashboardState extends State<SalesDashboard> {
               ),
             );
           },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFollowUpList(
+    BuildContext context,
+    List<ClientModel> followUps,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.phone_in_talk_outlined,
+              color: AppColors.warningOrange,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Actionable Follow-Ups',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (followUps.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.dividerDark : AppColors.grey200,
+              ),
+            ),
+            child: const Center(child: Text('No pending follow-ups!')),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: followUps.length > 5 ? 5 : followUps.length,
+            itemBuilder: (context, index) {
+              final client = followUps[index];
+              return Card(
+                elevation: 0,
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  ),
+                ),
+                color: isDark ? AppColors.darkSurface : AppColors.white,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.warningOrange.withValues(
+                      alpha: 0.1,
+                    ),
+                    child: const Icon(
+                      Icons.person_outline,
+                      color: AppColors.warningOrange,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    client.fullName,
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    '${client.preferredCandidateCategory} • ${client.budgetRange}',
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.phone_forwarded),
+                    color: AppColors.successGreen,
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecentWins(
+    BuildContext context,
+    List<ContractModel> wins,
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.emoji_events_outlined,
+              color: AppColors.gold,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Recent Wins',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (wins.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.dividerDark : AppColors.grey200,
+              ),
+            ),
+            child: const Center(child: Text('No recent wins yet.')),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: wins.length,
+            itemBuilder: (context, index) {
+              final win = wins[index];
+              final dateStr = DateFormat('MMM dd').format(win.placementDate);
+              return Card(
+                elevation: 0,
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  ),
+                ),
+                color: isDark ? AppColors.darkSurface : AppColors.white,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.successGreen.withValues(
+                      alpha: 0.1,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.successGreen,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    win.clientName,
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text('${win.candidateName} • $dateStr'),
+                  trailing: Text(
+                    '₹${NumberFormat('#,##,###').format(win.serviceFee)}',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.successGreen,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTopCategories(
+    BuildContext context,
+    List<MapEntry<String, int>> categories,
+    bool isDark,
+  ) {
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    final maxCount = categories.isNotEmpty ? categories.first.value : 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.pie_chart_outline,
+              color: AppColors.infoBlue,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Top Driving Categories',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? AppColors.dividerDark : AppColors.grey200,
+            ),
+          ),
+          child: Column(
+            children:
+                categories.map((entry) {
+                  final double percentage = entry.value / maxCount;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              entry.key,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    isDark
+                                        ? AppColors.white
+                                        : AppColors.navyBlue,
+                              ),
+                            ),
+                            Text(
+                              '${entry.value} closed',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color:
+                                    isDark
+                                        ? AppColors.grey400
+                                        : AppColors.grey600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: percentage,
+                            minHeight: 8,
+                            backgroundColor:
+                                isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.grey100,
+                            color: AppColors.infoBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
         ),
       ],
     );
@@ -485,299 +969,4 @@ class _PipelineStep {
     required this.color,
     required this.icon,
   });
-}
-
-// ---------------------------------------------------------
-// RECENT INQUIRIES TABLE
-// ---------------------------------------------------------
-
-class _RecentInquiriesTable extends StatefulWidget {
-  final List<ClientModel> clients;
-  const _RecentInquiriesTable({required this.clients});
-
-  @override
-  State<_RecentInquiriesTable> createState() => _RecentInquiriesTableState();
-}
-
-class _RecentInquiriesTableState extends State<_RecentInquiriesTable> {
-  String _searchQuery = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Sort descending by inquiry date (newest first)
-    final sortedClients = List<ClientModel>.from(widget.clients)
-      ..sort((a, b) => b.inquiryDate.compareTo(a.inquiryDate));
-
-    // Filter logic
-    final filtered = sortedClients.where((c) {
-      if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        if (!c.fullName.toLowerCase().contains(query) &&
-            !c.phone.contains(query) &&
-            !c.city.toLowerCase().contains(query)) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
-      ),
-      color: isDark ? AppColors.darkSurface : AppColors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header & Search
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search clients by name, phone, or location...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppColors.grey500,
-                      ),
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      isDense: true,
-                    ),
-                    onChanged: (val) {
-                      setState(() {
-                        _searchQuery = val;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.filter_list, size: 18),
-                  label: const Text('Filter'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    side: BorderSide(
-                      color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Data Table
-          SizedBox(
-            width: double.infinity,
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                cardColor: Colors.transparent,
-                dividerColor: isDark ? AppColors.dividerDark : AppColors.grey200,
-              ),
-              child: PaginatedDataTable(
-                columns: const [
-                  DataColumn(label: Text('Client Info')),
-                  DataColumn(label: Text('Requirement')),
-                  DataColumn(label: Text('Status')),
-                  DataColumn(label: Text('Inquiry Date')),
-                  DataColumn(label: Text('Actions')),
-                ],
-                source: _ClientDataSource(
-                  clients: filtered,
-                  context: context,
-                  isDark: isDark,
-                ),
-                rowsPerPage: filtered.length > 5 ? 5 : (filtered.isEmpty ? 1 : filtered.length),
-                columnSpacing: 24,
-                horizontalMargin: 24,
-                showCheckboxColumn: false,
-                headingRowHeight: 56,
-                dataRowMinHeight: 72,
-                dataRowMaxHeight: 72,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClientDataSource extends DataTableSource {
-  final List<ClientModel> clients;
-  final BuildContext context;
-  final bool isDark;
-
-  _ClientDataSource({
-    required this.clients,
-    required this.context,
-    required this.isDark,
-  });
-
-  Color _getStatusColor(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.newInquiry:
-        return AppColors.standardBlue;
-      case ClientStatus.followUp:
-        return AppColors.urgentAmber;
-      case ClientStatus.converted:
-      case ClientStatus.active:
-        return AppColors.successGreen;
-      case ClientStatus.noResponse:
-      case ClientStatus.notInterested:
-      case ClientStatus.churned:
-        return AppColors.criticalRed;
-    }
-  }
-
-  String _getStatusDisplay(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.newInquiry: return 'New';
-      case ClientStatus.followUp: return 'Follow Up';
-      case ClientStatus.converted: return 'Converted';
-      case ClientStatus.active: return 'Active';
-      case ClientStatus.noResponse: return 'No Response';
-      case ClientStatus.notInterested: return 'Not Interested';
-      case ClientStatus.churned: return 'Churned';
-    }
-  }
-
-  @override
-  DataRow? getRow(int index) {
-    if (index >= clients.length) return null;
-    final client = clients[index];
-    final statusColor = _getStatusColor(client.status);
-
-    return DataRow(
-      cells: [
-        DataCell(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                client.fullName,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: isDark ? AppColors.white : AppColors.navyBlue,
-                ),
-              ),
-              Text(
-                '${client.locality}, ${client.city}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: isDark ? AppColors.grey400 : AppColors.grey600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        DataCell(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                client.preferredCandidateCategory,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                  color: isDark ? AppColors.grey300 : AppColors.grey800,
-                ),
-              ),
-              Text(
-                client.budgetRange,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: isDark ? AppColors.grey400 : AppColors.grey600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              _getStatusDisplay(client.status),
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
-              ),
-            ),
-          ),
-        ),
-        DataCell(
-          Text(
-            DateFormat('dd MMM yyyy').format(client.inquiryDate),
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: isDark ? AppColors.grey300 : AppColors.grey700,
-            ),
-          ),
-        ),
-        DataCell(
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_red_eye_outlined, size: 20),
-                tooltip: 'View Profile',
-                color: AppColors.standardBlue,
-                onPressed: () {
-                  context.go('/sales/clients/${client.id}');
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.phone_outlined, size: 20),
-                tooltip: 'Call',
-                color: AppColors.successGreen,
-                onPressed: () {
-                  // Integration logic here
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  bool get isRowCountApproximate => false;
-
-  @override
-  int get rowCount => clients.length;
-
-  @override
-  int get selectedRowCount => 0;
 }

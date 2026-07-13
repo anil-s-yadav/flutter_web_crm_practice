@@ -165,7 +165,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                   width: 200,
                   height: 38,
                   child: DropdownButtonFormField<ContractStatus?>(
-                    value: _selectedStatus,
+                    initialValue: _selectedStatus,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,

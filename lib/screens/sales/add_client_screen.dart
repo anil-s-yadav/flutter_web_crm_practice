@@ -242,7 +242,9 @@ class _AddClientScreenState extends State<AddClientScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(
                             color:
-                                isDark ? AppColors.dividerDark : AppColors.grey300,
+                                isDark
+                                    ? AppColors.dividerDark
+                                    : AppColors.grey300,
                           ),
                         ),
                         child: Text(_currentStep == 0 ? 'Cancel' : 'Back'),
@@ -256,7 +258,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
               Step(
                 title: const Text('Basic Info'),
                 isActive: _currentStep >= 0,
-                state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                state:
+                    _currentStep > 0 ? StepState.complete : StepState.indexed,
                 content: Form(
                   key: _formKey1,
                   child: Column(
@@ -291,7 +294,9 @@ class _AddClientScreenState extends State<AddClientScreen> {
                         isDark: isDark,
                         validator: (v) {
                           if (v == null || v.isEmpty) return null;
-                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          final emailRegex = RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          );
                           if (!emailRegex.hasMatch(v)) {
                             return 'Enter a valid email address';
                           }
@@ -308,7 +313,10 @@ class _AddClientScreenState extends State<AddClientScreen> {
                               icon: Icons.location_city_outlined,
                               isDark: isDark,
                               validator:
-                                  (v) => v == null || v.isEmpty ? 'Required' : null,
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Required'
+                                          : null,
                               onSaved: (v) => _locality = v!,
                             ),
                           ),
@@ -339,7 +347,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
               Step(
                 title: const Text('Household Details'),
                 isActive: _currentStep >= 1,
-                state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                state:
+                    _currentStep > 1 ? StepState.complete : StepState.indexed,
                 content: Form(
                   key: _formKey2,
                   child: Column(
@@ -385,7 +394,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
                               label: 'Family Size',
                               value: _familySize,
                               items: [1, 2, 3, 4, 5, 6, 7, 8],
-                              onChanged: (v) => setState(() => _familySize = v!),
+                              onChanged:
+                                  (v) => setState(() => _familySize = v!),
                               isDark: isDark,
                             ),
                           ),
@@ -471,7 +481,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
                                 label: Text(c),
                                 selected: selected,
                                 onSelected: (val) {
-                                  if (val) setState(() => _preferredCategory = c);
+                                  if (val)
+                                    setState(() => _preferredCategory = c);
                                 },
                                 selectedColor: AppColors.navyBlue,
                                 labelStyle: TextStyle(
@@ -583,7 +594,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
     required bool isDark,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(

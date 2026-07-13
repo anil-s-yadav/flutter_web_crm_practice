@@ -203,7 +203,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     width: 200,
                     height: 38,
                     child: DropdownButtonFormField<ClientStatus?>(
-                      value: _selectedStatus,
+                      initialValue: _selectedStatus,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,

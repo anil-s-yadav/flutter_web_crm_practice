@@ -212,7 +212,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   width: 160,
                   height: 38,
                   child: DropdownButtonFormField<TicketPriority?>(
-                    value: _selectedPriority,
+                    initialValue: _selectedPriority,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -263,7 +263,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   width: 160,
                   height: 38,
                   child: DropdownButtonFormField<TicketStatus?>(
-                    value: _selectedStatus,
+                    initialValue: _selectedStatus,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
