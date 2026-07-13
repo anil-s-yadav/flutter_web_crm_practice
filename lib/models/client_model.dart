@@ -1,39 +1,35 @@
 import 'dart:convert';
 
 enum ClientStatus {
-  newInquiry,
   followUp,
-  noResponse,
+  interested,
   notInterested,
   converted,
-  active,
-  churned
 }
 
 extension ClientStatusExtension on ClientStatus {
   String get displayName {
     switch (this) {
-      case ClientStatus.newInquiry:
-        return 'New Inquiry';
       case ClientStatus.followUp:
         return 'Follow Up';
-      case ClientStatus.noResponse:
-        return 'No Response';
+      case ClientStatus.interested:
+        return 'Interested';
       case ClientStatus.notInterested:
         return 'Not Interested';
       case ClientStatus.converted:
-        return 'Converted';
-      case ClientStatus.active:
-        return 'Active';
-      case ClientStatus.churned:
-        return 'Churned';
+        return 'Converted (Active)';
     }
   }
 
   static ClientStatus fromString(String value) {
+    // Handling legacy statuses from mock data just in case
+    if (value == 'newInquiry') return ClientStatus.followUp;
+    if (value == 'noResponse') return ClientStatus.notInterested;
+    if (value == 'active' || value == 'churned') return ClientStatus.converted;
+
     return ClientStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => ClientStatus.newInquiry
+      orElse: () => ClientStatus.followUp
     );
   }
 }

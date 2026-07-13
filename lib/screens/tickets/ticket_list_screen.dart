@@ -6,12 +6,10 @@ import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/core/debouncer.dart';
 import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/core/pagination.dart';
-import 'package:practice_app/core/paginated_state.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/screens/tickets/ticket_data_source.dart';
-import 'package:go_router/go_router.dart';
 
 class TicketListScreen extends StatefulWidget {
   const TicketListScreen({super.key});

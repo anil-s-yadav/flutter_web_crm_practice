@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
@@ -11,10 +12,17 @@ import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
 import 'package:provider/provider.dart';
 
-class ClientProfileScreen extends StatelessWidget {
+class ClientProfileScreen extends StatefulWidget {
   final String clientId;
 
   const ClientProfileScreen({super.key, required this.clientId});
+
+  @override
+  State<ClientProfileScreen> createState() => _ClientProfileScreenState();
+}
+
+class _ClientProfileScreenState extends State<ClientProfileScreen> {
+  int _activeTabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +34,7 @@ class ClientProfileScreen extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final client = state.getClient(clientId);
+    final client = state.getClient(widget.clientId);
     if (client == null) {
       return const Center(child: Text('Client not found'));
     }
@@ -44,88 +52,130 @@ class ClientProfileScreen extends StatelessWidget {
             )
             .toList();
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        body: Column(
-          children: [
-            TabBar(
-              labelColor: AppColors.gold,
-              unselectedLabelColor:
-                  isDark ? AppColors.grey400 : AppColors.grey600,
-              indicatorColor: AppColors.gold,
-              tabs: const [
-                Tab(text: 'Details'),
-                Tab(text: 'Candidates & Contracts'),
-                Tab(text: 'Documents'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // Details Tab
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildClientHeader(client, isDark),
-                      const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Column(
-                              children: [_buildRequirements(client, isDark)],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            flex: 2,
-                            child: Column(
-                              children: [_buildClientDetails(client, isDark)],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+    final tabs = ['Details', 'Candidates & Contracts', 'Documents'];
 
-                  // Candidates & Contracts Tab
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (contract != null && candidate != null) ...[
-                        _buildActiveContractCard(
-                          context,
-                          contract,
-                          candidate,
-                          isDark,
+    return Scaffold(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(tabs.length, (index) {
+                  final isSelected = _activeTabIndex == index;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(
+                        tabs[index],
+                        style: GoogleFonts.poppins(
+                          color:
+                              isSelected
+                                  ? AppColors.navyBlue
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
-                        const SizedBox(height: 16),
-                        _buildContractActions(context, contract, isDark),
-                      ] else ...[
-                        _buildEmptyContractState(context, client, isDark),
-                      ],
-                      const SizedBox(height: 32),
-                      AuditLogWidget(
-                        logs: relevantLogs,
-                        title: 'Client & Contract History',
                       ),
-                    ],
-                  ),
-
-                  // Documents Tab
-                  _buildDocumentsTab(isDark),
-                ],
+                      selected: isSelected,
+                      selectedColor: AppColors.gold,
+                      backgroundColor:
+                          isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.white,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (selected) {
+                        setState(() {
+                          _activeTabIndex = index;
+                        });
+                      },
+                    ),
+                  );
+                }),
               ),
             ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: _buildActiveTabContent(
+                client,
+                contract,
+                candidate,
+                relevantLogs,
+                isDark,
+                context,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildClientHeader(ClientModel client, bool isDark) {
+  Widget _buildActiveTabContent(
+    ClientModel client,
+    ContractModel? contract,
+    CandidateModel? candidate,
+    List<AuditLogModel> relevantLogs,
+    bool isDark,
+    BuildContext context,
+  ) {
+    if (_activeTabIndex == 0) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildClientHeader(context, client, isDark),
+          const SizedBox(height: 16),
+          _buildUnifiedDetailsCard(context, client, isDark),
+        ],
+      );
+    } else if (_activeTabIndex == 1) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (contract != null && candidate != null) ...[
+            _buildActiveContractCard(context, contract, candidate, isDark),
+            const SizedBox(height: 16),
+            _buildContractActions(context, contract, isDark),
+          ] else ...[
+            _buildEmptyContractState(context, client, isDark),
+          ],
+          const SizedBox(height: 32),
+          AuditLogWidget(
+            logs: relevantLogs,
+            title: 'Client & Contract History',
+          ),
+        ],
+      );
+    } else {
+      return _buildDocumentsTab(client, contract, candidate, isDark);
+    }
+  }
+
+  Widget _buildClientHeader(BuildContext context, ClientModel client, bool isDark) {
+    ClientStatus? nextStatus;
+    String promoteText = '';
+    if (client.status == ClientStatus.followUp) {
+      nextStatus = ClientStatus.interested;
+      promoteText = 'Promote to Interested';
+    } else if (client.status == ClientStatus.interested) {
+      nextStatus = ClientStatus.converted;
+      promoteText = 'Promote to Converted';
+    } else if (client.status == ClientStatus.notInterested) {
+      nextStatus = ClientStatus.followUp;
+      promoteText = 'Reactivate to Follow Up';
+    }
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -184,65 +234,165 @@ class ClientProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            if (nextStatus != null)
+              ElevatedButton.icon(
+                onPressed: () {
+                  final state = Provider.of<GlobalAppState>(context, listen: false);
+                  state.updateClient(client.copyWith(status: nextStatus));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Client promoted to ${nextStatus!.displayName}'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.arrow_upward, size: 18),
+                label: Text(promoteText),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRequirements(ClientModel client, bool isDark) {
-    return _buildSectionCard('Service Requirements', isDark, [
-      _infoRow('Looking For', client.preferredCandidateCategory, isDark),
-      _infoRow('Budget', client.budgetRange, isDark),
-      const SizedBox(height: 8),
-      Text(
-        'Required Skills:',
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: isDark ? AppColors.grey400 : AppColors.grey600,
+  Widget _buildUnifiedDetailsCard(BuildContext context, ClientModel client, bool isDark) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
         ),
       ),
-      const SizedBox(height: 6),
-      Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children:
-            client.requiredSkills
-                .map(
-                  (s) => Chip(
-                    label: Text(s),
-                    labelStyle: GoogleFonts.poppins(fontSize: 11),
-                    backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
-                    side: BorderSide.none,
-                    visualDensity: VisualDensity.compact,
+      color: isDark ? AppColors.darkSurface : AppColors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // NOTES SECTION
+            Row(
+              children: [
+                const Icon(Icons.notes, color: AppColors.gold, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Detailed Notes',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
                   ),
-                )
-                .toList(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(8),
+                border: const Border(left: BorderSide(color: AppColors.gold, width: 4)),
+              ),
+              child: Text(
+                (client.remarks == null || client.remarks!.isEmpty)
+                    ? 'No notes available.'
+                    : client.remarks!,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isDark ? AppColors.grey300 : AppColors.grey700,
+                  height: 1.6,
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Divider(height: 1, color: isDark ? AppColors.dividerDark : AppColors.grey200),
+            const SizedBox(height: 32),
+            // TWO COLUMNS: REQUIREMENTS AND DETAILS
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Column 1: Service Requirements
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment_outlined, size: 20, color: AppColors.gold),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Service Requirements',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.white : AppColors.navyBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _infoRow('Looking For', client.preferredCandidateCategory, isDark),
+                      _infoRow('Budget', client.budgetRange, isDark),
+                      _infoRow('Source', client.source, isDark),
+                      _infoRow('Inquiry Date', DateFormat('dd MMM yyyy').format(client.inquiryDate), isDark),
+                      if (client.assignedEmployeeId != null) 
+                        _infoRow('Sales Rep ID', client.assignedEmployeeId!, isDark),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 32),
+                Container(
+                  width: 1,
+                  height: 250, // Line separator
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+                const SizedBox(width: 32),
+                // Column 2: Household Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.home_outlined, size: 20, color: AppColors.gold),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Household & Contact Details',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.white : AppColors.navyBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _infoRow('House Type', client.houseType, isDark),
+                      _infoRow('Family Size', '${client.familySize} Members', isDark),
+                      _infoRow('Has Children', client.hasChildren ? 'Yes (${client.childrenCount})' : 'No', isDark),
+                      _infoRow('Has Elderly', client.hasElderlyMembers ? 'Yes' : 'No', isDark),
+                      _infoRow('Has Pets', client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No', isDark),
+                      const SizedBox(height: 12),
+                      _infoRow('Address', '${client.address}, ${client.locality}, ${client.city}', isDark),
+                      const SizedBox(height: 12),
+                      _infoRow('Phone', client.phone, isDark),
+                      if (client.altPhone != null && client.altPhone!.isNotEmpty)
+                        _infoRow('Alt Phone', client.altPhone!, isDark),
+                      _infoRow('Email', client.email, isDark),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ]);
-  }
-
-  Widget _buildClientDetails(ClientModel client, bool isDark) {
-    return _buildSectionCard('Household Details', isDark, [
-      _infoRow('House Type', client.houseType, isDark),
-      _infoRow('Family Size', '${client.familySize} Members', isDark),
-      _infoRow(
-        'Has Children',
-        client.hasChildren ? 'Yes (${client.childrenCount})' : 'No',
-        isDark,
-      ),
-      _infoRow('Has Elderly', client.hasElderlyMembers ? 'Yes' : 'No', isDark),
-      _infoRow(
-        'Has Pets',
-        client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No',
-        isDark,
-      ),
-      const Divider(height: 24),
-      _infoRow('Phone', client.phone, isDark),
-      _infoRow('Email', client.email, isDark),
-      _infoRow('Source', client.source, isDark),
-    ]);
+    );
   }
 
   Widget _buildActiveContractCard(
@@ -285,115 +435,111 @@ class ClientProfileScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
-                child: const Icon(Icons.person, color: AppColors.gold),
+            const SizedBox(height: 16),
+            Text('Candidate Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(8),
               ),
-              title: Row(
+              child: Column(
                 children: [
-                  Text(
-                    candidate.fullName,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundImage: candidate.photoUrl.isNotEmpty ? NetworkImage(candidate.photoUrl) : null,
+                        child: candidate.photoUrl.isEmpty ? const Icon(Icons.person) : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(candidate.fullName, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                            Text('${candidate.category} • ${candidate.experienceYears} yrs exp', style: GoogleFonts.poppins(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new, size: 20),
+                        onPressed: () => context.go('/sales/candidates/${candidate.id}'),
+                        tooltip: 'View Candidate Profile',
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  if (candidate.isMedicalCleared)
-                    _buildBadge('Medical Checked', AppColors.successGreen)
-                  else
-                    _buildBadge('No Medical', AppColors.urgentAmber),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: _infoRow('Age', '${candidate.age} yrs', isDark)),
+                      Expanded(child: _infoRow('Religion', candidate.religion, isDark)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: _infoRow('Salary', candidate.expectedSalary, isDark)),
+                      Expanded(child: _infoRow('Hours', '${candidate.workingHoursPerDay} hrs/day', isDark)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: _infoRow('Languages', candidate.languages.join(', '), isDark)),
+                      Expanded(child: _infoRow('Medical', candidate.isMedicalCleared ? 'Cleared' : 'Pending', isDark)),
+                    ],
+                  ),
                 ],
               ),
-              subtitle: Text(
-                candidate.category,
-                style: GoogleFonts.poppins(fontSize: 12),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.open_in_new, size: 20),
-                onPressed:
-                    () => context.go('/sales/candidates/${candidate.id}'),
-                tooltip: 'View Candidate Profile',
-              ),
             ),
-            const Divider(height: 24),
-            _infoRow('Contract ID', contract.id, isDark),
-            _infoRow(
-              'Placement Date',
-              dateFormat.format(contract.placementDate),
-              isDark,
-            ),
-            _infoRow(
-              'Guarantee Ends',
-              dateFormat.format(contract.guaranteeEndDate),
-              isDark,
-            ),
-            if (!isPending) ...[
-              _infoRow(
-                'Days Left in SLA',
-                '${contract.daysRemainingInGuarantee} days',
-                isDark,
-              ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: contract.daysRemainingInGuarantee / 180,
-                backgroundColor:
-                    isDark ? AppColors.dividerDark : AppColors.grey200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  contract.daysRemainingInGuarantee > 30
-                      ? AppColors.successGreen
-                      : AppColors.urgentAmber,
-                ),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-            const Divider(height: 24),
+            const Divider(height: 32),
+            Text('Contract & Financials', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total Fee',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: isDark ? AppColors.grey400 : AppColors.grey600,
-                      ),
-                    ),
-                    Text(
-                      '₹${contract.serviceFee}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _infoRow('Contract ID', contract.id, isDark),
+                      _infoRow('Placement Date', dateFormat.format(contract.placementDate), isDark),
+                      _infoRow('Guarantee Ends', dateFormat.format(contract.guaranteeEndDate), isDark),
+                      if (!isPending) ...[
+                        _infoRow('Days Left', '${contract.daysRemainingInGuarantee} days', isDark),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: contract.daysRemainingInGuarantee / 180,
+                          backgroundColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            contract.daysRemainingInGuarantee > 30 ? AppColors.successGreen : AppColors.urgentAmber,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      _infoRow('Created By', contract.createdBy, isDark),
+                    ],
+                  ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Payment Status',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: isDark ? AppColors.grey400 : AppColors.grey600,
-                      ),
-                    ),
-                    Text(
-                      contract.paymentStatus.displayName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            contract.paymentStatus == PaymentStatus.paid
-                                ? AppColors.successGreen
-                                : AppColors.criticalRed,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _infoRow('Service Fee', '₹${contract.serviceFee}', isDark),
+                      _infoRow('Amount Paid', '₹${contract.amountPaid}', isDark),
+                      _infoRow('Balance', '₹${contract.balanceAmount}', isDark),
+                      _infoRow('Payment Status', contract.paymentStatus.displayName, isDark),
+                      const SizedBox(height: 12),
+                      if (contract.isReplacementUsed) ...[
+                        _infoRow('Replaced On', contract.replacementDate != null ? dateFormat.format(contract.replacementDate!) : 'N/A', isDark),
+                        _infoRow('Replacement ID', contract.replacementCandidateId ?? 'N/A', isDark),
+                      ],
+                      if (contract.remarks != null && contract.remarks!.isNotEmpty)
+                        _infoRow('Remarks', contract.remarks!, isDark),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -571,26 +717,34 @@ class ClientProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDocumentsTab(bool isDark) {
-    return _buildSectionCard('Client Documents', isDark, [
-      _documentRow('Aadhaar Card / ID Proof', null, isDark),
-      _documentRow('Address Proof', null, isDark),
-      _documentRow('Agreement Signoff', null, isDark),
-      const SizedBox(height: 16),
-      ElevatedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.upload_file),
-        label: const Text('Upload Document'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.navyBlue.withValues(alpha: 0.1),
-          foregroundColor: AppColors.navyBlue,
-          elevation: 0,
-        ),
-      ),
-    ]);
+  Widget _buildDocumentsTab(ClientModel client, ContractModel? contract, CandidateModel? candidate, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionCard('Client Documents', isDark, [
+          _documentRow('Aadhaar Card / ID Proof', null, isDark, required: true),
+          _documentRow('Address Proof', null, isDark, required: false),
+        ]),
+        const SizedBox(height: 24),
+        if (contract != null) ...[
+          _buildSectionCard('Contract & Legal Documents', isDark, [
+            _documentRow('Service Agreement (Signed)', null, isDark, required: true),
+            _documentRow('Payment Receipt', null, isDark, required: false),
+          ]),
+          const SizedBox(height: 24),
+        ],
+        if (candidate != null) ...[
+          _buildSectionCard('Candidate Documents (${candidate.fullName})', isDark, [
+            _documentRow('Aadhaar Card', candidate.aadhaarDocUrl, isDark, required: true),
+            _documentRow('Police Verification', candidate.policeVerificationDocUrl, isDark, required: true),
+            _documentRow('Medical Clearance', candidate.medicalClearanceDocUrl, isDark, required: false),
+          ]),
+        ],
+      ],
+    );
   }
 
-  Widget _documentRow(String name, String? url, bool isDark) {
+  Widget _documentRow(String name, String? url, bool isDark, {bool required = false}) {
     final hasDoc = url != null && url.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -603,22 +757,44 @@ class ClientProfileScreen extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              name,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                ),
+                if (!hasDoc && required)
+                  _buildBadge('Required', AppColors.criticalRed)
+                else if (!hasDoc && !required)
+                  _buildBadge('Optional', AppColors.grey500),
+              ],
+            ),
+          ),
+          if (hasDoc) ...[
+            const SizedBox(width: 10),
+            TextButton(
+              onPressed: () {},
+              child: Text(
+                'View',
+                style: GoogleFonts.poppins(fontSize: 12, color: AppColors.gold),
               ),
             ),
-          ),
-          Text(
-            hasDoc ? 'Uploaded' : 'Missing',
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: hasDoc ? AppColors.successGreen : AppColors.urgentAmber,
+          ] else ...[
+            const SizedBox(width: 10),
+            TextButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.upload_file, size: 16),
+              label: Text(
+                'Upload',
+                style: GoogleFonts.poppins(fontSize: 12),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -712,15 +888,14 @@ class ClientProfileScreen extends StatelessWidget {
 
   Color _statusColor(ClientStatus status) {
     switch (status) {
-      case ClientStatus.newInquiry:
-        return AppColors.standardBlue;
       case ClientStatus.followUp:
         return AppColors.urgentAmber;
-      case ClientStatus.active:
+      case ClientStatus.interested:
+        return AppColors.infoBlue;
       case ClientStatus.converted:
         return AppColors.successGreen;
-      default:
-        return AppColors.criticalRed;
+      case ClientStatus.notInterested:
+        return AppColors.grey500;
     }
   }
 

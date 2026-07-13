@@ -82,7 +82,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
         onRowTap: (client) {
           final routePrefix =
               state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
-          context.push('$routePrefix/clients/${client.id}');
+          var path = '$routePrefix/clients/${client.id}';
+          if (widget.initialStatus != null) {
+            path += '?from=${widget.initialStatus!.name}';
+          }
+          context.push(path);
         },
         showStatus: widget.initialStatus == null,
       );
@@ -354,12 +358,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
                           ),
                         ),
                       GridColumn(
-                        columnName: 'actions',
-                        width: 120,
+                        columnName: 'notes',
+                        width: 200,
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.center,
-                          child: Text('Actions', style: _headerStyle),
+                          alignment: Alignment.centerLeft,
+                          child: Text('Notes', style: _headerStyle),
                         ),
                       ),
                     ],

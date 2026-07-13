@@ -45,21 +45,20 @@ class _SalesDashboardState extends State<SalesDashboard> {
             : state.contracts;
 
     // Pipeline Stats
-    final newInquiries =
-        myClients.where((c) => c.status == ClientStatus.newInquiry).length;
     final followUps =
         myClients.where((c) => c.status == ClientStatus.followUp).length;
-    final negotiating =
-        0; // Assuming we use followUps or define a negotiating stage later
+    final interested =
+        myClients.where((c) => c.status == ClientStatus.interested).length;
+    final notInterested =
+        myClients.where((c) => c.status == ClientStatus.notInterested).length;
     final converted =
         myClients
             .where(
               (c) =>
-                  c.status == ClientStatus.converted ||
-                  c.status == ClientStatus.active,
+                  c.status == ClientStatus.converted,
             )
             .length;
-    final totalPipeline = newInquiries + followUps + negotiating;
+    final totalPipeline = followUps + interested + notInterested + converted;
 
     // Other Stats
     final now = DateTime.now();
@@ -157,7 +156,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final categoryCounts = <String, int>{};
     for (var client in myClients.where(
       (c) =>
-          c.status == ClientStatus.converted || c.status == ClientStatus.active,
+          c.status == ClientStatus.converted,
     )) {
       categoryCounts[client.preferredCandidateCategory] =
           (categoryCounts[client.preferredCandidateCategory] ?? 0) + 1;
@@ -200,8 +199,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
                           children: _buildPipelineSteps(
                             isDark,
                             true,
-                            newInquiries,
                             followUps,
+                            interested,
                             converted,
                             totalPipeline,
                           ),
@@ -210,8 +209,8 @@ class _SalesDashboardState extends State<SalesDashboard> {
                           children: _buildPipelineSteps(
                             isDark,
                             false,
-                            newInquiries,
                             followUps,
+                            interested,
                             converted,
                             totalPipeline,
                           ),
@@ -226,6 +225,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 final isDesktop = constraints.maxWidth > 900;
                 final isTablet = constraints.maxWidth > 600 && !isDesktop;
 
+                final revenueTrend = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0.0;
                 final revenueCard = _buildStatCard(
                   icon: Icons.currency_rupee,
                   iconColor: AppColors.gold,
@@ -234,8 +234,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   isDark: isDark,
                   subtitle:
                       'Last month: ₹${_indianFormat.format(lastMonthRevenue)}',
+                  trend: revenueTrend,
                 );
 
+                final contractsTrend = lastMonthClosed > 0 ? ((currentMonthClosed - lastMonthClosed) / lastMonthClosed) * 100 : 0.0;
                 final contractsCard = _buildStatCard(
                   icon: Icons.handshake_outlined,
                   iconColor: AppColors.successGreen,
@@ -244,6 +246,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   isDark: isDark,
                   subtitle:
                       'Last month: ${_indianFormat.format(lastMonthClosed)}',
+                  trend: contractsTrend,
                 );
 
                 final slaCard = _buildStatCard(
@@ -255,6 +258,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   subtitle: '< 1 month left',
                 );
 
+                final conversionTrend = lastConversionRate > 0 ? ((currentConversionRate - lastConversionRate) / lastConversionRate) * 100 : 0.0;
                 final conversionCard = _buildStatCard(
                   icon: Icons.trending_up,
                   iconColor: AppColors.infoBlue,
@@ -263,8 +267,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   isDark: isDark,
                   subtitle:
                       'Last month: ${lastConversionRate.toStringAsFixed(1)}%',
+                  trend: conversionTrend,
                 );
 
+                final avgDealTrend = lastAvgDeal > 0 ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) * 100 : 0.0;
                 final avgDealCard = _buildStatCard(
                   icon: Icons.monetization_on_outlined,
                   iconColor: AppColors.successGreen,
@@ -272,6 +278,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   value: '₹${_indianFormat.format(currentAvgDeal)}',
                   isDark: isDark,
                   subtitle: 'Last month: ₹${_indianFormat.format(lastAvgDeal)}',
+                  trend: avgDealTrend,
                 );
 
                 if (isDesktop) {
@@ -368,25 +375,25 @@ class _SalesDashboardState extends State<SalesDashboard> {
   List<Widget> _buildPipelineSteps(
     bool isDark,
     bool isHorizontal,
-    int newInquiries,
     int followUps,
+    int interested,
     int converted,
     int totalPipeline,
   ) {
     final steps = [
-      _PipelineStep(
-        title: 'New Inquiries',
-        count: newInquiries,
-        total: totalPipeline,
-        color: AppColors.standardBlue,
-        icon: Icons.person_add_alt_1,
-      ),
       _PipelineStep(
         title: 'Follow Up',
         count: followUps,
         total: totalPipeline,
         color: AppColors.urgentAmber,
         icon: Icons.phone_in_talk,
+      ),
+      _PipelineStep(
+        title: 'Interested',
+        count: interested,
+        total: totalPipeline,
+        color: AppColors.infoBlue,
+        icon: Icons.lightbulb_outline,
       ),
       _PipelineStep(
         title: 'Converted',
@@ -507,6 +514,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
     required String value,
     required bool isDark,
     String? subtitle,
+    double? trend,
   }) {
     return Card(
       elevation: 0,
@@ -554,12 +562,24 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: isDark ? AppColors.grey500 : AppColors.grey500,
-                      ),
+                    Row(
+                      children: [
+                        if (trend != null && trend != 0) ...[
+                          Icon(
+                            trend > 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                            size: 14,
+                            color: trend > 0 ? AppColors.successGreen : AppColors.criticalRed,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: isDark ? AppColors.grey500 : AppColors.grey500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],

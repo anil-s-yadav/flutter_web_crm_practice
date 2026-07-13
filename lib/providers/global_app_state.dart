@@ -80,7 +80,7 @@ class GlobalAppState extends ChangeNotifier {
         currentPlacementId: contract.id,
       );
 
-      _clients[i] = client.copyWith(status: ClientStatus.active);
+      _clients[i] = client.copyWith(status: ClientStatus.converted);
     }
 
     // Generate Tasks
@@ -316,6 +316,19 @@ class GlobalAppState extends ChangeNotifier {
       'Added new client inquiry: ${client.fullName}',
     );
     notifyListeners();
+  }
+
+  void updateClient(ClientModel updatedClient) {
+    final idx = _clients.indexWhere((c) => c.id == updatedClient.id);
+    if (idx != -1) {
+      _clients[idx] = updatedClient;
+      logAction(
+        ActionType.update,
+        updatedClient.id,
+        'Updated client status to ${updatedClient.status.displayName}',
+      );
+      notifyListeners();
+    }
   }
 
   // --- Candidate Modifications ---

@@ -79,7 +79,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
       preferredCandidateCategory: _preferredCategory,
       requiredSkills: const ['Standard Duty'], // default hidden skill
       budgetRange: '₹${_budgetBase.toInt()} - ₹${_budgetEnd.toInt()}',
-      status: ClientStatus.newInquiry,
+      status: ClientStatus.followUp,
       assignedEmployeeId: state.currentUser?.id.toString(),
       source: 'Direct Entry',
       inquiryDate: DateTime.now(),
@@ -481,8 +481,9 @@ class _AddClientScreenState extends State<AddClientScreen> {
                                 label: Text(c),
                                 selected: selected,
                                 onSelected: (val) {
-                                  if (val)
+                                  if (val) {
                                     setState(() => _preferredCategory = c);
+                                  }
                                 },
                                 selectedColor: AppColors.navyBlue,
                                 labelStyle: TextStyle(

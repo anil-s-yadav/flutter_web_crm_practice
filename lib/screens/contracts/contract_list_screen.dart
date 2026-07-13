@@ -13,7 +13,9 @@ import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/contracts/contract_data_source.dart';
 
 class ContractListScreen extends StatefulWidget {
-  const ContractListScreen({super.key});
+  final String? initialViewMode;
+
+  const ContractListScreen({super.key, this.initialViewMode});
 
   @override
   State<ContractListScreen> createState() => _ContractListScreenState();
@@ -21,10 +23,28 @@ class ContractListScreen extends StatefulWidget {
 
 class _ContractListScreenState extends State<ContractListScreen> {
   String _searchQuery = '';
+  String? _currentViewMode;
   ContractStatus? _selectedStatus;
   ContractDataSource? _contractDataSource;
 
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
+
+  @override
+  void initState() {
+    super.initState();
+    _currentViewMode = widget.initialViewMode;
+  }
+
+  @override
+  void didUpdateWidget(covariant ContractListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialViewMode != widget.initialViewMode) {
+      setState(() {
+        _currentViewMode = widget.initialViewMode;
+      });
+      _initializeDataSource();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -42,7 +62,21 @@ class _ContractListScreenState extends State<ContractListScreen> {
 
     final filteredContracts =
         allContracts.where((c) {
-          if (_selectedStatus != null && c.contractStatus != _selectedStatus) {
+          if (_currentViewMode != null) {
+            if (_currentViewMode == 'active' &&
+                c.contractStatus != ContractStatus.active)
+              return false;
+            if (_currentViewMode == 'expired' && c.isGuaranteeActive)
+              return false;
+            if (_currentViewMode == 'renewals' &&
+                (!c.isGuaranteeActive || c.daysRemainingInGuarantee > 30))
+              return false;
+            if (_currentViewMode == 'replacements' &&
+                !c.isReplacementUsed &&
+                c.contractStatus != ContractStatus.replaced)
+              return false;
+          } else if (_selectedStatus != null &&
+              c.contractStatus != _selectedStatus) {
             return false;
           }
           if (_searchQuery.isNotEmpty) {
@@ -62,7 +96,11 @@ class _ContractListScreenState extends State<ContractListScreen> {
         onRowTap: (contract) {
           final routePrefix =
               state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
-          context.push('$routePrefix/clients/${contract.clientId}');
+          var path = '$routePrefix/clients/${contract.clientId}';
+          if (_currentViewMode != null) {
+            path += '?fromContractMode=$_currentViewMode';
+          }
+          context.push(path);
         },
       );
     } else {

@@ -97,30 +97,64 @@ class _DesktopShellState extends State<DesktopShell> {
             activeIcon: Icons.business,
             label: 'All Clients',
             route: '/sales/clients',
-          ),
-          _SidebarItem(
-            icon: Icons.new_releases_outlined,
-            activeIcon: Icons.new_releases,
-            label: 'New Inquiries',
-            route: '/sales/clients/new',
-          ),
-          _SidebarItem(
-            icon: Icons.record_voice_over_outlined,
-            activeIcon: Icons.record_voice_over,
-            label: 'Follow Ups',
-            route: '/sales/clients/followup',
-          ),
-          _SidebarItem(
-            icon: Icons.check_circle_outline,
-            activeIcon: Icons.check_circle,
-            label: 'Converted (Active)',
-            route: '/sales/clients/active',
+            children: [
+              _SidebarItem(
+                icon: Icons.record_voice_over_outlined,
+                activeIcon: Icons.record_voice_over,
+                label: 'Follow Ups',
+                route: '/sales/clients/followup',
+              ),
+              _SidebarItem(
+                icon: Icons.lightbulb_outline,
+                activeIcon: Icons.lightbulb,
+                label: 'Interested',
+                route: '/sales/clients/interested',
+              ),
+              _SidebarItem(
+                icon: Icons.thumb_down_outlined,
+                activeIcon: Icons.thumb_down,
+                label: 'Not Interested',
+                route: '/sales/clients/not_interested',
+              ),
+              _SidebarItem(
+                icon: Icons.check_circle_outline,
+                activeIcon: Icons.check_circle,
+                label: 'Converted (Active)',
+                route: '/sales/clients/active',
+              ),
+            ],
           ),
           _SidebarItem(
             icon: Icons.description_outlined,
             activeIcon: Icons.description,
             label: 'Contracts',
             route: '/sales/contracts',
+            children: [
+              _SidebarItem(
+                icon: Icons.assignment_outlined,
+                activeIcon: Icons.assignment,
+                label: 'Active Contracts',
+                route: '/sales/contracts/active',
+              ),
+              _SidebarItem(
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+                label: 'Expired Contracts',
+                route: '/sales/contracts/expired',
+              ),
+              _SidebarItem(
+                icon: Icons.autorenew_outlined,
+                activeIcon: Icons.autorenew,
+                label: 'Renewals',
+                route: '/sales/contracts/renewals',
+              ),
+              _SidebarItem(
+                icon: Icons.swap_horiz_outlined,
+                activeIcon: Icons.swap_horiz,
+                label: 'Replacements',
+                route: '/sales/contracts/replacements',
+              ),
+            ],
           ),
           _SidebarItem(
             icon: Icons.people_outline,
@@ -230,12 +264,51 @@ class _DesktopShellState extends State<DesktopShell> {
       return currentLocation == route;
     }
 
+    if (route == '/sales/clients/followup') {
+      return currentLocation.startsWith(route) || currentLocation.contains('from=followUp');
+    }
+    if (route == '/sales/clients/interested') {
+      return currentLocation.startsWith(route) || currentLocation.contains('from=interested');
+    }
+    if (route == '/sales/clients/not_interested') {
+      return currentLocation.startsWith(route) || currentLocation.contains('from=notInterested');
+    }
+    if (route == '/sales/clients/active') {
+      return currentLocation.startsWith(route) || currentLocation.contains('from=converted');
+    }
+
+    if (route == '/sales/contracts/active') {
+      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=active');
+    }
+    if (route == '/sales/contracts/expired') {
+      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=expired');
+    }
+    if (route == '/sales/contracts/renewals') {
+      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=renewals');
+    }
+    if (route == '/sales/contracts/replacements') {
+      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=replacements');
+    }
+
     if (route == '/sales/clients') {
       return currentLocation == route ||
           (currentLocation.startsWith('/sales/clients/') &&
-              !currentLocation.startsWith('/sales/clients/new') &&
               !currentLocation.startsWith('/sales/clients/followup') &&
-              !currentLocation.startsWith('/sales/clients/active'));
+              !currentLocation.startsWith('/sales/clients/interested') &&
+              !currentLocation.startsWith('/sales/clients/not_interested') &&
+              !currentLocation.startsWith('/sales/clients/active') &&
+              !currentLocation.contains('from=') &&
+              !currentLocation.contains('fromContractMode='));
+    }
+
+    if (route == '/sales/contracts') {
+      return currentLocation == route ||
+          (currentLocation.startsWith('/sales/contracts/') &&
+              !currentLocation.startsWith('/sales/contracts/active') &&
+              !currentLocation.startsWith('/sales/contracts/expired') &&
+              !currentLocation.startsWith('/sales/contracts/renewals') &&
+              !currentLocation.startsWith('/sales/contracts/replacements') &&
+              !currentLocation.contains('fromContractMode='));
     }
 
     return currentLocation.startsWith(route);
@@ -463,6 +536,62 @@ class _DesktopShellState extends State<DesktopShell> {
     bool expanded,
     bool isDark,
   ) {
+    if (item.children != null && item.children!.isNotEmpty) {
+      bool isAnyChildActive = isActive ||
+          item.children!.any((c) => _isRouteActive(c.route, GoRouterState.of(context).uri.toString()));
+
+      return Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: isAnyChildActive || expanded,
+            tilePadding: EdgeInsets.symmetric(horizontal: expanded ? 14 : 0),
+            collapsedIconColor: isAnyChildActive ? AppColors.gold : AppColors.grey400,
+            iconColor: AppColors.gold,
+            title: expanded
+                ? Row(
+                    children: [
+                      Icon(
+                        isAnyChildActive ? item.activeIcon : item.icon,
+                        size: 20,
+                        color: isAnyChildActive ? AppColors.gold : AppColors.grey400,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: isAnyChildActive ? FontWeight.w600 : FontWeight.w400,
+                            color: isAnyChildActive
+                                ? AppColors.gold
+                                : (isDark ? AppColors.grey300 : AppColors.navyBlue),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  )
+                : Icon(
+                    isAnyChildActive ? item.activeIcon : item.icon,
+                    size: 20,
+                    color: isAnyChildActive ? AppColors.gold : AppColors.grey400,
+                  ),
+            children: expanded
+                ? item.children!.map((child) {
+                    final isChildActive = _isRouteActive(child.route, GoRouterState.of(context).uri.toString());
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 24.0, bottom: 4.0),
+                      child: _buildMenuItem(child, isChildActive, expanded, isDark),
+                    );
+                  }).toList()
+                : [],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
@@ -482,70 +611,52 @@ class _DesktopShellState extends State<DesktopShell> {
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color:
-                  isActive
-                      ? AppColors.gold.withValues(alpha: 0.12)
-                      : Colors.transparent,
+              color: isActive ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border:
-                  isActive
-                      ? Border.all(
-                        color: AppColors.gold.withValues(alpha: 0.3),
-                        width: 1,
-                      )
-                      : null,
+              border: isActive
+                  ? Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 1)
+                  : null,
             ),
-            child:
-                expanded
-                    ? Row(
-                      children: [
-                        Icon(
-                          isActive ? item.activeIcon : item.icon,
-                          size: 20,
-                          color: isActive ? AppColors.gold : AppColors.grey400,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            item.label,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight:
-                                  isActive ? FontWeight.w600 : FontWeight.w400,
-                              color:
-                                  isActive
-                                      ? (isDark
-                                          ? AppColors.gold
-                                          : AppColors.gold)
-                                      : (isDark
-                                          ? AppColors.grey300
-                                          : AppColors.grey600),
-                            ),
-                            overflow: TextOverflow.ellipsis,
+            child: expanded
+                ? Row(
+                    children: [
+                      Icon(
+                        isActive ? item.activeIcon : item.icon,
+                        size: 20,
+                        color: isActive ? AppColors.gold : AppColors.grey400,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                            color: isActive
+                                ? AppColors.gold
+                                : (isDark ? AppColors.grey300 : AppColors.navyBlue),
                           ),
-                        ),
-                      ],
-                    )
-                    : Center(
-                      child: Tooltip(
-                        message: item.label,
-                        child: Icon(
-                          isActive ? item.activeIcon : item.icon,
-                          size: 22,
-                          color:
-                              isActive
-                                  ? (isDark ? AppColors.gold : AppColors.gold)
-                                  : (isDark
-                                      ? AppColors.grey400
-                                      : AppColors.grey600),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                    ],
+                  )
+                : Tooltip(
+                    message: item.label,
+                    child: Center(
+                      child: Icon(
+                        isActive ? item.activeIcon : item.icon,
+                        size: 22,
+                        color: isActive ? AppColors.gold : AppColors.grey400,
+                      ),
                     ),
+                  ),
           ),
         ),
       ),
     );
   }
+
 
   Widget _buildUserSection(UserModel? user, bool expanded, bool isDark) {
     if (user == null) return const SizedBox.shrink();
@@ -847,11 +958,13 @@ class _SidebarItem {
   final IconData activeIcon;
   final String label;
   final String route;
+  final List<_SidebarItem>? children;
 
   const _SidebarItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
     required this.route,
+    this.children,
   });
 }

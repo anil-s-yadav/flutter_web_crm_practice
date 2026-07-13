@@ -161,16 +161,20 @@ class AppRouter {
               builder: (context, state) => const ClientListScreen(),
             ),
             GoRoute(
-              path: '/sales/clients/new',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.newInquiry),
-            ),
-            GoRoute(
               path: '/sales/clients/followup',
               builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.followUp),
             ),
             GoRoute(
+              path: '/sales/clients/interested',
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.interested),
+            ),
+            GoRoute(
+              path: '/sales/clients/not_interested',
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.notInterested),
+            ),
+            GoRoute(
               path: '/sales/clients/active',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.active),
+              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.converted),
             ),
             GoRoute(
               path: '/sales/clients/:id',
@@ -190,6 +194,22 @@ class AppRouter {
             GoRoute(
               path: '/sales/contracts',
               builder: (context, state) => const ContractListScreen(),
+            ),
+            GoRoute(
+              path: '/sales/contracts/active',
+              builder: (context, state) => const ContractListScreen(initialViewMode: 'active'),
+            ),
+            GoRoute(
+              path: '/sales/contracts/expired',
+              builder: (context, state) => const ContractListScreen(initialViewMode: 'expired'),
+            ),
+            GoRoute(
+              path: '/sales/contracts/renewals',
+              builder: (context, state) => const ContractListScreen(initialViewMode: 'renewals'),
+            ),
+            GoRoute(
+              path: '/sales/contracts/replacements',
+              builder: (context, state) => const ContractListScreen(initialViewMode: 'replacements'),
             ),
             GoRoute(
               path: '/sales/tickets',

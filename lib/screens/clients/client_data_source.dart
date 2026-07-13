@@ -56,7 +56,7 @@ class ClientDataSource extends DataGridSource {
               columnName: 'status',
               value: client.status,
             ),
-          DataGridCell<ClientModel>(columnName: 'actions', value: client),
+          DataGridCell<String>(columnName: 'notes', value: client.remarks ?? '-'),
         ],
       );
     }).toList();
@@ -201,29 +201,22 @@ class ClientDataSource extends DataGridSource {
           );
         }
 
-        if (dataGridCell.columnName == 'actions') {
+        if (dataGridCell.columnName == 'notes') {
           return Container(
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_red_eye_outlined, size: 20),
-                  tooltip: 'View Profile',
-                  color: AppColors.standardBlue,
-                  onPressed: () => onRowTap(client),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.centerLeft,
+            child: Tooltip(
+              message: dataGridCell.value.toString(),
+              child: Text(
+                dataGridCell.value.toString(),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  fontStyle: FontStyle.italic,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.phone_outlined, size: 20),
-                  tooltip: 'Call',
-                  color: AppColors.successGreen,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Calling ${client.phone}...')),
-                    );
-                  },
-                ),
-              ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           );
         }
@@ -247,13 +240,10 @@ class ClientDataSource extends DataGridSource {
 
   Color _getStatusColor(ClientStatus status) {
     switch (status) {
-      case ClientStatus.newInquiry: return AppColors.standardBlue;
-      case ClientStatus.followUp: return AppColors.urgentAmber;
-      case ClientStatus.noResponse: return AppColors.criticalRed;
+      case ClientStatus.followUp: return AppColors.standardBlue;
+      case ClientStatus.interested: return AppColors.urgentAmber;
       case ClientStatus.converted: return AppColors.successGreen;
-      case ClientStatus.active: return AppColors.successGreen;
       case ClientStatus.notInterested: return AppColors.grey500;
-      case ClientStatus.churned: return AppColors.statusBlacklisted;
     }
   }
 }

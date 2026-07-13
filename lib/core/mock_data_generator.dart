@@ -166,9 +166,9 @@ class MockDataGenerator {
     final city = _cities[rng.nextInt(_cities.length)];
     final locality = _localities[rng.nextInt(_localities.length)];
     final statusValues = ClientStatus.values;
-    final statusWeights = [0.20, 0.15, 0.10, 0.05, 0.10, 0.30, 0.10];
+    final statusWeights = [0.30, 0.20, 0.10, 0.40]; // followUp, interested, notInterested, converted
     double roll = rng.nextDouble();
-    ClientStatus status = ClientStatus.newInquiry;
+    ClientStatus status = ClientStatus.followUp;
     double cumulative = 0;
     for (int i = 0; i < statusWeights.length; i++) {
       cumulative += statusWeights[i];
