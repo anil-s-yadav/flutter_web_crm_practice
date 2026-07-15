@@ -26,7 +26,7 @@ class CandidateProfileScreen extends StatelessWidget {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.placed:
+      case CandidateStatus.Placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
@@ -48,7 +48,7 @@ class CandidateProfileScreen extends StatelessWidget {
       case CandidateStatus.medicalPending:
         return 3;
       case CandidateStatus.readyToPlace:
-      case CandidateStatus.placed:
+      case CandidateStatus.Placed:
         return 4;
       case CandidateStatus.blacklisted:
         return 0;
@@ -78,48 +78,75 @@ class CandidateProfileScreen extends StatelessWidget {
       return const Center(child: Text('Candidate not found'));
     }
 
-    final relevantLogs = state.auditLogs.where((l) => l.targetId == candidate.id).toList();
+    final relevantLogs =
+        state.auditLogs.where((l) => l.targetId == candidate.id).toList();
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        padding: EdgeInsets.all(isMobile ? 8 : 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMobile) ...[
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_ios, size: 18),
-                    label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    style: TextButton.styleFrom(foregroundColor: isDark ? AppColors.white : AppColors.navyBlue),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
+            // if (!isMobile) ...[
+            //   Row(
+            //     children: [
+            //       TextButton.icon(
+            //         onPressed: () => context.pop(),
+            //         icon: const Icon(Icons.arrow_back_ios, size: 18),
+            //         label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            //         style: TextButton.styleFrom(foregroundColor: isDark ? AppColors.white : AppColors.navyBlue),
+            //       ),
+            //     ],
+            //   ),
+            //   const SizedBox(height: 16),
+            // ],
             if (isMobile)
-              _buildMobileLayout(context, candidate, state, isDark, relevantLogs)
+              _buildMobileLayout(
+                context,
+                candidate,
+                state,
+                isDark,
+                relevantLogs,
+              )
             else if (isTablet)
-              _buildTabletLayout(context, candidate, state, isDark, relevantLogs)
+              _buildTabletLayout(
+                context,
+                candidate,
+                state,
+                isDark,
+                relevantLogs,
+              )
             else
-              _buildDesktopLayout(context, candidate, state, isDark, relevantLogs),
+              _buildDesktopLayout(
+                context,
+                candidate,
+                state,
+                isDark,
+                relevantLogs,
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+  Widget _buildMobileLayout(
+    BuildContext context,
+    CandidateModel candidate,
+    GlobalAppState state,
+    bool isDark,
+    List<dynamic> relevantLogs,
+  ) {
     return Column(
       children: [
         _buildProfileHeader(context, candidate, isDark),
         const SizedBox(height: 16),
         _buildTopActions(context, state, candidate),
         const SizedBox(height: 24),
-        if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
-        else _buildPipelineIndicator(candidate, isDark),
+        if (candidate.status == CandidateStatus.Placed)
+          _buildplacedDashboard(context, candidate, isDark)
+        else
+          _buildPipelineIndicator(candidate, isDark),
         const SizedBox(height: 24),
         _buildPersonalDetails(candidate, isDark),
         const SizedBox(height: 16),
@@ -129,21 +156,32 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDocuments(candidate, isDark),
         const SizedBox(height: 16),
-        if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
+        if (candidate.currentPlacementId != null)
+          _buildCurrentPlacement(candidate, isDark),
         if (candidate.remarks != null) ...[
           const SizedBox(height: 16),
           _buildRemarks(candidate, isDark),
         ],
         const SizedBox(height: 24),
-        if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin)
+        if (state.currentUser?.role == UserRole.sourcing ||
+            state.currentUser?.role == UserRole.admin)
           _buildActionBar(context, candidate, isDark),
         const SizedBox(height: 32),
-        AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+        AuditLogWidget(
+          logs: relevantLogs.cast(),
+          title: 'Candidate Activity History',
+        ),
       ],
     );
   }
 
-  Widget _buildTabletLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+  Widget _buildTabletLayout(
+    BuildContext context,
+    CandidateModel candidate,
+    GlobalAppState state,
+    bool isDark,
+    List<dynamic> relevantLogs,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -151,8 +189,10 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildTopActions(context, state, candidate),
         const SizedBox(height: 24),
-        if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
-        else _buildPipelineIndicator(candidate, isDark),
+        if (candidate.status == CandidateStatus.Placed)
+          _buildplacedDashboard(context, candidate, isDark)
+        else
+          _buildPipelineIndicator(candidate, isDark),
         const SizedBox(height: 24),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,24 +205,35 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildDocuments(candidate, isDark),
         const SizedBox(height: 16),
-        if (candidate.currentPlacementId != null) _buildCurrentPlacement(candidate, isDark),
+        if (candidate.currentPlacementId != null)
+          _buildCurrentPlacement(candidate, isDark),
         if (candidate.remarks != null) ...[
           const SizedBox(height: 16),
           _buildRemarks(candidate, isDark),
         ],
         const SizedBox(height: 24),
-        if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin) ...[
+        if (state.currentUser?.role == UserRole.sourcing ||
+            state.currentUser?.role == UserRole.admin) ...[
           _buildActionBar(context, candidate, isDark),
           const SizedBox(height: 16),
         ],
         _buildLanguages(candidate, isDark),
         const SizedBox(height: 32),
-        AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+        AuditLogWidget(
+          logs: relevantLogs.cast(),
+          title: 'Candidate Activity History',
+        ),
       ],
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context, CandidateModel candidate, GlobalAppState state, bool isDark, List<dynamic> relevantLogs) {
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    CandidateModel candidate,
+    GlobalAppState state,
+    bool isDark,
+    List<dynamic> relevantLogs,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -197,7 +248,8 @@ class CandidateProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _buildPersonalDetails(candidate, isDark),
               const SizedBox(height: 24),
-              if (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin) ...[
+              if (state.currentUser?.role == UserRole.sourcing ||
+                  state.currentUser?.role == UserRole.admin) ...[
                 _buildActionBar(context, candidate, isDark),
                 const SizedBox(height: 16),
               ],
@@ -211,19 +263,17 @@ class CandidateProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (candidate.status == CandidateStatus.placed) _buildHiredDashboard(context, candidate, isDark)
-              else _buildPipelineIndicator(candidate, isDark),
+              if (candidate.status == CandidateStatus.Placed)
+                _buildplacedDashboard(context, candidate, isDark)
+              else
+                _buildPipelineIndicator(candidate, isDark),
               const SizedBox(height: 24),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _buildVerificationStatus(candidate, isDark),
-                  ),
+                  Expanded(child: _buildVerificationStatus(candidate, isDark)),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDocuments(candidate, isDark),
-                  ),
+                  Expanded(child: _buildDocuments(candidate, isDark)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -235,7 +285,10 @@ class CandidateProfileScreen extends StatelessWidget {
                 _buildRemarks(candidate, isDark),
                 const SizedBox(height: 24),
               ],
-              AuditLogWidget(logs: relevantLogs.cast(), title: 'Candidate Activity History'),
+              AuditLogWidget(
+                logs: relevantLogs.cast(),
+                title: 'Candidate Activity History',
+              ),
             ],
           ),
         ),
@@ -243,83 +296,167 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopActions(BuildContext context, GlobalAppState state, CandidateModel candidate) {
-    if (candidate.status == CandidateStatus.placed || candidate.status == CandidateStatus.blacklisted || candidate.status == CandidateStatus.readyToPlace) {
-      if (!(candidate.status == CandidateStatus.newlyAdded && (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin))) {
-        return const SizedBox.shrink();
-      }
-    }
+  Widget _buildTopActions(
+    BuildContext context,
+    GlobalAppState state,
+    CandidateModel candidate,
+  ) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
-        if (candidate.status == CandidateStatus.newlyAdded && (state.currentUser?.role == UserRole.sourcing || state.currentUser?.role == UserRole.admin))
+
           ElevatedButton.icon(
             onPressed: () {
-              final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-              context.go('$routePrefix/candidates/${candidate.id}/edit');
+              final routePrefix =
+                  state.currentUser?.role == UserRole.admin
+                      ? '/admin'
+                      : '/sourcing';
+              context.push('$routePrefix/candidates/${candidate.id}/edit');
             },
             icon: const Icon(Icons.edit, size: 16),
-            label: Text('Edit Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            label: Text(
+              'Edit Profile',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.white,
               foregroundColor: AppColors.navyBlue,
               elevation: 0,
-              side: BorderSide(color: AppColors.navyBlue.withValues(alpha: 0.2)),
+              side: BorderSide(
+                color: AppColors.navyBlue.withValues(alpha: 0.2),
+              ),
             ),
           ),
-        if (candidate.status != CandidateStatus.placed && candidate.status != CandidateStatus.blacklisted && candidate.status != CandidateStatus.readyToPlace)
+        if (candidate.status != CandidateStatus.Placed &&
+            candidate.status != CandidateStatus.blacklisted &&
+            candidate.status != CandidateStatus.readyToPlace)
           PopupMenuButton<VoidCallback>(
             tooltip: 'Promote Candidate',
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               decoration: BoxDecoration(
-                color: AppColors.navyBlue,
+                color: AppColors.gold,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_upward, size: 16, color: AppColors.white),
+                  const Icon(
+                    Icons.arrow_upward,
+                    size: 16,
+                    color: AppColors.navyBlue,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Promote', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.white)),
+                  Text(
+                    'Promote',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.navyBlue,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.arrow_drop_down, size: 16, color: AppColors.white),
+                  const Icon(
+                    Icons.arrow_drop_down,
+                    size: 16,
+                    color: AppColors.navyBlue,
+                  ),
                 ],
               ),
             ),
             onSelected: (action) => action(),
             itemBuilder: (context) {
-              final appState = Provider.of<GlobalAppState>(context, listen: false);
+              final appState = Provider.of<GlobalAppState>(
+                context,
+                listen: false,
+              );
               return [
                 if (candidate.status == CandidateStatus.newlyAdded)
                   PopupMenuItem(
-                    value: () => appState.advanceCandidatePipeline(candidate.id, CandidateStatus.verificationPending),
+                    value:
+                        () => appState.advanceCandidatePipeline(
+                          candidate.id,
+                          CandidateStatus.verificationPending,
+                        ),
                     child: const Text('Promote to Police Verification'),
                   ),
-                if (candidate.status == CandidateStatus.verificationPending) ...[
+                if (candidate.status ==
+                    CandidateStatus.verificationPending) ...[
                   PopupMenuItem(
-                    value: () => appState.updateCandidate(candidate.copyWith(status: CandidateStatus.medicalPending, isPoliceVerified: true, isAadhaarVerified: true), 'Police & Aadhaar Verified. Moved to Medical Pending.'),
+                    value:
+                        () => appState.updateCandidate(
+                          candidate.copyWith(
+                            status: CandidateStatus.medicalPending,
+                            isPoliceVerified: true,
+                            isAadhaarVerified: true,
+                          ),
+                          'Police & Aadhaar Verified. Moved to Medical Pending.',
+                        ),
                     child: const Text('Promote to Medical Test'),
                   ),
                   PopupMenuItem(
-                    value: () => appState.updateCandidate(candidate.copyWith(status: CandidateStatus.readyToPlace, isPoliceVerified: true, isAadhaarVerified: true, isMedicalCleared: false, availableFrom: DateTime.now()), 'Police & Aadhaar Verified. Medical bypassed. Moved to Ready to Place.'),
-                    child: const Text('Promote to Ready to Hire (Skip Medical)'),
+                    value:
+                        () => appState.updateCandidate(
+                          candidate.copyWith(
+                            status: CandidateStatus.readyToPlace,
+                            isPoliceVerified: true,
+                            isAadhaarVerified: true,
+                            isMedicalCleared: false,
+                            availableFrom: DateTime.now(),
+                          ),
+                          'Police & Aadhaar Verified. Medical bypassed. Moved to Ready to Place.',
+                        ),
+                    child: const Text(
+                      'Promote to Ready to Hire (Skip Medical)',
+                    ),
                   ),
                 ],
                 if (candidate.status == CandidateStatus.medicalPending)
                   PopupMenuItem(
-                    value: () => appState.updateCandidate(candidate.copyWith(status: CandidateStatus.readyToPlace, isMedicalCleared: true, availableFrom: DateTime.now()), 'Medical Test Cleared. Moved to Ready to Place.'),
+                    value:
+                        () => appState.updateCandidate(
+                          candidate.copyWith(
+                            status: CandidateStatus.readyToPlace,
+                            isMedicalCleared: true,
+                            availableFrom: DateTime.now(),
+                          ),
+                          'Medical Test Cleared. Moved to Ready to Place.',
+                        ),
                     child: const Text('Promote to Ready to Hire'),
                   ),
               ];
             },
           ),
+        if (candidate.status != CandidateStatus.blacklisted &&
+            candidate.status != CandidateStatus.Placed &&
+            (state.currentUser?.role == UserRole.sourcing ||
+                state.currentUser?.role == UserRole.admin))
+          ElevatedButton.icon(
+            onPressed: () {
+              _showBlacklistDialog(context, candidate.id);
+            },
+            icon: const Icon(Icons.block, size: 16),
+            label: Text(
+              'Blacklist',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.white,
+              foregroundColor: AppColors.criticalRed,
+              elevation: 0,
+              side: BorderSide(
+                color: AppColors.criticalRed.withValues(alpha: 0.2),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildHiredDashboard(
+  Widget _buildplacedDashboard(
     BuildContext context,
     CandidateModel candidate,
     bool isDark,
@@ -407,7 +544,8 @@ class CandidateProfileScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: isDark ? AppColors.goldLight : AppColors.navyBlue,
+                  foregroundColor:
+                      isDark ? AppColors.goldLight : AppColors.navyBlue,
                 ),
               ),
             ],
@@ -555,7 +693,11 @@ class CandidateProfileScreen extends StatelessWidget {
     return '${(diffDays / 30).round()} Months';
   }
 
-  Widget _buildProfileHeader(BuildContext context, CandidateModel candidate, bool isDark) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    CandidateModel candidate,
+    bool isDark,
+  ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -571,9 +713,10 @@ class CandidateProfileScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 36,
-              backgroundColor: isDark 
-                  ? AppColors.white.withValues(alpha: 0.1)
-                  : AppColors.navyBlue.withValues(alpha: 0.1),
+              backgroundColor:
+                  isDark
+                      ? AppColors.white.withValues(alpha: 0.1)
+                      : AppColors.navyBlue.withValues(alpha: 0.1),
               child: Text(
                 candidate.fullName.isNotEmpty
                     ? candidate.fullName
@@ -625,17 +768,6 @@ class CandidateProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            if (candidate.status == CandidateStatus.newlyAdded)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                color: isDark ? AppColors.white : AppColors.navyBlue,
-                tooltip: 'Edit Profile',
-                onPressed: () {
-                  final state = Provider.of<GlobalAppState>(context, listen: false);
-                  final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-                  context.push('$routePrefix/candidates/${candidate.id}/edit');
-                },
-              ),
           ],
         ),
       ),
@@ -701,9 +833,11 @@ class CandidateProfileScreen extends StatelessWidget {
                 bool isComplete = stepIndex < progress - 1 || progress >= 4;
                 bool isActive = stepIndex == progress - 1 && progress < 4;
                 bool isSkipped = false;
-                
+
                 // If past Medical (progress > 3) and medical not cleared, it was skipped
-                if (stepIndex == 2 && progress > 3 && !candidate.isMedicalCleared) {
+                if (stepIndex == 2 &&
+                    progress > 3 &&
+                    !candidate.isMedicalCleared) {
                   isComplete = false;
                   isActive = false;
                   isSkipped = true;
@@ -716,24 +850,41 @@ class CandidateProfileScreen extends StatelessWidget {
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSkipped 
-                            ? (isDark ? AppColors.grey700 : AppColors.grey200)
-                            : ((isComplete || isActive)
-                                ? colors[stepIndex]
-                                : (isDark
+                        color:
+                            isSkipped
+                                ? (isDark
                                     ? AppColors.grey700
-                                    : AppColors.grey300)),
-                        border: isSkipped 
-                            ? Border.all(color: AppColors.grey400, width: 2) 
-                            : (isActive ? Border.all(color: isDark ? Colors.white : AppColors.navyBlue, width: 2) : null),
+                                    : AppColors.grey200)
+                                : ((isComplete || isActive)
+                                    ? colors[stepIndex]
+                                    : (isDark
+                                        ? AppColors.grey700
+                                        : AppColors.grey300)),
+                        border:
+                            isSkipped
+                                ? Border.all(color: AppColors.grey400, width: 2)
+                                : (isActive
+                                    ? Border.all(
+                                      color:
+                                          isDark
+                                              ? Colors.white
+                                              : AppColors.navyBlue,
+                                      width: 2,
+                                    )
+                                    : null),
                       ),
                       child: Icon(
-                        isSkipped 
-                            ? Icons.double_arrow 
-                            : (isComplete 
-                                ? Icons.check 
-                                : (isActive ? Icons.hourglass_empty : Icons.circle)),
-                        size: isSkipped ? 16 : (isComplete ? 18 : (isActive ? 16 : 8)),
+                        isSkipped
+                            ? Icons.double_arrow
+                            : (isComplete
+                                ? Icons.check
+                                : (isActive
+                                    ? Icons.hourglass_empty
+                                    : Icons.circle)),
+                        size:
+                            isSkipped
+                                ? 16
+                                : (isComplete ? 18 : (isActive ? 16 : 8)),
                         color: isSkipped ? AppColors.grey500 : AppColors.white,
                       ),
                     ),
@@ -743,14 +894,17 @@ class CandidateProfileScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         fontWeight:
-                            (isComplete || isActive || isSkipped) ? FontWeight.w600 : FontWeight.w400,
-                        color: isSkipped 
-                            ? AppColors.grey500
-                            : ((isComplete || isActive)
-                                ? colors[stepIndex]
-                                : (isDark
-                                    ? AppColors.grey500
-                                    : AppColors.grey600)),
+                            (isComplete || isActive || isSkipped)
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                        color:
+                            isSkipped
+                                ? AppColors.grey500
+                                : ((isComplete || isActive)
+                                    ? colors[stepIndex]
+                                    : (isDark
+                                        ? AppColors.grey500
+                                        : AppColors.grey600)),
                       ),
                     ),
                     if (dates[stepIndex] != null) ...[
@@ -777,12 +931,17 @@ class CandidateProfileScreen extends StatelessWidget {
     return _buildSection('Personal Details', isDark, [
       _infoRow('Age', '${candidate.age} years', isDark),
       _infoRow('Phone', candidate.phone, isDark),
-      if (candidate.altPhone != null) _infoRow('Alt Phone', candidate.altPhone!, isDark),
+      if (candidate.altPhone != null)
+        _infoRow('Alt Phone', candidate.altPhone!, isDark),
       _infoRow('Address', candidate.address, isDark),
       _infoRow('City', '${candidate.city}, ${candidate.state}', isDark),
       _infoRow('Religion', candidate.religion, isDark),
       _infoRow('Expected Salary', candidate.expectedSalary, isDark),
-      _infoRow('Working Hours', '${candidate.workingHoursPerDay} hrs/day', isDark),
+      _infoRow(
+        'Working Hours',
+        '${candidate.workingHoursPerDay} hrs/day',
+        isDark,
+      ),
       if (candidate.preferredWorkType != null)
         _infoRow('Pref. Work Type', candidate.preferredWorkType!, isDark),
     ]);
@@ -813,16 +972,32 @@ class CandidateProfileScreen extends StatelessWidget {
 
   Widget _buildVerificationStatus(CandidateModel candidate, bool isDark) {
     return _buildSection('Verification Hub', isDark, [
-      _verificationItem('Police Verification', candidate.isPoliceVerified, isDark),
-      _verificationItem('Aadhaar Verification', candidate.isAadhaarVerified, isDark),
-      _verificationItem('Medical Clearance', candidate.isMedicalCleared, isDark),
+      _verificationItem(
+        'Police Verification',
+        candidate.isPoliceVerified,
+        isDark,
+      ),
+      _verificationItem(
+        'Aadhaar Verification',
+        candidate.isAadhaarVerified,
+        isDark,
+      ),
+      _verificationItem(
+        'Medical Clearance',
+        candidate.isMedicalCleared,
+        isDark,
+      ),
     ]);
   }
 
   Widget _buildDocuments(CandidateModel candidate, bool isDark) {
     return _buildSection('Documents', isDark, [
       _documentRow('Aadhaar', candidate.aadhaarDocUrl, isDark),
-      _documentRow('Medical Clearance', candidate.medicalClearanceDocUrl, isDark),
+      _documentRow(
+        'Medical Clearance',
+        candidate.medicalClearanceDocUrl,
+        isDark,
+      ),
       _documentRow(
         'Police Verification',
         candidate.policeVerificationDocUrl,
@@ -849,7 +1024,11 @@ class CandidateProfileScreen extends StatelessWidget {
     ]);
   }
 
-  Widget _buildActionBar(BuildContext context, CandidateModel candidate, bool isDark) {
+  Widget _buildActionBar(
+    BuildContext context,
+    CandidateModel candidate,
+    bool isDark,
+  ) {
     final state = Provider.of<GlobalAppState>(context, listen: false);
     return Container(
       width: double.infinity,
@@ -892,7 +1071,10 @@ class CandidateProfileScreen extends StatelessWidget {
                 Provider.of<GlobalAppState>(
                   context,
                   listen: false,
-                ).advanceCandidatePipeline(candidate.id, CandidateStatus.verificationPending);
+                ).advanceCandidatePipeline(
+                  candidate.id,
+                  CandidateStatus.verificationPending,
+                );
               },
             ),
           ],
@@ -904,7 +1086,10 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.stageMedicalCheck,
               isDark,
               () {
-                Provider.of<GlobalAppState>(context, listen: false).updateCandidate(
+                Provider.of<GlobalAppState>(
+                  context,
+                  listen: false,
+                ).updateCandidate(
                   candidate.copyWith(
                     status: CandidateStatus.medicalPending,
                     isPoliceVerified: true,
@@ -920,7 +1105,10 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.statusVerified,
               isDark,
               () {
-                Provider.of<GlobalAppState>(context, listen: false).updateCandidate(
+                Provider.of<GlobalAppState>(
+                  context,
+                  listen: false,
+                ).updateCandidate(
                   candidate.copyWith(
                     status: CandidateStatus.readyToPlace,
                     isPoliceVerified: true,
@@ -941,7 +1129,10 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.statusVerified,
               isDark,
               () {
-                Provider.of<GlobalAppState>(context, listen: false).updateCandidate(
+                Provider.of<GlobalAppState>(
+                  context,
+                  listen: false,
+                ).updateCandidate(
                   candidate.copyWith(
                     status: CandidateStatus.readyToPlace,
                     isMedicalCleared: true,
@@ -953,7 +1144,7 @@ class CandidateProfileScreen extends StatelessWidget {
             ),
 
           if (candidate.status != CandidateStatus.blacklisted &&
-              candidate.status != CandidateStatus.placed)
+              candidate.status != CandidateStatus.Placed)
             _actionButton(
               'Blacklist',
               Icons.block,

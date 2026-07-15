@@ -24,7 +24,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void initState() {
     super.initState();
     final result = MockDataGenerator.getTickets(
-      const PaginationParams(pageSize: 5)
+      const PaginationParams(pageSize: 5),
     );
     _recentTickets = result.items;
   }
@@ -62,7 +62,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 value: _formatCurrency(_stats['totalRevenue'] as double),
                 subtitle: 'This Financial Year',
                 width: _cardWidth(width, isDesktop, isTablet),
-                isDark: isDark
+                isDark: isDark,
               ),
               _buildStatCard(
                 icon: Icons.people,
@@ -71,7 +71,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 value: _indianFormat.format(_stats['activePlacements'] as int),
                 subtitle: 'Currently Placed',
                 width: _cardWidth(width, isDesktop, isTablet),
-                isDark: isDark
+                isDark: isDark,
               ),
               _buildStatCard(
                 icon: Icons.trending_down,
@@ -80,7 +80,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 value: '${_stats['attritionRate']}%',
                 subtitle: 'Last 90 Days',
                 width: _cardWidth(width, isDesktop, isTablet),
-                isDark: isDark
+                isDark: isDark,
               ),
               _buildStatCard(
                 icon: Icons.warning_amber_rounded,
@@ -89,9 +89,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 value: _indianFormat.format(_stats['urgentTickets'] as int),
                 subtitle: 'Requires Attention',
                 width: _cardWidth(width, isDesktop, isTablet),
-                isDark: isDark
+                isDark: isDark,
               ),
-            ]
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -101,8 +101,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue
-            )
+              color: isDark ? AppColors.white : AppColors.navyBlue,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -114,50 +114,77 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 _indianFormat.format(_stats['totalCandidates'] as int),
                 Icons.people_outline,
                 AppColors.stageInterviewed,
-                isDark
+                isDark,
               ),
               _buildMiniStat(
                 'Total Clients',
                 _indianFormat.format(_stats['totalClients'] as int),
                 Icons.business_outlined,
                 AppColors.gold,
-                isDark
+                isDark,
               ),
               _buildMiniStat(
                 'Open Tickets',
                 _indianFormat.format(_stats['openTickets'] as int),
                 Icons.confirmation_number_outlined,
                 AppColors.urgentAmber,
-                isDark
+                isDark,
               ),
               InkWell(
                 onTap: () => context.go('/admin/audit'),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.navyBlue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.navyBlue.withValues(alpha: 0.3))
+                    border: Border.all(
+                      color: AppColors.navyBlue.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.history, size: 20, color: AppColors.gold),
+                      const Icon(
+                        Icons.history,
+                        size: 20,
+                        color: AppColors.gold,
+                      ),
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Global Logs', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: isDark ? AppColors.grey400 : AppColors.grey600)),
-                          Text('View Audit Trail', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.navyBlue)),
-                        ]
-                      )
-                    ]
-                  )
-                )
-              )
-            ]
+                          Text(
+                            'Global Logs',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isDark
+                                      ? AppColors.grey400
+                                      : AppColors.grey600,
+                            ),
+                          ),
+                          Text(
+                            'View Audit Trail',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color:
+                                  isDark ? AppColors.white : AppColors.navyBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 
@@ -167,8 +194,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue
-            )
+              color: isDark ? AppColors.white : AppColors.navyBlue,
+            ),
           ),
           const SizedBox(height: 12),
           Card(
@@ -176,26 +203,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: isDark ? AppColors.dividerDark : AppColors.grey200
-              )
+                color: isDark ? AppColors.dividerDark : AppColors.grey200,
+              ),
             ),
             color: isDark ? AppColors.darkSurface : AppColors.white,
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _recentTickets.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: isDark ? AppColors.dividerDark : AppColors.grey200
-              ),
+              separatorBuilder:
+                  (_, __) => Divider(
+                    height: 1,
+                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  ),
               itemBuilder: (context, index) {
                 final ticket = _recentTickets[index];
                 return _buildTicketTile(ticket, isDark);
-              }
-            )
+              },
+            ),
           ),
-        ]
-      )
+        ],
+      ),
     );
   }
 
@@ -212,7 +240,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required String value,
     required String subtitle,
     required double width,
-    required bool isDark
+    required bool isDark,
   }) {
     return SizedBox(
       width: width,
@@ -221,8 +249,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
           side: BorderSide(
-            color: isDark ? AppColors.dividerDark : AppColors.grey200
-          )
+            color: isDark ? AppColors.dividerDark : AppColors.grey200,
+          ),
         ),
         color: isDark ? AppColors.darkSurface : AppColors.white,
         child: Padding(
@@ -236,17 +264,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: iconColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10)
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icon, size: 22, color: iconColor)
+                    child: Icon(icon, size: 22, color: iconColor),
                   ),
                   const Spacer(),
                   Icon(
                     Icons.trending_up,
                     size: 18,
-                    color: AppColors.successGreen
+                    color: AppColors.successGreen,
                   ),
-                ]
+                ],
               ),
               const SizedBox(height: 16),
               Text(
@@ -254,8 +282,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? AppColors.grey400 : AppColors.grey600
-                )
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -263,21 +291,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.navyBlue
-                )
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
-                  color: isDark ? AppColors.grey500 : AppColors.grey600
-                )
+                  color: isDark ? AppColors.grey500 : AppColors.grey600,
+                ),
               ),
-            ]
-          )
-        )
-      )
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -286,14 +314,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     String value,
     IconData icon,
     Color color,
-    bool isDark
+    bool isDark,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2))
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -309,21 +337,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? AppColors.grey400 : AppColors.grey600
-                )
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                ),
               ),
               Text(
                 value,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.navyBlue
-                )
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
               ),
-            ]
+            ],
           ),
-        ]
-      )
+        ],
+      ),
     );
   }
 
@@ -348,39 +376,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
         height: 40,
         decoration: BoxDecoration(
           color: priorityColor,
-          borderRadius: BorderRadius.circular(2)
-        )
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
       title: Text(
         ticket.title,
         style: GoogleFonts.poppins(
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          color: isDark ? AppColors.white : AppColors.textPrimaryLight
-        )
+          color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+        ),
       ),
       subtitle: Text(
         '${ticket.clientName} • ${ticket.priority.displayName}',
         style: GoogleFonts.poppins(
           fontSize: 11,
-          color: isDark ? AppColors.grey500 : AppColors.grey600
-        )
+          color: isDark ? AppColors.grey500 : AppColors.grey600,
+        ),
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: priorityColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6)
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           ticket.status.displayName,
           style: GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: priorityColor
-          )
-        )
-      )
+            color: priorityColor,
+          ),
+        ),
+      ),
     );
   }
 }

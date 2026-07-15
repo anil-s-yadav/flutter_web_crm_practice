@@ -5,6 +5,7 @@ enum ClientStatus {
   interested,
   notInterested,
   converted,
+  inactive,
 }
 
 extension ClientStatusExtension on ClientStatus {
@@ -18,6 +19,8 @@ extension ClientStatusExtension on ClientStatus {
         return 'Not Interested';
       case ClientStatus.converted:
         return 'Converted (Active)';
+      case ClientStatus.inactive:
+        return 'Inactive / Past';
     }
   }
 

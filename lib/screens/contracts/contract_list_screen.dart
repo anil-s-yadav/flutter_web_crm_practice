@@ -73,7 +73,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
               return false;
             if (_currentViewMode == 'replacements' &&
                 !c.isReplacementUsed &&
-                c.contractStatus != ContractStatus.replaced)
+                c.contractStatus != ContractStatus.rePlaced)
               return false;
           } else if (_selectedStatus != null &&
               c.contractStatus != _selectedStatus) {
@@ -93,6 +93,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
         context: context,
         isDark: isDark,
         contracts: filteredContracts,
+        viewMode: _currentViewMode,
         onRowTap: (contract) {
           final routePrefix =
               state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
@@ -123,135 +124,6 @@ class _ContractListScreenState extends State<ContractListScreen> {
           isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
       body: Column(
         children: [
-          // Toolbar (Search & Filters)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-            margin: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                ),
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.successGreen.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_indianFormat.format(_contractDataSource!.rows.length)} Contracts',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.successGreen,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: 300,
-                  height: 38,
-                  child: TextField(
-                    onChanged: (val) {
-                      setState(() => _searchQuery = val);
-                      _initializeDataSource();
-                    },
-                    style: GoogleFonts.poppins(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Search by ID, client or candidate...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppColors.grey500,
-                      ),
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 200,
-                  height: 38,
-                  child: DropdownButtonFormField<ContractStatus?>(
-                    initialValue: _selectedStatus,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 0,
-                      ),
-                      filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('All Statuses'),
-                      ),
-                      ...ContractStatus.values.map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s.displayName),
-                        ),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      setState(() => _selectedStatus = val);
-                      _initializeDataSource();
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
           // DataGrid
           Expanded(
             child: Container(
@@ -261,9 +133,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
                     headerColor:
-                        isDark
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.grey50,
+                        isDark ? AppColors.darkSurface : AppColors.grey50,
                     gridLineColor:
                         isDark ? AppColors.dividerDark : AppColors.grey200,
                     gridLineStrokeWidth: 1,
@@ -290,85 +160,108 @@ class _ContractListScreenState extends State<ContractListScreen> {
                       ),
                       GridColumn(
                         columnName: 'sr_no',
-                        width: 100,
+                        // width: 90,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
                           alignment: Alignment.centerLeft,
-                          child: Text('Sr No', style: _headerStyle),
-                        ),
-                      ),
-                      GridColumn(
-                        columnName: 'date',
-                        width: 130,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Placed On', style: _headerStyle),
-                        ),
-                      ),
-                      GridColumn(
-                        columnName: 'duration',
-                        width: 110,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Duration', style: _headerStyle),
-                        ),
-                      ),
-                      GridColumn(
-                        columnName: 'expires_on',
-                        width: 130,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Expires On', style: _headerStyle),
+                          child: Text('Sr No', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
                         columnName: 'details',
-                        maximumWidth: 300,
+                        width: 240,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
                           alignment: Alignment.centerLeft,
-                          child: Text('Contract Details', style: _headerStyle),
+                          child: Text(
+                            'Contract Details',
+                            style: _headerStyle(isDark),
+                          ),
                         ),
                       ),
+                      if (_currentViewMode != 'renewals')
+                        GridColumn(
+                          columnName: 'date',
+                          width: 120,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Placed On',
+                              style: _headerStyle(isDark),
+                            ),
+                          ),
+                        ),
                       GridColumn(
-                        columnName: 'financials',
-                        width: 160,
+                        columnName: 'expires_on',
+                        width: 120,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
                           alignment: Alignment.centerLeft,
-                          child: Text('Financials', style: _headerStyle),
+                          child: Text(
+                            'Expires On',
+                            style: _headerStyle(isDark),
+                          ),
                         ),
                       ),
-                      GridColumn(
-                        columnName: 'paymentStatus',
-                        width: 130,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Payment', style: _headerStyle),
+                      if (_currentViewMode != 'renewals' &&
+                          _currentViewMode != 'replacements')
+                        GridColumn(
+                          columnName: 'duration',
+                          width: 100,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Duration',
+                              style: _headerStyle(isDark),
+                            ),
+                          ),
                         ),
-                      ),
-                      GridColumn(
-                        columnName: 'contractStatus',
-                        width: 130,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Status', style: _headerStyle),
+                      if (_currentViewMode != 'replacements')
+                        GridColumn(
+                          columnName: 'financials',
+                          width: 130,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Financials',
+                              style: _headerStyle(isDark),
+                            ),
+                          ),
                         ),
-                      ),
-                      GridColumn(
-                        columnName: 'actions',
-                        width: 90,
-                        label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          alignment: Alignment.center,
-                          child: Text('Action', style: _headerStyle),
+                      if (_currentViewMode != 'replacements' &&
+                          _currentViewMode != 'renewals')
+                        GridColumn(
+                          columnName: 'paymentStatus',
+                          width: 130,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.centerLeft,
+                            child: Text('Payment', style: _headerStyle(isDark)),
+                          ),
                         ),
-                      ),
+                      if (_currentViewMode != 'active')
+                        GridColumn(
+                          columnName: 'contractStatus',
+                          width: 130,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.centerLeft,
+                            child: Text('Status', style: _headerStyle(isDark)),
+                          ),
+                        ),
+                      if (_currentViewMode != 'active')
+                        GridColumn(
+                          columnName: 'actions',
+                          width: 90,
+                          label: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            alignment: Alignment.center,
+                            child: Text('Action', style: _headerStyle(isDark)),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -378,7 +271,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
 
           // Pagination
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
               border: Border(
@@ -388,23 +281,50 @@ class _ContractListScreenState extends State<ContractListScreen> {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const IconButton(
-                  icon: Icon(Icons.chevron_left, size: 20),
-                  onPressed: null, // Stubbed for mock data
-                ),
-                Text(
-                  'Page 1 of 1',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.successGreen.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_indianFormat.format(_contractDataSource!.rows.length)} Contracts',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.successGreen,
+                    ),
                   ),
                 ),
-                const IconButton(
-                  icon: Icon(Icons.chevron_right, size: 20),
-                  onPressed: null, // Stubbed for mock data
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const IconButton(
+                      icon: Icon(Icons.chevron_left, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                    Text(
+                      'Page 1 of 1',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const IconButton(
+                      icon: Icon(Icons.chevron_right, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                  ],
                 ),
+                const SizedBox(width: 100),
               ],
             ),
           ),
@@ -413,9 +333,9 @@ class _ContractListScreenState extends State<ContractListScreen> {
     );
   }
 
-  TextStyle get _headerStyle => GoogleFonts.poppins(
+  TextStyle _headerStyle(bool isDark) => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.grey600,
+    color: isDark ? AppColors.goldLight : AppColors.grey600,
   );
 }

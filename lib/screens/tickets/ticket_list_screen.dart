@@ -128,83 +128,19 @@ class _TicketListScreenState extends State<TicketListScreen> {
           //   ),
           // ),
 
-          // Toolbar (Search & Filters)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
               border: Border(
-                bottom: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                ),
+                bottom: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
               ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
-              spacing: 10,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.criticalRed.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_indianFormat.format(_ticketDataSource!.rows.length)} Tickets',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.criticalRed,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-
-                SizedBox(
-                  width: 300,
-                  height: 38,
-                  child: TextField(
-                    onChanged: (val) {
-                      setState(() => _searchQuery = val);
-                      _debouncer.run(() => _initializeDataSource());
-                    },
-                    style: GoogleFonts.poppins(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Search tickets...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppColors.grey500,
-                      ),
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                const Text('Filters:', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(width: 12),
                 SizedBox(
                   width: 160,
@@ -212,43 +148,21 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   child: DropdownButtonFormField<TicketPriority?>(
                     initialValue: _selectedPriority,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 0,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                       filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
+                      fillColor: isDark ? AppColors.darkSurface : AppColors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
+                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
+                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('All Priorities'),
-                      ),
-                      ...TicketPriority.values.map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s.displayName),
-                        ),
-                      ),
+                      const DropdownMenuItem(value: null, child: Text('All Priorities')),
+                      ...TicketPriority.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
                     ],
                     onChanged: (val) {
                       setState(() => _selectedPriority = val);
@@ -263,63 +177,26 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   child: DropdownButtonFormField<TicketStatus?>(
                     initialValue: _selectedStatus,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 0,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                       filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
+                      fillColor: isDark ? AppColors.darkSurface : AppColors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
+                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
+                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('All Statuses'),
-                      ),
-                      ...TicketStatus.values.map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s.displayName),
-                        ),
-                      ),
+                      const DropdownMenuItem(value: null, child: Text('All Statuses')),
+                      ...TicketStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
                     ],
                     onChanged: (val) {
                       setState(() => _selectedStatus = val);
                       _initializeDataSource();
                     },
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Add ticket logic
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('New Ticket'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.navyBlue,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
                   ),
                 ),
               ],
@@ -334,12 +211,8 @@ class _TicketListScreenState extends State<TicketListScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
-                    headerColor:
-                        isDark
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.grey50,
-                    gridLineColor:
-                        isDark ? AppColors.dividerDark : AppColors.grey200,
+                    headerColor: isDark ? AppColors.darkSurface : AppColors.grey50,
+                    gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
                     gridLineStrokeWidth: 1,
                     rowHoverColor:
                         isDark
@@ -368,7 +241,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Ticket ID', style: _headerStyle),
+                          child: Text('Ticket ID', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -377,7 +250,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Created At', style: _headerStyle),
+                          child: Text('Created At', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -386,7 +259,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Details', style: _headerStyle),
+                          child: Text('Details', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -395,7 +268,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Priority', style: _headerStyle),
+                          child: Text('Priority', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -404,7 +277,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Status', style: _headerStyle),
+                          child: Text('Status', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -413,7 +286,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Assigned To', style: _headerStyle),
+                          child: Text('Assigned To', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -422,7 +295,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.center,
-                          child: Text('Action', style: _headerStyle),
+                          child: Text('Action', style: _headerStyle(isDark)),
                         ),
                       ),
                     ],
@@ -444,23 +317,47 @@ class _TicketListScreenState extends State<TicketListScreen> {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const IconButton(
-                  icon: Icon(Icons.chevron_left, size: 20),
-                  onPressed: null, // Stubbed for mock data
-                ),
-                Text(
-                  'Page 1 of 1',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.white.withValues(alpha: 0.1) : AppColors.criticalRed.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_indianFormat.format(_ticketDataSource!.rows.length)} Tickets',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.criticalRed,
+                    ),
                   ),
                 ),
-                const IconButton(
-                  icon: Icon(Icons.chevron_right, size: 20),
-                  onPressed: null, // Stubbed for mock data
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const IconButton(
+                      icon: Icon(Icons.chevron_left, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                    Text(
+                      'Page 1 of 1',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const IconButton(
+                      icon: Icon(Icons.chevron_right, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                  ],
                 ),
+                const SizedBox(width: 100), // Balance space
               ],
             ),
           ),
@@ -469,9 +366,9 @@ class _TicketListScreenState extends State<TicketListScreen> {
     );
   }
 
-  TextStyle get _headerStyle => GoogleFonts.poppins(
+  TextStyle _headerStyle(bool isDark) => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.grey600,
+    color: isDark ? AppColors.goldLight : AppColors.grey600,
   );
 }

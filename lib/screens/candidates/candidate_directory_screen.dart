@@ -18,7 +18,7 @@ enum CandidateDirectoryType {
   readyToPlace,
   verificationPending,
   medicalPending,
-  hired,
+  placed,
   blacklisted,
 }
 
@@ -45,17 +45,23 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   String? _selectedExperience;
   String? _selectedLocation;
   String? _selectedCategory;
-  bool _showMobileFilters = false;
+  bool _showFilters = false;
 
   int _activeReadyTabIndex = 0;
   int _activeVerifyTabIndex = 0;
+
+  bool get _isNewStyle =>
+      widget.type == CandidateDirectoryType.readyToPlace ||
+      widget.type == CandidateDirectoryType.verificationPending;
 
   void _onRowTap(CandidateModel candidate) {
     if (!widget.readOnly) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
       final routePrefix =
           state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-      context.push('$routePrefix/candidates/${candidate.id}');
+      context.push(
+        '$routePrefix/candidates/${candidate.id}?from=${widget.type.name}',
+      );
     }
   }
 
@@ -262,61 +268,84 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(tabs.length, (index) {
-                  final isSelected = _activeReadyTabIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        tabs[index],
-                        style: GoogleFonts.poppins(
-                          color:
-                              isSelected
-                                  ? AppColors.navyBlue
-                                  : (isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight),
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.gold,
-                      backgroundColor:
-                          isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.white,
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      onSelected: (selected) {
-                        setState(() {
-                          _activeReadyTabIndex = index;
-                        });
-                      },
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(tabs.length, (index) {
+                        final isSelected = _activeReadyTabIndex == index;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(
+                              tabs[index],
+                              style: GoogleFonts.poppins(
+                                color:
+                                    isSelected
+                                        ? AppColors.navyBlue
+                                        : (isDark
+                                            ? AppColors.textSecondaryDark
+                                            : AppColors.textSecondaryLight),
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: AppColors.gold,
+                            backgroundColor:
+                                isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.white,
+                            side: BorderSide.none,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            onSelected: (selected) {
+                              setState(() {
+                                _activeReadyTabIndex = index;
+                              });
+                            },
+                          ),
+                        );
+                      }),
                     ),
-                  );
-                }),
-              ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  tooltip: 'Toggle Filters',
+                  onPressed: () {
+                    setState(() {
+                      _showFilters = !_showFilters;
+                    });
+                  },
+                ),
+              ],
             ),
           ),
-          _buildToolbar(context, isDark, policeAndAadhaar.length),
+          if (_showFilters)
+            _buildToolbar(context, isDark, policeAndAadhaar.length),
           Expanded(
             child:
                 _activeReadyTabIndex == 0
                     ? _CandidateGridView(
                       candidates: policeAndAadhaar,
                       isDark: isDark,
+                      isNewStyle: _isNewStyle,
                       onRowTap: _onRowTap,
                       onActionTap: _onActionTap,
                     )
                     : _CandidateGridView(
                       candidates: medicalCleared,
                       isDark: isDark,
+                      isNewStyle: _isNewStyle,
                       onRowTap: _onRowTap,
                       onActionTap: _onActionTap,
                     ),
@@ -346,49 +375,69 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(tabs.length, (index) {
-                  final isSelected = _activeVerifyTabIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        tabs[index],
-                        style: GoogleFonts.poppins(
-                          color:
-                              isSelected
-                                  ? AppColors.navyBlue
-                                  : (isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight),
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.gold,
-                      backgroundColor:
-                          isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.white,
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      onSelected: (selected) {
-                        setState(() {
-                          _activeVerifyTabIndex = index;
-                        });
-                      },
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(tabs.length, (index) {
+                        final isSelected = _activeVerifyTabIndex == index;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(
+                              tabs[index],
+                              style: GoogleFonts.poppins(
+                                color:
+                                    isSelected
+                                        ? AppColors.navyBlue
+                                        : (isDark
+                                            ? AppColors.textSecondaryDark
+                                            : AppColors.textSecondaryLight),
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: AppColors.gold,
+                            backgroundColor:
+                                isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.white,
+                            side: BorderSide.none,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            onSelected: (selected) {
+                              setState(() {
+                                _activeVerifyTabIndex = index;
+                              });
+                            },
+                          ),
+                        );
+                      }),
                     ),
-                  );
-                }),
-              ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  tooltip: 'Toggle Filters',
+                  onPressed: () {
+                    setState(() {
+                      _showFilters = !_showFilters;
+                    });
+                  },
+                ),
+              ],
             ),
           ),
-          _buildToolbar(context, isDark, allPending.length),
+          if (_showFilters) _buildToolbar(context, isDark, allPending.length),
           Expanded(
             child:
                 _activeVerifyTabIndex == 0
@@ -397,12 +446,14 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                       isDark: isDark,
                       onRowTap: _onRowTap,
                       onActionTap: _onActionTap,
+                      isNewStyle: true,
                     )
                     : _CandidateGridView(
                       candidates: aadhaarPending,
                       isDark: isDark,
                       onRowTap: _onRowTap,
                       onActionTap: _onActionTap,
+                      isNewStyle: true,
                     ),
           ),
         ],
@@ -424,10 +475,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                 .where((m) => m.status == CandidateStatus.medicalPending)
                 .toList();
         break;
-      case CandidateDirectoryType.hired:
+      case CandidateDirectoryType.placed:
         displayCandidates =
             baseCandidates
-                .where((m) => m.status == CandidateStatus.placed)
+                .where((m) => m.status == CandidateStatus.Placed)
                 .toList();
         break;
       case CandidateDirectoryType.blacklisted:
@@ -447,6 +498,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           child: _CandidateGridView(
             candidates: displayCandidates,
             isDark: isDark,
+            isNewStyle: _isNewStyle,
             onRowTap: _onRowTap,
             onActionTap: _onActionTap,
           ),
@@ -478,102 +530,108 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   }
 
   Widget _buildMobileToolbar(bool isDark, int count) {
+    // If old style, we conditionally hide the filters part using the mobile toggle
+    bool showFiltersArea = _isNewStyle ? true : _showFilters;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.navyBlue.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${_indianFormat.format(count)} Candidates found',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.white : AppColors.navyBlue,
-                ),
-              ),
-            ),
-            const Spacer(),
-            InkWell(
-              onTap:
-                  () =>
-                      setState(() => _showMobileFilters = !_showMobileFilters),
-              child: Container(
+        if (!_isNewStyle) ...[
+          Row(
+            children: [
+              Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
-                  ),
+                  color: AppColors.successGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  color:
-                      _showMobileFilters
-                          ? (isDark ? AppColors.navyBlue : AppColors.grey200)
-                          : Colors.transparent,
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.filter_list,
-                      size: 16,
-                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                child: Text(
+                  '${_indianFormat.format(count)} Candidates found',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.successGreen,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () => setState(() => _showFilters = !_showFilters),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey300,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Filters',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
+                    borderRadius: BorderRadius.circular(8),
+                    color:
+                        _showFilters
+                            ? (isDark ? AppColors.navyBlue : AppColors.grey200)
+                            : Colors.transparent,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.filter_list,
+                        size: 16,
                         color: isDark ? AppColors.white : AppColors.navyBlue,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'Filters',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 38,
-          child: TextField(
-            controller: _searchController,
-            onChanged: (val) {
-              setState(() => _searchQuery = val);
-            },
-            style: GoogleFonts.poppins(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Search candidates...',
-              hintStyle: GoogleFonts.poppins(
-                fontSize: 13,
-                color: AppColors.grey500,
-              ),
-              prefixIcon: const Icon(Icons.search, size: 18),
-              filled: true,
-              fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (showFiltersArea || _isNewStyle) ...[
+          SizedBox(
+            height: 38,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (val) {
+                setState(() => _searchQuery = val);
+              },
+              style: GoogleFonts.poppins(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Search candidates...',
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: AppColors.grey500,
                 ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                filled: true,
+                fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        if (_showMobileFilters) ...[
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -644,21 +702,24 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   Widget _buildDesktopToolbar(bool isDark, int count) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.navyBlue.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '${_indianFormat.format(count)} Candidates found',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue,
+        if (!_isNewStyle) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.successGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${_indianFormat.format(count)} Candidates found',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.successGreen,
+              ),
             ),
           ),
-        ),
+          const Spacer(),
+        ],
         const Spacer(),
         _buildFilterDropdown(
           value: _selectedCategory,
@@ -798,12 +859,14 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
 class _CandidateGridView extends StatelessWidget {
   final List<CandidateModel> candidates;
   final bool isDark;
+  final bool isNewStyle;
   final Function(CandidateModel) onRowTap;
   final Function(CandidateModel, String) onActionTap;
 
   const _CandidateGridView({
     required this.candidates,
     required this.isDark,
+    required this.isNewStyle,
     required this.onRowTap,
     required this.onActionTap,
   });
@@ -838,13 +901,16 @@ class _CandidateGridView extends StatelessWidget {
       children: [
         Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10),
+            // margin: const EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.all(5),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(5),
               child: SfDataGridTheme(
                 data: SfDataGridThemeData(
-                  headerColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-                  gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  headerColor:
+                      isDark ? AppColors.darkSurface : AppColors.grey50,
+                  gridLineColor:
+                      isDark ? AppColors.dividerDark : AppColors.grey200,
                   gridLineStrokeWidth: 1,
                   rowHoverColor:
                       isDark
@@ -873,7 +939,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'ID',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -887,7 +953,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Date',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -901,7 +967,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Profile',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -915,7 +981,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Category',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -929,7 +995,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Exp (Yrs)',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -943,7 +1009,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Expected Salary',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -957,7 +1023,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Education',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -971,7 +1037,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Lang',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -985,7 +1051,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'Status',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -999,7 +1065,7 @@ class _CandidateGridView extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           'Actions',
-                          style: _headerStyle,
+                          style: _headerStyle(isDark),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1023,22 +1089,50 @@ class _CandidateGridView extends StatelessWidget {
             ),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                isNewStyle
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.center,
             children: [
-              const IconButton(
-                icon: Icon(Icons.chevron_left, size: 20),
-                onPressed: null,
-              ),
-              Text(
-                'Page 1 of 1',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+              if (isNewStyle)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${NumberFormat('#,##,###', 'en_IN').format(candidates.length)} Candidates found',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.successGreen,
+                    ),
+                  ),
                 ),
-              ),
-              const IconButton(
-                icon: Icon(Icons.chevron_right, size: 20),
-                onPressed: null,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const IconButton(
+                    icon: Icon(Icons.chevron_left, size: 20),
+                    onPressed: null,
+                  ),
+                  Text(
+                    'Page 1 of 1',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const IconButton(
+                    icon: Icon(Icons.chevron_right, size: 20),
+                    onPressed: null,
+                  ),
+                ],
               ),
             ],
           ),
@@ -1093,7 +1187,7 @@ class _CandidateGridView extends StatelessWidget {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.placed:
+      case CandidateStatus.Placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
@@ -1106,10 +1200,10 @@ class _CandidateGridView extends StatelessWidget {
     }
   }
 
-  TextStyle get _headerStyle => GoogleFonts.poppins(
+  TextStyle _headerStyle(bool isDark) => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.grey600,
+    color: isDark ? AppColors.goldLight : AppColors.grey600,
   );
 }
 
@@ -1258,7 +1352,7 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                         );
                       }
                       if (candidate.status != CandidateStatus.blacklisted &&
-                          candidate.status != CandidateStatus.placed) {
+                          candidate.status != CandidateStatus.Placed) {
                         items.add(
                           const PopupMenuItem(
                             value: 'blacklist',

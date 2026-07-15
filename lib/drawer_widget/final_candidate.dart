@@ -173,11 +173,6 @@ class FinalCandidateScreen extends StatelessWidget {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor: WidgetStateProperty.all(Colors.deepPurple),
-                headingTextStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
                 columns: const [
                   DataColumn(label: Text("DATE")),
                   DataColumn(label: Text("PHOTO")),

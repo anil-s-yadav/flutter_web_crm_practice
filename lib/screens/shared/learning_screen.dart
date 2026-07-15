@@ -12,15 +12,6 @@ class LearningScreen extends StatelessWidget {
     final isMobile = context.media.width < 800;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Learning Center',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
@@ -44,40 +35,62 @@ class LearningScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Language Abbreviations
-            _buildSectionHeader(
-              'Language Abbreviations',
-              Icons.translate,
-              isDark,
-            ),
-            const SizedBox(height: 16),
             Wrap(
-              spacing: 16,
-              runSpacing: 16,
+              spacing: 32,
+              runSpacing: 32,
+              crossAxisAlignment: WrapCrossAlignment.start,
               children: [
-                _buildAbbreviationCard('en', 'English', isDark),
-                _buildAbbreviationCard('hi', 'Hindi', isDark),
-                _buildAbbreviationCard('ma', 'Marathi', isDark),
-                _buildAbbreviationCard('gu', 'Gujarati', isDark),
-                _buildAbbreviationCard('ta', 'Tamil', isDark),
-                _buildAbbreviationCard('te', 'Telugu', isDark),
-                _buildAbbreviationCard('pu', 'Punjabi', isDark),
-                _buildAbbreviationCard('bn', 'Bengali', isDark),
-              ],
-            ),
-            const SizedBox(height: 32),
+                // Language Abbreviations
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      'Language Abbreviations',
+                      Icons.translate,
+                      isDark,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTable(
+                      [
+                        {'code': 'en', 'name': 'English'},
+                        {'code': 'hi', 'name': 'Hindi'},
+                        {'code': 'ma', 'name': 'Marathi'},
+                        {'code': 'gu', 'name': 'Gujarati'},
+                        {'code': 'ta', 'name': 'Tamil'},
+                        {'code': 'te', 'name': 'Telugu'},
+                        {'code': 'pu', 'name': 'Punjabi'},
+                        {'code': 'bn', 'name': 'Bengali'},
+                      ],
+                      'Code',
+                      'Language',
+                      isDark,
+                    ),
+                  ],
+                ),
 
-            // Education Abbreviations
-            _buildSectionHeader('Education Categories', Icons.school, isDark),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                _buildAbbreviationCard('Below 10th', 'Basic literacy', isDark),
-                _buildAbbreviationCard('10th Pass', 'Completed SSC', isDark),
-                _buildAbbreviationCard('12th Pass', 'Completed HSC', isDark),
-                _buildAbbreviationCard('Graduate', 'Completed Degree', isDark),
+                // Education Abbreviations
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      'Education Categories',
+                      Icons.school,
+                      isDark,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTable(
+                      [
+                        {'code': 'Below 10th', 'name': 'Basic literacy'},
+                        {'code': '10th Pass', 'name': 'Completed SSC'},
+                        {'code': '12th Pass', 'name': 'Completed HSC'},
+                        {'code': 'Graduate', 'name': 'Completed Degree'},
+                      ],
+                      'Category',
+                      'Description',
+                      isDark,
+                    ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -143,45 +156,65 @@ class LearningScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAbbreviationCard(
-    String shortForm,
-    String fullForm,
+  Widget _buildTable(
+    List<Map<String, String>> items,
+    String col1,
+    String col2,
     bool isDark,
   ) {
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.grey200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.navyBlue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              shortForm,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            fullForm,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
-            ),
-          ),
-        ],
-      ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children:
+          items.map((item) {
+            return Container(
+              width: 200,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.navyBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item['code']!,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item['name']!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color:
+                            isDark
+                                ? AppColors.grey300
+                                : AppColors.textPrimaryLight,
+                      ),
+                      maxLines: 1,
+                      // overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
     );
   }
 

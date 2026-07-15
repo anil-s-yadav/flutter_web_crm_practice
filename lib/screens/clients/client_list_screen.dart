@@ -110,98 +110,22 @@ class _ClientListScreenState extends State<ClientListScreen> {
           isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
       body: Column(
         children: [
-          // Toolbar (Search & Filters)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-            margin: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+          if (widget.initialStatus == null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              margin: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                  ),
                 ),
+                borderRadius: BorderRadius.circular(10),
               ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 10,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.navyBlue.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_indianFormat.format(_clientDataSource!.rows.length)} Clients found',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.navyBlue,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-
-                SizedBox(
-                  width: 300,
-                  height: 38,
-                  child: TextField(
-                    onChanged: (val) {
-                      setState(() => _searchQuery = val);
-                      _initializeDataSource();
-                    },
-                    style: GoogleFonts.poppins(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Search clients...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppColors.grey500,
-                      ),
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      filled: true,
-                      fillColor:
-                          isDark ? AppColors.darkSurface : AppColors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color:
-                              isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.grey300,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => context.push('/sales/add_client'),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Client'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.navyBlue,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
-                if (widget.initialStatus == null) ...[
+              child: Row(
+                children: [
+                  const Text('Filter by Status:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(width: 12),
                   SizedBox(
                     width: 200,
@@ -209,42 +133,22 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     child: DropdownButtonFormField<ClientStatus?>(
                       initialValue: _selectedStatus,
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 0,
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                         filled: true,
-                        fillColor:
-                            isDark ? AppColors.darkSurface : AppColors.white,
+                        fillColor: isDark ? AppColors.darkSurface : AppColors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
-                          ),
+                          borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
-                          ),
+                          borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
                         ),
                       ),
                       items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('All Statuses'),
-                        ),
+                        const DropdownMenuItem(value: null, child: Text('All Statuses')),
                         ...ClientStatus.values.map(
-                          (s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(s.displayName),
-                          ),
+                          (s) => DropdownMenuItem(value: s, child: Text(s.displayName)),
                         ),
                       ],
                       onChanged: (val) {
@@ -254,9 +158,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
           // DataGrid
           Expanded(
             child: Container(
@@ -265,12 +168,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
-                    headerColor:
-                        isDark
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.grey50,
-                    gridLineColor:
-                        isDark ? AppColors.dividerDark : AppColors.grey200,
+                    headerColor: isDark ? AppColors.darkSurface : AppColors.grey50,
+                    gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
                     gridLineStrokeWidth: 1,
                     rowHoverColor:
                         isDark
@@ -299,7 +198,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Sr No', style: _headerStyle),
+                          child: Text('Sr No', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -308,7 +207,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Date', style: _headerStyle),
+                          child: Text('Date', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -317,7 +216,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Client', style: _headerStyle),
+                          child: Text('Client', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -326,7 +225,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Mobile', style: _headerStyle),
+                          child: Text('Mobile', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -335,7 +234,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Looking For', style: _headerStyle),
+                          child: Text('Looking For', style: _headerStyle(isDark)),
                         ),
                       ),
                       GridColumn(
@@ -344,7 +243,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Budget', style: _headerStyle),
+                          child: Text('Budget', style: _headerStyle(isDark)),
                         ),
                       ),
                       if (widget.initialStatus == null)
@@ -354,7 +253,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                           label: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             alignment: Alignment.centerLeft,
-                            child: Text('Status', style: _headerStyle),
+                            child: Text('Status', style: _headerStyle(isDark)),
                           ),
                         ),
                       GridColumn(
@@ -363,7 +262,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Notes', style: _headerStyle),
+                          child: Text('Notes', style: _headerStyle(isDark)),
                         ),
                       ),
                     ],
@@ -385,23 +284,47 @@ class _ClientListScreenState extends State<ClientListScreen> {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const IconButton(
-                  icon: Icon(Icons.chevron_left, size: 20),
-                  onPressed: null, // Stubbed for mock data
-                ),
-                Text(
-                  'Page 1 of 1',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.white.withValues(alpha: 0.1) : AppColors.navyBlue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_indianFormat.format(_clientDataSource!.rows.length)} Clients found',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
                   ),
                 ),
-                const IconButton(
-                  icon: Icon(Icons.chevron_right, size: 20),
-                  onPressed: null, // Stubbed for mock data
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const IconButton(
+                      icon: Icon(Icons.chevron_left, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                    Text(
+                      'Page 1 of 1',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const IconButton(
+                      icon: Icon(Icons.chevron_right, size: 20),
+                      onPressed: null, // Stubbed for mock data
+                    ),
+                  ],
                 ),
+                const SizedBox(width: 100), // Balance the flex space
               ],
             ),
           ),
@@ -410,9 +333,9 @@ class _ClientListScreenState extends State<ClientListScreen> {
     );
   }
 
-  TextStyle get _headerStyle => GoogleFonts.poppins(
+  TextStyle _headerStyle(bool isDark) => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.grey600,
+    color: isDark ? AppColors.goldLight : AppColors.grey600,
   );
 }

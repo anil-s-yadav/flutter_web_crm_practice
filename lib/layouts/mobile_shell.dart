@@ -34,7 +34,7 @@ class _MobileShellState extends State<MobileShell> {
       icon: Icons.assignment_ind_outlined,
       activeIcon: Icons.assignment_ind,
       label: 'Placed Candidates',
-      route: '/sourcing/candidates/hired',
+      route: '/sourcing/candidates/placed',
     ),
     _TabItem(
       icon: Icons.gavel_outlined,
@@ -83,11 +83,7 @@ class _MobileShellState extends State<MobileShell> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'lib/assets/applogo.png',
-              width: 32,
-              height: 32,
-            ),
+            Image.asset('lib/assets/applogo.png', width: 32, height: 32),
             const SizedBox(width: 10),
             Text(
               'Verified Maids',
@@ -134,7 +130,10 @@ class _MobileShellState extends State<MobileShell> {
             context.go(_tabs[index].route);
           },
           backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-          indicatorColor: isDark ? AppColors.gold.withValues(alpha: 0.15) : AppColors.navyBlue,
+          indicatorColor:
+              isDark
+                  ? AppColors.gold.withValues(alpha: 0.15)
+                  : AppColors.navyBlue,
           height: 68,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations:

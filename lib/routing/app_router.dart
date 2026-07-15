@@ -81,10 +81,10 @@ class AppRouter {
                   ),
             ),
             GoRoute(
-              path: '/admin/candidates/hired',
+              path: '/admin/candidates/placed',
               builder:
                   (context, state) => const CandidateDirectoryScreen(
-                    type: CandidateDirectoryType.hired,
+                    type: CandidateDirectoryType.placed,
                   ),
             ),
             GoRoute(
@@ -162,19 +162,38 @@ class AppRouter {
             ),
             GoRoute(
               path: '/sales/clients/followup',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.followUp),
+              builder:
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.followUp,
+                  ),
             ),
             GoRoute(
               path: '/sales/clients/interested',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.interested),
+              builder:
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.interested,
+                  ),
             ),
             GoRoute(
               path: '/sales/clients/not_interested',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.notInterested),
+              builder:
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.notInterested,
+                  ),
             ),
             GoRoute(
               path: '/sales/clients/active',
-              builder: (context, state) => const ClientListScreen(initialStatus: ClientStatus.converted),
+              builder:
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.converted,
+                  ),
+            ),
+            GoRoute(
+              path: '/sales/clients/past',
+              builder:
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.inactive,
+                  ),
             ),
             GoRoute(
               path: '/sales/clients/:id',
@@ -197,19 +216,21 @@ class AppRouter {
             ),
             GoRoute(
               path: '/sales/contracts/active',
-              builder: (context, state) => const ContractListScreen(initialViewMode: 'active'),
-            ),
-            GoRoute(
-              path: '/sales/contracts/expired',
-              builder: (context, state) => const ContractListScreen(initialViewMode: 'expired'),
+              builder:
+                  (context, state) =>
+                      const ContractListScreen(initialViewMode: 'active'),
             ),
             GoRoute(
               path: '/sales/contracts/renewals',
-              builder: (context, state) => const ContractListScreen(initialViewMode: 'renewals'),
+              builder:
+                  (context, state) =>
+                      const ContractListScreen(initialViewMode: 'renewals'),
             ),
             GoRoute(
               path: '/sales/contracts/replacements',
-              builder: (context, state) => const ContractListScreen(initialViewMode: 'replacements'),
+              builder:
+                  (context, state) =>
+                      const ContractListScreen(initialViewMode: 'replacements'),
             ),
             GoRoute(
               path: '/sales/tickets',
@@ -218,6 +239,15 @@ class AppRouter {
             GoRoute(
               path: '/sales/learning',
               builder: (context, state) => const LearningScreen(),
+            ),
+            GoRoute(
+              path: '/sales/financials',
+              builder:
+                  (context, state) => const Scaffold(
+                    body: Center(
+                      child: Text('Financials & Payments (Coming Soon)'),
+                    ),
+                  ),
             ),
           ],
         ),
@@ -266,10 +296,10 @@ class AppRouter {
                   ),
             ),
             GoRoute(
-              path: '/sourcing/candidates/hired',
+              path: '/sourcing/candidates/placed',
               builder:
                   (context, state) => const CandidateDirectoryScreen(
-                    type: CandidateDirectoryType.hired,
+                    type: CandidateDirectoryType.placed,
                   ),
             ),
             GoRoute(

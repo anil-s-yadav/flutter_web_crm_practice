@@ -25,7 +25,8 @@ class CandidateDataSource extends DataGridSource {
   }
 
   String _getMostRelevantDate(CandidateModel candidate) {
-    if (candidate.status == CandidateStatus.placed && candidate.datePlaced != null) {
+    if (candidate.status == CandidateStatus.Placed &&
+        candidate.datePlaced != null) {
       return DateFormat('MMM dd, yyyy').format(candidate.datePlaced!);
     } else if (candidate.status == CandidateStatus.readyToPlace &&
         candidate.dateReadyToHire != null) {
@@ -56,7 +57,10 @@ class CandidateDataSource extends DataGridSource {
                 columnName: 'date',
                 value: _getMostRelevantDate(candidate),
               ),
-              DataGridCell<CandidateModel>(columnName: 'candidate', value: candidate),
+              DataGridCell<CandidateModel>(
+                columnName: 'candidate',
+                value: candidate,
+              ),
               DataGridCell<String>(
                 columnName: 'category',
                 value: candidate.category,
@@ -83,7 +87,10 @@ class CandidateDataSource extends DataGridSource {
                 columnName: 'status',
                 value: candidate.status,
               ),
-              DataGridCell<CandidateModel>(columnName: 'actions', value: candidate),
+              DataGridCell<CandidateModel>(
+                columnName: 'actions',
+                value: candidate,
+              ),
             ],
           );
         }).toList();
@@ -101,8 +108,12 @@ class CandidateDataSource extends DataGridSource {
   @override
   int compare(DataGridRow? a, DataGridRow? b, SortColumnDetails sortColumn) {
     if (sortColumn.name == 'candidate' || sortColumn.name == 'actions') {
-      final value1 = a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateModel?;
-      final value2 = b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateModel?;
+      final value1 =
+          a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value
+              as CandidateModel?;
+      final value2 =
+          b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value
+              as CandidateModel?;
       if (value1 == null || value2 == null) return 0;
       if (sortColumn.sortDirection == DataGridSortDirection.ascending) {
         return value1.fullName.compareTo(value2.fullName);
@@ -110,8 +121,12 @@ class CandidateDataSource extends DataGridSource {
         return value2.fullName.compareTo(value1.fullName);
       }
     } else if (sortColumn.name == 'status') {
-      final value1 = a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateStatus?;
-      final value2 = b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value as CandidateStatus?;
+      final value1 =
+          a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value
+              as CandidateStatus?;
+      final value2 =
+          b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value
+              as CandidateStatus?;
       if (value1 == null || value2 == null) return 0;
       if (sortColumn.sortDirection == DataGridSortDirection.ascending) {
         return value1.name.compareTo(value2.name);
@@ -151,15 +166,17 @@ class CandidateDataSource extends DataGridSource {
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: isDark 
-                            ? AppColors.white.withValues(alpha: 0.1)
-                            : AppColors.navyBlue.withValues(alpha: 0.1),
+                        backgroundColor:
+                            isDark
+                                ? AppColors.white.withValues(alpha: 0.1)
+                                : AppColors.navyBlue.withValues(alpha: 0.1),
                         child: Text(
                           candidate.fullName[0],
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.white : AppColors.navyBlue,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
                           ),
                         ),
                       ),
@@ -250,7 +267,8 @@ class CandidateDataSource extends DataGridSource {
                           child: Text('Move to Verification'),
                         ),
                       );
-                    } else if (candidate.status == CandidateStatus.verificationPending) {
+                    } else if (candidate.status ==
+                        CandidateStatus.verificationPending) {
                       items.add(
                         const PopupMenuItem(
                           value: 'promote_medical',
@@ -263,7 +281,8 @@ class CandidateDataSource extends DataGridSource {
                           child: Text('Promote to Ready (Skip Medical)'),
                         ),
                       );
-                    } else if (candidate.status == CandidateStatus.medicalPending) {
+                    } else if (candidate.status ==
+                        CandidateStatus.medicalPending) {
                       items.add(
                         const PopupMenuItem(
                           value: 'promote_ready',
@@ -273,7 +292,7 @@ class CandidateDataSource extends DataGridSource {
                     }
 
                     if (candidate.status != CandidateStatus.blacklisted &&
-                        candidate.status != CandidateStatus.placed) {
+                        candidate.status != CandidateStatus.Placed) {
                       items.add(
                         const PopupMenuItem(
                           value: 'blacklist',
@@ -317,7 +336,7 @@ class CandidateDataSource extends DataGridSource {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.placed:
+      case CandidateStatus.Placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;

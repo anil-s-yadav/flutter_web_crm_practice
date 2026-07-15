@@ -5,7 +5,7 @@ enum CandidateStatus {
   verificationPending,
   medicalPending,
   readyToPlace,
-  placed,
+  Placed,
   renewalPending,
   jobLeft,
   blacklisted,
@@ -22,7 +22,7 @@ extension CandidateStatusExtension on CandidateStatus {
         return 'Medical Pending';
       case CandidateStatus.readyToPlace:
         return 'Ready to Place';
-      case CandidateStatus.placed:
+      case CandidateStatus.Placed:
         return 'Placed';
       case CandidateStatus.renewalPending:
         return 'Renewal Pending';
@@ -150,10 +150,22 @@ class CandidateModel {
       currentPlacementId: json['currentPlacementId'],
       addedBy: json['addedBy'],
       dateAdded: DateTime.parse(json['dateAdded']),
-      dateVerificationSent: json['dateVerificationSent'] != null ? DateTime.parse(json['dateVerificationSent']) : null,
-      dateMedicalSent: json['dateMedicalSent'] != null ? DateTime.parse(json['dateMedicalSent']) : null,
-      dateReadyToHire: json['dateReadyToHire'] != null ? DateTime.parse(json['dateReadyToHire']) : null,
-      datePlaced: json['datePlaced'] != null ? DateTime.parse(json['datePlaced']) : null,
+      dateVerificationSent:
+          json['dateVerificationSent'] != null
+              ? DateTime.parse(json['dateVerificationSent'])
+              : null,
+      dateMedicalSent:
+          json['dateMedicalSent'] != null
+              ? DateTime.parse(json['dateMedicalSent'])
+              : null,
+      dateReadyToHire:
+          json['dateReadyToHire'] != null
+              ? DateTime.parse(json['dateReadyToHire'])
+              : null,
+      datePlaced:
+          json['datePlaced'] != null
+              ? DateTime.parse(json['datePlaced'])
+              : null,
       availableFrom:
           json['availableFrom'] != null
               ? DateTime.parse(json['availableFrom'])
@@ -275,21 +287,39 @@ class CandidateModel {
 
   CandidateModel clearPlacement() {
     return CandidateModel(
-      id: id, fullName: fullName, age: age, phone: phone, altPhone: altPhone,
-      address: address, city: city, state: state, languages: languages,
-      religion: religion, category: category, education: education,
-      experienceYears: experienceYears, expectedSalary: expectedSalary,
-      workingHoursPerDay: workingHoursPerDay, preferredWorkType: preferredWorkType,
-      status: status, isMedicalCleared: isMedicalCleared,
-      isPoliceVerified: isPoliceVerified, isAadhaarVerified: isAadhaarVerified,
+      id: id,
+      fullName: fullName,
+      age: age,
+      phone: phone,
+      altPhone: altPhone,
+      address: address,
+      city: city,
+      state: state,
+      languages: languages,
+      religion: religion,
+      category: category,
+      education: education,
+      experienceYears: experienceYears,
+      expectedSalary: expectedSalary,
+      workingHoursPerDay: workingHoursPerDay,
+      preferredWorkType: preferredWorkType,
+      status: status,
+      isMedicalCleared: isMedicalCleared,
+      isPoliceVerified: isPoliceVerified,
+      isAadhaarVerified: isAadhaarVerified,
       medicalClearanceDocUrl: medicalClearanceDocUrl,
       policeVerificationDocUrl: policeVerificationDocUrl,
-      aadhaarDocUrl: aadhaarDocUrl, photoUrl: photoUrl,
+      aadhaarDocUrl: aadhaarDocUrl,
+      photoUrl: photoUrl,
       currentPlacementId: null, // CLEAR PLACEMENT
-      addedBy: addedBy, dateAdded: dateAdded,
-      dateVerificationSent: dateVerificationSent, dateMedicalSent: dateMedicalSent,
-      dateReadyToHire: dateReadyToHire, datePlaced: datePlaced,
-      availableFrom: availableFrom, remarks: remarks,
+      addedBy: addedBy,
+      dateAdded: dateAdded,
+      dateVerificationSent: dateVerificationSent,
+      dateMedicalSent: dateMedicalSent,
+      dateReadyToHire: dateReadyToHire,
+      datePlaced: datePlaced,
+      availableFrom: availableFrom,
+      remarks: remarks,
     );
   }
 
@@ -300,7 +330,9 @@ class CandidateModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CandidateModel && runtimeType == other.runtimeType && id == other.id;
+      other is CandidateModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
 
   @override
   int get hashCode => id.hashCode;

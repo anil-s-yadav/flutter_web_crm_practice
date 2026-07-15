@@ -21,7 +21,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
-        ChangeNotifierProvider(create: (_) => GlobalAppState()..initializeData()),
+        ChangeNotifierProvider(
+          create: (_) => GlobalAppState()..initializeData(),
+        ),
       ],
       child: const MyApp(),
     ),

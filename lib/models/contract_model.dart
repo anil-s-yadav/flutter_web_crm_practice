@@ -2,7 +2,7 @@ import 'dart:convert';
 
 enum PaymentStatus { pending, partial, paid, overdue }
 
-enum ContractStatus { pending, active, completed, replaced, cancelled }
+enum ContractStatus { pending, active, completed, rePlaced, cancelled }
 
 extension PaymentStatusExtension on PaymentStatus {
   String get displayName {
@@ -21,7 +21,7 @@ extension PaymentStatusExtension on PaymentStatus {
   static PaymentStatus fromString(String value) {
     return PaymentStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => PaymentStatus.pending
+      orElse: () => PaymentStatus.pending,
     );
   }
 }
@@ -35,8 +35,8 @@ extension ContractStatusExtension on ContractStatus {
         return 'Active';
       case ContractStatus.completed:
         return 'Completed';
-      case ContractStatus.replaced:
-        return 'Replaced';
+      case ContractStatus.rePlaced:
+        return 'RePlaced';
       case ContractStatus.cancelled:
         return 'Cancelled';
     }
@@ -45,7 +45,7 @@ extension ContractStatusExtension on ContractStatus {
   static ContractStatus fromString(String value) {
     return ContractStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => ContractStatus.pending
+      orElse: () => ContractStatus.pending,
     );
   }
 }
@@ -86,7 +86,7 @@ class ContractModel {
     this.replacementDate,
     this.replacementCandidateId,
     required this.createdBy,
-    this.remarks
+    this.remarks,
   });
 
   int get daysRemainingInGuarantee {
@@ -111,15 +111,20 @@ class ContractModel {
       serviceFee: (json['serviceFee'] as num).toDouble(),
       amountPaid: (json['amountPaid'] as num).toDouble(),
       balanceAmount: (json['balanceAmount'] as num).toDouble(),
-      paymentStatus: PaymentStatusExtension.fromString(json['paymentStatus'] as String),
-      contractStatus: ContractStatusExtension.fromString(json['contractStatus'] as String),
+      paymentStatus: PaymentStatusExtension.fromString(
+        json['paymentStatus'] as String,
+      ),
+      contractStatus: ContractStatusExtension.fromString(
+        json['contractStatus'] as String,
+      ),
       isReplacementUsed: (json['isReplacementUsed'] as bool?) ?? false,
-      replacementDate: json['replacementDate'] != null
-          ? DateTime.parse(json['replacementDate'] as String)
-          : null,
+      replacementDate:
+          json['replacementDate'] != null
+              ? DateTime.parse(json['replacementDate'] as String)
+              : null,
       replacementCandidateId: json['replacementCandidateId'] as String?,
       createdBy: json['createdBy'] as String,
-      remarks: json['remarks'] as String?
+      remarks: json['remarks'] as String?,
     );
   }
 
@@ -141,7 +146,7 @@ class ContractModel {
       'replacementDate': replacementDate?.toIso8601String(),
       'replacementCandidateId': replacementCandidateId,
       'createdBy': createdBy,
-      'remarks': remarks
+      'remarks': remarks,
     };
   }
 
@@ -164,7 +169,7 @@ class ContractModel {
     DateTime? replacementDate,
     String? replacementCandidateId,
     String? createdBy,
-    String? remarks
+    String? remarks,
   }) {
     return ContractModel(
       id: id ?? this.id,
@@ -181,19 +186,23 @@ class ContractModel {
       contractStatus: contractStatus ?? this.contractStatus,
       isReplacementUsed: isReplacementUsed ?? this.isReplacementUsed,
       replacementDate: replacementDate ?? this.replacementDate,
-      replacementCandidateId: replacementCandidateId ?? this.replacementCandidateId,
+      replacementCandidateId:
+          replacementCandidateId ?? this.replacementCandidateId,
       createdBy: createdBy ?? this.createdBy,
-      remarks: remarks ?? this.remarks
+      remarks: remarks ?? this.remarks,
     );
   }
 
   @override
-  String toString() => 'ContractModel(id: $id, client: $clientName, candidate: $candidateName)';
+  String toString() =>
+      'ContractModel(id: $id, client: $clientName, candidate: $candidateName)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ContractModel && runtimeType == other.runtimeType && id == other.id;
+      other is ContractModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
 
   @override
   int get hashCode => id.hashCode;

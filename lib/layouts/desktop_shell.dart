@@ -122,6 +122,12 @@ class _DesktopShellState extends State<DesktopShell> {
                 label: 'Converted (Active)',
                 route: '/sales/clients/active',
               ),
+              _SidebarItem(
+                icon: Icons.person_off_outlined,
+                activeIcon: Icons.person_off,
+                label: 'Inactive / Past',
+                route: '/sales/clients/past',
+              ),
             ],
           ),
           _SidebarItem(
@@ -135,12 +141,6 @@ class _DesktopShellState extends State<DesktopShell> {
                 activeIcon: Icons.assignment,
                 label: 'Active Contracts',
                 route: '/sales/contracts/active',
-              ),
-              _SidebarItem(
-                icon: Icons.history_outlined,
-                activeIcon: Icons.history,
-                label: 'Expired Contracts',
-                route: '/sales/contracts/expired',
               ),
               _SidebarItem(
                 icon: Icons.autorenew_outlined,
@@ -161,6 +161,12 @@ class _DesktopShellState extends State<DesktopShell> {
             activeIcon: Icons.people,
             label: 'Candidate Pool',
             route: '/sales/candidates',
+          ),
+          _SidebarItem(
+            icon: Icons.account_balance_wallet_outlined,
+            activeIcon: Icons.account_balance_wallet,
+            label: 'Financials',
+            route: '/sales/financials',
           ),
           _SidebarItem(
             icon: Icons.confirmation_number_outlined,
@@ -216,8 +222,8 @@ class _DesktopShellState extends State<DesktopShell> {
           _SidebarItem(
             icon: Icons.assignment_ind_outlined,
             activeIcon: Icons.assignment_ind,
-            label: 'Hired Candidates',
-            route: '/sourcing/candidates/hired',
+            label: 'Placed Candidates',
+            route: '/sourcing/candidates/placed',
           ),
           _SidebarItem(
             icon: Icons.school_outlined,
@@ -265,29 +271,62 @@ class _DesktopShellState extends State<DesktopShell> {
     }
 
     if (route == '/sales/clients/followup') {
-      return currentLocation.startsWith(route) || currentLocation.contains('from=followUp');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=followUp');
     }
     if (route == '/sales/clients/interested') {
-      return currentLocation.startsWith(route) || currentLocation.contains('from=interested');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=interested');
     }
     if (route == '/sales/clients/not_interested') {
-      return currentLocation.startsWith(route) || currentLocation.contains('from=notInterested');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=notInterested');
     }
     if (route == '/sales/clients/active') {
-      return currentLocation.startsWith(route) || currentLocation.contains('from=converted');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=converted');
+    }
+    if (route == '/sales/clients/past') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=past');
     }
 
     if (route == '/sales/contracts/active') {
-      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=active');
-    }
-    if (route == '/sales/contracts/expired') {
-      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=expired');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('fromContractMode=active');
     }
     if (route == '/sales/contracts/renewals') {
-      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=renewals');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('fromContractMode=renewals');
     }
     if (route == '/sales/contracts/replacements') {
-      return currentLocation.startsWith(route) || currentLocation.contains('fromContractMode=replacements');
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('fromContractMode=replacements');
+    }
+
+    if (route == '/sourcing/candidates/ready') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=readyToPlace');
+    }
+    if (route == '/sourcing/candidates/new') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=newlyAdded');
+    }
+    if (route == '/sourcing/candidates/verification') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=verificationPending');
+    }
+    if (route == '/sourcing/candidates/medical') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=medicalPending');
+    }
+    if (route == '/sourcing/candidates/placed') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=placed');
+    }
+    if (route == '/sourcing/candidates/blacklisted') {
+      return currentLocation.startsWith(route) ||
+          currentLocation.contains('from=blacklisted');
     }
 
     if (route == '/sales/clients') {
@@ -297,6 +336,7 @@ class _DesktopShellState extends State<DesktopShell> {
               !currentLocation.startsWith('/sales/clients/interested') &&
               !currentLocation.startsWith('/sales/clients/not_interested') &&
               !currentLocation.startsWith('/sales/clients/active') &&
+              !currentLocation.startsWith('/sales/clients/past') &&
               !currentLocation.contains('from=') &&
               !currentLocation.contains('fromContractMode='));
     }
@@ -305,7 +345,6 @@ class _DesktopShellState extends State<DesktopShell> {
       return currentLocation == route ||
           (currentLocation.startsWith('/sales/contracts/') &&
               !currentLocation.startsWith('/sales/contracts/active') &&
-              !currentLocation.startsWith('/sales/contracts/expired') &&
               !currentLocation.startsWith('/sales/contracts/renewals') &&
               !currentLocation.startsWith('/sales/contracts/replacements') &&
               !currentLocation.contains('fromContractMode='));
@@ -537,8 +576,14 @@ class _DesktopShellState extends State<DesktopShell> {
     bool isDark,
   ) {
     if (item.children != null && item.children!.isNotEmpty) {
-      bool isAnyChildActive = isActive ||
-          item.children!.any((c) => _isRouteActive(c.route, GoRouterState.of(context).uri.toString()));
+      bool isAnyChildActive =
+          isActive ||
+          item.children!.any(
+            (c) => _isRouteActive(
+              c.route,
+              GoRouterState.of(context).uri.toString(),
+            ),
+          );
 
       return Material(
         color: Colors.transparent,
@@ -547,46 +592,67 @@ class _DesktopShellState extends State<DesktopShell> {
           child: ExpansionTile(
             initiallyExpanded: isAnyChildActive || expanded,
             tilePadding: EdgeInsets.symmetric(horizontal: expanded ? 14 : 0),
-            collapsedIconColor: isAnyChildActive ? AppColors.gold : AppColors.grey400,
+            collapsedIconColor:
+                isAnyChildActive ? AppColors.gold : AppColors.grey400,
             iconColor: AppColors.gold,
-            title: expanded
-                ? Row(
-                    children: [
-                      Icon(
-                        isAnyChildActive ? item.activeIcon : item.icon,
-                        size: 20,
-                        color: isAnyChildActive ? AppColors.gold : AppColors.grey400,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: isAnyChildActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isAnyChildActive
-                                ? AppColors.gold
-                                : (isDark ? AppColors.grey300 : AppColors.navyBlue),
-                          ),
-                          overflow: TextOverflow.ellipsis,
+            title:
+                expanded
+                    ? Row(
+                      children: [
+                        Icon(
+                          isAnyChildActive ? item.activeIcon : item.icon,
+                          size: 20,
+                          color:
+                              isAnyChildActive
+                                  ? AppColors.gold
+                                  : AppColors.grey400,
                         ),
-                      ),
-                    ],
-                  )
-                : Icon(
-                    isAnyChildActive ? item.activeIcon : item.icon,
-                    size: 20,
-                    color: isAnyChildActive ? AppColors.gold : AppColors.grey400,
-                  ),
-            children: expanded
-                ? item.children!.map((child) {
-                    final isChildActive = _isRouteActive(child.route, GoRouterState.of(context).uri.toString());
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 24.0, bottom: 4.0),
-                      child: _buildMenuItem(child, isChildActive, expanded, isDark),
-                    );
-                  }).toList()
-                : [],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight:
+                                  isAnyChildActive
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                              color:
+                                  isAnyChildActive
+                                      ? AppColors.gold
+                                      : (isDark
+                                          ? AppColors.grey300
+                                          : AppColors.navyBlue),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    )
+                    : Icon(
+                      isAnyChildActive ? item.activeIcon : item.icon,
+                      size: 20,
+                      color:
+                          isAnyChildActive ? AppColors.gold : AppColors.grey400,
+                    ),
+            children:
+                expanded
+                    ? item.children!.map((child) {
+                      final isChildActive = _isRouteActive(
+                        child.route,
+                        GoRouterState.of(context).uri.toString(),
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 24.0, bottom: 4.0),
+                        child: _buildMenuItem(
+                          child,
+                          isChildActive,
+                          expanded,
+                          isDark,
+                        ),
+                      );
+                    }).toList()
+                    : [],
           ),
         ),
       );
@@ -611,52 +677,63 @@ class _DesktopShellState extends State<DesktopShell> {
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: isActive ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
+              color:
+                  isActive
+                      ? AppColors.gold.withValues(alpha: 0.12)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: isActive
-                  ? Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 1)
-                  : null,
+              border:
+                  isActive
+                      ? Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.3),
+                        width: 1,
+                      )
+                      : null,
             ),
-            child: expanded
-                ? Row(
-                    children: [
-                      Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        size: 20,
-                        color: isActive ? AppColors.gold : AppColors.grey400,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isActive
-                                ? AppColors.gold
-                                : (isDark ? AppColors.grey300 : AppColors.navyBlue),
+            child:
+                expanded
+                    ? Row(
+                      children: [
+                        Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 20,
+                          color: isActive ? AppColors.gold : AppColors.grey400,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight:
+                                  isActive ? FontWeight.w600 : FontWeight.w400,
+                              color:
+                                  isActive
+                                      ? AppColors.gold
+                                      : (isDark
+                                          ? AppColors.grey300
+                                          : AppColors.navyBlue),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    )
+                    : Tooltip(
+                      message: item.label,
+                      child: Center(
+                        child: Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 22,
+                          color: isActive ? AppColors.gold : AppColors.grey400,
                         ),
                       ),
-                    ],
-                  )
-                : Tooltip(
-                    message: item.label,
-                    child: Center(
-                      child: Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        size: 22,
-                        color: isActive ? AppColors.gold : AppColors.grey400,
-                      ),
                     ),
-                  ),
           ),
         ),
       ),
     );
   }
-
 
   Widget _buildUserSection(UserModel? user, bool expanded, bool isDark) {
     if (user == null) return const SizedBox.shrink();
@@ -804,7 +881,48 @@ class _DesktopShellState extends State<DesktopShell> {
               ],
             ),
           ),
-          const SizedBox(width: 16),
+
+          if (currentLocation.startsWith('/sales/clients') ||
+              currentLocation.startsWith('/admin/clients'))
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/sales/add_client'),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Client'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ),
+
+          if (currentLocation.startsWith('/sales/tickets') ||
+              currentLocation.startsWith('/admin/tickets'))
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  /* TODO: Add ticket logic */
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('New Ticket'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ),
+
+          const SizedBox(width: 24),
 
           // Timer
           // _buildTimerChip(timerProvider),
@@ -915,7 +1033,7 @@ class _DesktopShellState extends State<DesktopShell> {
       return 'Verification Pending';
     }
     if (location.endsWith('/candidates/medical')) return 'Medical Pending';
-    if (location.endsWith('/candidates/hired')) return 'Hired Candidates';
+    if (location.endsWith('/candidates/placed')) return 'PlacedCandidates';
     if (location.endsWith('/candidates/blacklisted')) {
       return 'Blacklisted Candidates';
     }
@@ -940,6 +1058,19 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location == '/executive') return 'Executive Dashboard';
     if (location == '/executive/tasks') return 'My Tasks';
     if (location == '/executive/rewards') return 'Rewards & Bonus';
+
+    if (location.endsWith('/clients/interested')) return 'Interested Clients';
+    if (location.endsWith('/clients/not_interested')) return 'Not Interested';
+    if (location.endsWith('/clients/active')) return 'Active Clients';
+    if (location.endsWith('/clients/past')) return 'Inactive / Past Clients';
+    if (location.endsWith('/clients')) return 'All Clients';
+
+    if (location.endsWith('/contracts/active')) return 'Active Contracts';
+    if (location.endsWith('/contracts/renewals')) return 'Renewals';
+    if (location.endsWith('/contracts/replacements')) return 'Replacements';
+    if (location.endsWith('/contracts')) return 'Contracts';
+
+    if (location.endsWith('/financials')) return 'Financials & Payments';
 
     return 'Dashboard';
   }

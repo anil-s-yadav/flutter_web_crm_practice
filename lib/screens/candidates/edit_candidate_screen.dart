@@ -137,26 +137,6 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     ];
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     'Edit Candidate Details',
-      //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      //   ),
-      //   backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-      //   elevation: 0,
-      //   actions: [
-      //     TextButton.icon(
-      //       onPressed: _saveChanges,
-      //       icon: const Icon(Icons.save),
-      //       label: Text(
-      //         'Save',
-      //         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      //       ),
-      //       style: TextButton.styleFrom(foregroundColor: AppColors.navyBlue),
-      //     ),
-      //     const SizedBox(width: 16),
-      //   ],
-      // ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -187,12 +167,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      _buildTextField(
+                        label: 'Full Name',
+                        isDark: isDark,
                         initialValue: _name,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name',
-                          border: OutlineInputBorder(),
-                        ),
                         validator: (v) => v!.isEmpty ? 'Required' : null,
                         onSaved: (v) => _name = v!,
                       ),
@@ -200,12 +178,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'Phone Number',
+                              isDark: isDark,
                               initialValue: _phone,
-                              decoration: const InputDecoration(
-                                labelText: 'Phone Number',
-                                border: OutlineInputBorder(),
-                              ),
                               validator:
                                   (v) =>
                                       v!.length < 10 ? 'Invalid phone' : null,
@@ -214,12 +190,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'Age',
+                              isDark: isDark,
                               initialValue: _age.toString(),
-                              decoration: const InputDecoration(
-                                labelText: 'Age',
-                                border: OutlineInputBorder(),
-                              ),
                               keyboardType: TextInputType.number,
                               validator:
                                   (v) =>
@@ -236,12 +210,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         children: [
                           Expanded(
                             flex: 2,
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'Address',
+                              isDark: isDark,
                               initialValue: _address,
-                              decoration: const InputDecoration(
-                                labelText: 'Address',
-                                border: OutlineInputBorder(),
-                              ),
                               validator: (v) => v!.isEmpty ? 'Required' : null,
                               onSaved: (v) => _address = v!,
                             ),
@@ -249,12 +221,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             flex: 1,
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'City',
+                              isDark: isDark,
                               initialValue: _city,
-                              decoration: const InputDecoration(
-                                labelText: 'City',
-                                border: OutlineInputBorder(),
-                              ),
                               validator: (v) => v!.isEmpty ? 'Required' : null,
                               onSaved: (v) => _city = v!,
                             ),
@@ -262,46 +232,32 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Religion',
-                          border: OutlineInputBorder(),
-                        ),
-                        initialValue: _religion.isEmpty ? null : _religion,
-                        items:
-                            [
-                              'Hindu',
-                              'Muslim',
-                              'Christian',
-                              'Sikh',
-                              'Other',
-                            ].map((String val) {
-                              return DropdownMenuItem(
-                                value: val,
-                                child: Text(val),
-                              );
-                            }).toList(),
+                      _buildDropdown<String>(
+                        label: 'Religion',
+                        isDark: isDark,
+                        value: _religion.isEmpty ? 'Hindu' : _religion,
+                        items: [
+                          'Hindu',
+                          'Muslim',
+                          'Christian',
+                          'Sikh',
+                          'Other',
+                        ],
                         onChanged: (val) => setState(() => _religion = val!),
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Education',
-                          border: OutlineInputBorder(),
-                        ),
-                        initialValue: _education.isEmpty ? null : _education,
-                        items:
-                            [
-                              'Below 10th',
-                              '10th Pass',
-                              '12th Pass',
-                              'Graduate',
-                            ].map((String val) {
-                              return DropdownMenuItem(
-                                value: val,
-                                child: Text(val),
-                              );
-                            }).toList(),
+                      _buildDropdown<String>(
+                        label: 'Education',
+                        isDark: isDark,
+                        value:
+                            _education.isEmpty ? 'Not Specified' : _education,
+                        items: [
+                          'Not Specified',
+                          'Below 10th',
+                          '10th Pass',
+                          '12th Pass',
+                          'Graduate',
+                        ],
                         onChanged: (val) => setState(() => _education = val!),
                       ),
                       const SizedBox(height: 32),
@@ -314,19 +270,17 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Service Category',
-                          border: OutlineInputBorder(),
-                        ),
-                        initialValue: _category,
+                      _buildDropdown<String>(
+                        label: 'Service Category',
+                        isDark: isDark,
+                        value:
+                            _category.isEmpty
+                                ? CategoryConstants.categories.first
+                                : _category,
                         items:
-                            CategoryConstants.categories.map((String val) {
-                              return DropdownMenuItem(
-                                value: val,
-                                child: Text(val),
-                              );
-                            }).toList(),
+                            CategoryConstants.categories.contains(_category)
+                                ? CategoryConstants.categories
+                                : [...CategoryConstants.categories, _category],
                         onChanged: (val) {
                           setState(() {
                             _category = val!;
@@ -368,12 +322,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'Experience (Years)',
+                              isDark: isDark,
                               initialValue: _experienceYears.toString(),
-                              decoration: const InputDecoration(
-                                labelText: 'Experience (Years)',
-                                border: OutlineInputBorder(),
-                              ),
                               keyboardType: TextInputType.number,
                               validator:
                                   (v) =>
@@ -385,12 +337,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: TextFormField(
+                            child: _buildTextField(
+                              label: 'Expected Salary',
+                              isDark: isDark,
                               initialValue: _expectedSalary,
-                              decoration: const InputDecoration(
-                                labelText: 'Expected Salary',
-                                border: OutlineInputBorder(),
-                              ),
                               validator: (v) => v!.isEmpty ? 'Required' : null,
                               onSaved: (v) => _expectedSalary = v!,
                             ),
@@ -404,10 +354,11 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         child: ElevatedButton(
                           onPressed: _saveChanges,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.navyBlue,
-                            foregroundColor: AppColors.white,
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: AppColors.navyBlue,
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: Text(
@@ -427,6 +378,119 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required bool isDark,
+    String? initialValue,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+    void Function(String?)? onSaved,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+          ),
+          style: GoogleFonts.poppins(fontSize: 14),
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          validator: validator,
+          onSaved: onSaved,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required String label,
+    required T value,
+    required List<T> items,
+    required void Function(T?) onChanged,
+    required bool isDark,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T>(
+          value: value,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+          ),
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: isDark ? AppColors.white : AppColors.navyBlue,
+          ),
+          dropdownColor:
+              isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+          items:
+              items.map((T val) {
+                return DropdownMenuItem<T>(
+                  value: val,
+                  child: Text(val.toString()),
+                );
+              }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

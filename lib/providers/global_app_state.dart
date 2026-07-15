@@ -30,7 +30,8 @@ class GlobalAppState extends ChangeNotifier {
   List<ExecutiveTaskModel> get tasks => _tasks;
   List<AuditLogModel> get auditLogs => _auditLogs;
   List<NotificationModel> get notifications => _notifications;
-  int get unreadNotificationCount => _notifications.where((n) => !n.isRead).length;
+  int get unreadNotificationCount =>
+      _notifications.where((n) => !n.isRead).length;
   UserModel? get currentUser => _currentUser;
 
   Future<void> initializeData() async {
@@ -45,16 +46,35 @@ class GlobalAppState extends ChangeNotifier {
     );
 
     // Seed in-memory data
-    _candidates = List.generate(200, (i) => MockDataGenerator.generateCandidate(i));
+    _candidates = List.generate(
+      200,
+      (i) => MockDataGenerator.generateCandidate(i),
+    );
     _clients = List.generate(100, (i) => MockDataGenerator.generateClient(i));
 
     // Let's generate a few contracts
     _contracts = [];
     int contractCount = 0;
 
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 60; i++) {
       final client = _clients[i];
       final candidate = _candidates[i];
+
+      // Distribute data across different statuses
+      int daysLeft = 180 - (i * 5); // Goes down to -115 for expired
+      DateTime placementDate = DateTime.now().subtract(
+        Duration(days: 180 - daysLeft),
+      );
+      DateTime guaranteeEndDate = DateTime.now().add(Duration(days: daysLeft));
+
+      ContractStatus status = ContractStatus.active;
+      bool isReplacementUsed = false;
+
+      // Make some replacements
+      if (i % 8 == 0) {
+        status = ContractStatus.rePlaced;
+        isReplacementUsed = true;
+      }
 
       // Update candidate and client status for realism
       final contract = ContractModel(
@@ -63,20 +83,21 @@ class GlobalAppState extends ChangeNotifier {
         candidateId: candidate.id,
         clientName: client.fullName,
         candidateName: candidate.fullName,
-        placementDate: DateTime.now().subtract(Duration(days: i * 3)),
-        guaranteeEndDate: DateTime.now().add(Duration(days: 180 - (i * 3))),
+        placementDate: placementDate,
+        guaranteeEndDate: guaranteeEndDate,
         serviceFee: 25000,
-        amountPaid: 25000,
-        balanceAmount: 0,
-        paymentStatus: PaymentStatus.paid,
-        contractStatus: ContractStatus.active,
+        amountPaid: i % 3 == 0 ? 15000 : 25000,
+        balanceAmount: i % 3 == 0 ? 10000 : 0,
+        paymentStatus: i % 3 == 0 ? PaymentStatus.partial : PaymentStatus.paid,
+        contractStatus: status,
+        isReplacementUsed: isReplacementUsed,
         createdBy: 'Priya Mehta',
       );
 
       _contracts.add(contract);
 
       _candidates[i] = candidate.copyWith(
-        status: CandidateStatus.placed,
+        status: CandidateStatus.Placed,
         currentPlacementId: contract.id,
       );
 
@@ -152,7 +173,8 @@ class GlobalAppState extends ChangeNotifier {
   }
 
   void markAllNotificationsRead() {
-    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+    _notifications =
+        _notifications.map((n) => n.copyWith(isRead: true)).toList();
     notifyListeners();
   }
 
@@ -256,13 +278,23 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _contracts.indexWhere((c) => c.id == contractId);
     if (idx != -1) {
       final contract = _contracts[idx];
-      _contracts[idx] = contract.copyWith(contractStatus: ContractStatus.completed);
-      
-      final candidateIdx = _candidates.indexWhere((m) => m.id == contract.candidateId);
+      _contracts[idx] = contract.copyWith(
+        contractStatus: ContractStatus.completed,
+      );
+
+      final candidateIdx = _candidates.indexWhere(
+        (m) => m.id == contract.candidateId,
+      );
       if (candidateIdx != -1) {
-        _candidates[candidateIdx] = _candidates[candidateIdx].clearPlacement().copyWith(status: CandidateStatus.readyToPlace); 
+        _candidates[candidateIdx] = _candidates[candidateIdx]
+            .clearPlacement()
+            .copyWith(status: CandidateStatus.readyToPlace);
       }
-      logAction(ActionType.update, contract.id, 'Contract completed. Candidate released to pool.');
+      logAction(
+        ActionType.update,
+        contract.id,
+        'Contract completed. Candidate released to pool.',
+      );
       notifyListeners();
     }
   }
@@ -271,13 +303,23 @@ class GlobalAppState extends ChangeNotifier {
     final idx = _contracts.indexWhere((c) => c.id == contractId);
     if (idx != -1) {
       final contract = _contracts[idx];
-      _contracts[idx] = contract.copyWith(contractStatus: ContractStatus.completed);
-      
-      final candidateIdx = _candidates.indexWhere((m) => m.id == contract.candidateId);
+      _contracts[idx] = contract.copyWith(
+        contractStatus: ContractStatus.completed,
+      );
+
+      final candidateIdx = _candidates.indexWhere(
+        (m) => m.id == contract.candidateId,
+      );
       if (candidateIdx != -1) {
-        _candidates[candidateIdx] = _candidates[candidateIdx].clearPlacement().copyWith(status: CandidateStatus.jobLeft); 
+        _candidates[candidateIdx] = _candidates[candidateIdx]
+            .clearPlacement()
+            .copyWith(status: CandidateStatus.jobLeft);
       }
-      logAction(ActionType.update, contract.id, 'Contract completed. Candidate left job.');
+      logAction(
+        ActionType.update,
+        contract.id,
+        'Contract completed. Candidate left job.',
+      );
       notifyListeners();
     }
   }
@@ -362,10 +404,20 @@ class GlobalAppState extends ChangeNotifier {
       final now = DateTime.now();
       _candidates[idx] = candidate.copyWith(
         status: newStatus,
-        dateVerificationSent: newStatus == CandidateStatus.verificationPending ? now : candidate.dateVerificationSent,
-        dateMedicalSent: newStatus == CandidateStatus.medicalPending ? now : candidate.dateMedicalSent,
-        dateReadyToHire: newStatus == CandidateStatus.readyToPlace ? now : candidate.dateReadyToHire,
-        datePlaced: newStatus == CandidateStatus.placed ? now : candidate.datePlaced,
+        dateVerificationSent:
+            newStatus == CandidateStatus.verificationPending
+                ? now
+                : candidate.dateVerificationSent,
+        dateMedicalSent:
+            newStatus == CandidateStatus.medicalPending
+                ? now
+                : candidate.dateMedicalSent,
+        dateReadyToHire:
+            newStatus == CandidateStatus.readyToPlace
+                ? now
+                : candidate.dateReadyToHire,
+        datePlaced:
+            newStatus == CandidateStatus.Placed ? now : candidate.datePlaced,
       );
       logAction(
         ActionType.statusChange,
@@ -384,7 +436,11 @@ class GlobalAppState extends ChangeNotifier {
         status: CandidateStatus.blacklisted,
         remarks: 'BLACKLISTED: $reason\n${candidate.remarks ?? ""}',
       );
-      logAction(ActionType.statusChange, candidate.id, 'Blacklisted candidate: $reason');
+      logAction(
+        ActionType.statusChange,
+        candidate.id,
+        'Blacklisted candidate: $reason',
+      );
       notifyListeners();
     }
   }

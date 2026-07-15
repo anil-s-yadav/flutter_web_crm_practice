@@ -6,6 +6,7 @@ import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
+import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -162,8 +163,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     }
   }
 
-  Widget _buildClientHeader(BuildContext context, ClientModel client, bool isDark) {
-
+  Widget _buildClientHeader(
+    BuildContext context,
+    ClientModel client,
+    bool isDark,
+  ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -222,48 +226,109 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 ],
               ),
             ),
+            ElevatedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Edit Client functionality coming soon.'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit, size: 16),
+              label: Text(
+                'Edit',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+                foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
+                elevation: 0,
+                side: BorderSide(
+                  color: (isDark ? AppColors.white : AppColors.navyBlue)
+                      .withValues(alpha: 0.2),
+                ),
+              ),
+            ),
             if (client.status == ClientStatus.followUp) ...[
+              const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.interested, 'Client promoted to Interested'),
+                onPressed:
+                    () => _showStatusChangeDialog(
+                      context,
+                      client,
+                      ClientStatus.interested,
+                      'Client promoted to Interested',
+                    ),
                 icon: const Icon(Icons.arrow_upward, size: 18),
                 label: const Text('Promote to Interested'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.notInterested, 'Client marked as Not Interested'),
+                onPressed:
+                    () => _showStatusChangeDialog(
+                      context,
+                      client,
+                      ClientStatus.notInterested,
+                      'Client marked as Not Interested',
+                    ),
                 icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
                 label: const Text('Not Interested'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.criticalRed,
                   side: const BorderSide(color: AppColors.criticalRed),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ] else if (client.status == ClientStatus.interested)
               OutlinedButton.icon(
-                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.notInterested, 'Client marked as Not Interested'),
+                onPressed:
+                    () => _showStatusChangeDialog(
+                      context,
+                      client,
+                      ClientStatus.notInterested,
+                      'Client marked as Not Interested',
+                    ),
                 icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
                 label: const Text('Not Interested'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.criticalRed,
                   side: const BorderSide(color: AppColors.criticalRed),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               )
             else if (client.status == ClientStatus.notInterested)
               ElevatedButton.icon(
-                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.followUp, 'Client reactivated to Follow Up'),
+                onPressed:
+                    () => _showStatusChangeDialog(
+                      context,
+                      client,
+                      ClientStatus.followUp,
+                      'Client reactivated to Follow Up',
+                    ),
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Reactivate to Follow Up'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
           ],
@@ -272,14 +337,22 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     );
   }
 
-  Future<void> _showStatusChangeDialog(BuildContext context, ClientModel client, ClientStatus nextStatus, String successMessage) async {
+  Future<void> _showStatusChangeDialog(
+    BuildContext context,
+    ClientModel client,
+    ClientStatus nextStatus,
+    String successMessage,
+  ) async {
     final TextEditingController noteController = TextEditingController();
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Status Change Note', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          title: Text(
+            'Status Change Note',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,29 +382,44 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 backgroundColor: AppColors.gold,
                 foregroundColor: AppColors.navyBlue,
               ),
-              child: Text('Update Status', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Update Status',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
               onPressed: () {
                 final note = noteController.text.trim();
                 if (note.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('A note is absolutely required to change status.')),
+                    const SnackBar(
+                      content: Text(
+                        'A note is absolutely required to change status.',
+                      ),
+                    ),
                   );
                   return;
                 }
-                
-                final state = Provider.of<GlobalAppState>(context, listen: false);
-                final timestamp = DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now());
-                
-                final newRemarks = (client.remarks == null || client.remarks!.isEmpty) 
-                    ? '[$timestamp] Status changed to ${nextStatus.displayName}: $note' 
-                    : '${client.remarks}\n\n[$timestamp] Status changed to ${nextStatus.displayName}: $note';
 
-                state.updateClient(client.copyWith(status: nextStatus, remarks: newRemarks));
-                
-                Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(successMessage)),
+                final state = Provider.of<GlobalAppState>(
+                  context,
+                  listen: false,
                 );
+                final timestamp = DateFormat(
+                  'dd MMM yyyy, HH:mm',
+                ).format(DateTime.now());
+
+                final newRemarks =
+                    (client.remarks == null || client.remarks!.isEmpty)
+                        ? '[$timestamp] Status changed to ${nextStatus.displayName}: $note'
+                        : '${client.remarks}\n\n[$timestamp] Status changed to ${nextStatus.displayName}: $note';
+
+                state.updateClient(
+                  client.copyWith(status: nextStatus, remarks: newRemarks),
+                );
+
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(successMessage)));
               },
             ),
           ],
@@ -340,7 +428,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     );
   }
 
-  Widget _buildUnifiedDetailsCard(BuildContext context, ClientModel client, bool isDark) {
+  Widget _buildUnifiedDetailsCard(
+    BuildContext context,
+    ClientModel client,
+    bool isDark,
+  ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -375,9 +467,14 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+                color:
+                    isDark
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(8),
-                border: const Border(left: BorderSide(color: AppColors.gold, width: 4)),
+                border: const Border(
+                  left: BorderSide(color: AppColors.gold, width: 4),
+                ),
               ),
               child: Text(
                 (client.remarks == null || client.remarks!.isEmpty)
@@ -391,7 +488,10 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            Divider(height: 1, color: isDark ? AppColors.dividerDark : AppColors.grey200),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.dividerDark : AppColors.grey200,
+            ),
             const SizedBox(height: 32),
             // TWO COLUMNS: REQUIREMENTS AND DETAILS
             Row(
@@ -404,25 +504,42 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.assignment_outlined, size: 20, color: AppColors.gold),
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 20,
+                            color: AppColors.gold,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Service Requirements',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.white : AppColors.navyBlue,
+                              color:
+                                  isDark ? AppColors.white : AppColors.navyBlue,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      _infoRow('Looking For', client.preferredCandidateCategory, isDark),
+                      _infoRow(
+                        'Looking For',
+                        client.preferredCandidateCategory,
+                        isDark,
+                      ),
                       _infoRow('Budget', client.budgetRange, isDark),
                       _infoRow('Source', client.source, isDark),
-                      _infoRow('Inquiry Date', DateFormat('dd MMM yyyy').format(client.inquiryDate), isDark),
-                      if (client.assignedEmployeeId != null) 
-                        _infoRow('Sales Rep ID', client.assignedEmployeeId!, isDark),
+                      _infoRow(
+                        'Inquiry Date',
+                        DateFormat('dd MMM yyyy').format(client.inquiryDate),
+                        isDark,
+                      ),
+                      if (client.assignedEmployeeId != null)
+                        _infoRow(
+                          'Sales Rep ID',
+                          client.assignedEmployeeId!,
+                          isDark,
+                        ),
                     ],
                   ),
                 ),
@@ -440,29 +557,59 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.home_outlined, size: 20, color: AppColors.gold),
+                          Icon(
+                            Icons.home_outlined,
+                            size: 20,
+                            color: AppColors.gold,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Household & Contact Details',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.white : AppColors.navyBlue,
+                              color:
+                                  isDark ? AppColors.white : AppColors.navyBlue,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
                       _infoRow('House Type', client.houseType, isDark),
-                      _infoRow('Family Size', '${client.familySize} Members', isDark),
-                      _infoRow('Has Children', client.hasChildren ? 'Yes (${client.childrenCount})' : 'No', isDark),
-                      _infoRow('Has Elderly', client.hasElderlyMembers ? 'Yes' : 'No', isDark),
-                      _infoRow('Has Pets', client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No', isDark),
+                      _infoRow(
+                        'Family Size',
+                        '${client.familySize} Members',
+                        isDark,
+                      ),
+                      _infoRow(
+                        'Has Children',
+                        client.hasChildren
+                            ? 'Yes (${client.childrenCount})'
+                            : 'No',
+                        isDark,
+                      ),
+                      _infoRow(
+                        'Has Elderly',
+                        client.hasElderlyMembers ? 'Yes' : 'No',
+                        isDark,
+                      ),
+                      _infoRow(
+                        'Has Pets',
+                        client.hasPets
+                            ? 'Yes (${client.petDetails ?? ""})'
+                            : 'No',
+                        isDark,
+                      ),
                       const SizedBox(height: 12),
-                      _infoRow('Address', '${client.address}, ${client.locality}, ${client.city}', isDark),
+                      _infoRow(
+                        'Address',
+                        '${client.address}, ${client.locality}, ${client.city}',
+                        isDark,
+                      ),
                       const SizedBox(height: 12),
                       _infoRow('Phone', client.phone, isDark),
-                      if (client.altPhone != null && client.altPhone!.isNotEmpty)
+                      if (client.altPhone != null &&
+                          client.altPhone!.isNotEmpty)
                         _infoRow('Alt Phone', client.altPhone!, isDark),
                       _infoRow('Email', client.email, isDark),
                     ],
@@ -517,12 +664,18 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
             const SizedBox(height: 16),
             const SizedBox(height: 16),
-            Text('Candidate Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(
+              'Candidate Profile',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+                color:
+                    isDark
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -531,22 +684,39 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundImage: candidate.photoUrl.isNotEmpty ? NetworkImage(candidate.photoUrl) : null,
-                        child: candidate.photoUrl.isEmpty ? const Icon(Icons.person) : null,
+                        backgroundImage:
+                            candidate.photoUrl.isNotEmpty
+                                ? NetworkImage(candidate.photoUrl)
+                                : null,
+                        child:
+                            candidate.photoUrl.isEmpty
+                                ? const Icon(Icons.person)
+                                : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(candidate.fullName, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
-                            Text('${candidate.category} • ${candidate.experienceYears} yrs exp', style: GoogleFonts.poppins(fontSize: 12)),
+                            Text(
+                              candidate.fullName,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '${candidate.category} • ${candidate.experienceYears} yrs exp',
+                              style: GoogleFonts.poppins(fontSize: 12),
+                            ),
                           ],
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 20),
-                        onPressed: () => context.go('/sales/candidates/${candidate.id}'),
+                        onPressed:
+                            () =>
+                                context.go('/sales/candidates/${candidate.id}'),
                         tooltip: 'View Candidate Profile',
                       ),
                     ],
@@ -554,27 +724,58 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _infoRow('Age', '${candidate.age} yrs', isDark)),
-                      Expanded(child: _infoRow('Religion', candidate.religion, isDark)),
+                      Expanded(
+                        child: _infoRow('Age', '${candidate.age} yrs', isDark),
+                      ),
+                      Expanded(
+                        child: _infoRow('Religion', candidate.religion, isDark),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
-                      Expanded(child: _infoRow('Salary', candidate.expectedSalary, isDark)),
-                      Expanded(child: _infoRow('Hours', '${candidate.workingHoursPerDay} hrs/day', isDark)),
+                      Expanded(
+                        child: _infoRow(
+                          'Salary',
+                          candidate.expectedSalary,
+                          isDark,
+                        ),
+                      ),
+                      Expanded(
+                        child: _infoRow(
+                          'Hours',
+                          '${candidate.workingHoursPerDay} hrs/day',
+                          isDark,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
                     children: [
-                      Expanded(child: _infoRow('Languages', candidate.languages.join(', '), isDark)),
-                      Expanded(child: _infoRow('Medical', candidate.isMedicalCleared ? 'Cleared' : 'Pending', isDark)),
+                      Expanded(
+                        child: _infoRow(
+                          'Languages',
+                          candidate.languages.join(', '),
+                          isDark,
+                        ),
+                      ),
+                      Expanded(
+                        child: _infoRow(
+                          'Medical',
+                          candidate.isMedicalCleared ? 'Cleared' : 'Pending',
+                          isDark,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
             const Divider(height: 32),
-            Text('Contract & Financials', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(
+              'Contract & Financials',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,16 +785,33 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _infoRow('Contract ID', contract.id, isDark),
-                      _infoRow('Placement Date', dateFormat.format(contract.placementDate), isDark),
-                      _infoRow('Guarantee Ends', dateFormat.format(contract.guaranteeEndDate), isDark),
+                      _infoRow(
+                        'Placement Date',
+                        dateFormat.format(contract.placementDate),
+                        isDark,
+                      ),
+                      _infoRow(
+                        'Guarantee Ends',
+                        dateFormat.format(contract.guaranteeEndDate),
+                        isDark,
+                      ),
                       if (!isPending) ...[
-                        _infoRow('Days Left', '${contract.daysRemainingInGuarantee} days', isDark),
+                        _infoRow(
+                          'Days Left',
+                          '${contract.daysRemainingInGuarantee} days',
+                          isDark,
+                        ),
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: contract.daysRemainingInGuarantee / 180,
-                          backgroundColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                          backgroundColor:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey200,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            contract.daysRemainingInGuarantee > 30 ? AppColors.successGreen : AppColors.urgentAmber,
+                            contract.daysRemainingInGuarantee > 30
+                                ? AppColors.successGreen
+                                : AppColors.urgentAmber,
                           ),
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -608,16 +826,39 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _infoRow('Service Fee', '₹${contract.serviceFee}', isDark),
-                      _infoRow('Amount Paid', '₹${contract.amountPaid}', isDark),
+                      _infoRow(
+                        'Service Fee',
+                        '₹${contract.serviceFee}',
+                        isDark,
+                      ),
+                      _infoRow(
+                        'Amount Paid',
+                        '₹${contract.amountPaid}',
+                        isDark,
+                      ),
                       _infoRow('Balance', '₹${contract.balanceAmount}', isDark),
-                      _infoRow('Payment Status', contract.paymentStatus.displayName, isDark),
+                      _infoRow(
+                        'Payment Status',
+                        contract.paymentStatus.displayName,
+                        isDark,
+                      ),
                       const SizedBox(height: 12),
                       if (contract.isReplacementUsed) ...[
-                        _infoRow('Replaced On', contract.replacementDate != null ? dateFormat.format(contract.replacementDate!) : 'N/A', isDark),
-                        _infoRow('Replacement ID', contract.replacementCandidateId ?? 'N/A', isDark),
+                        _infoRow(
+                          'RePlaced On',
+                          contract.replacementDate != null
+                              ? dateFormat.format(contract.replacementDate!)
+                              : 'N/A',
+                          isDark,
+                        ),
+                        _infoRow(
+                          'Replacement ID',
+                          contract.replacementCandidateId ?? 'N/A',
+                          isDark,
+                        ),
                       ],
-                      if (contract.remarks != null && contract.remarks!.isNotEmpty)
+                      if (contract.remarks != null &&
+                          contract.remarks!.isNotEmpty)
                         _infoRow('Remarks', contract.remarks!, isDark),
                     ],
                   ),
@@ -798,7 +1039,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     );
   }
 
-  Widget _buildDocumentsTab(ClientModel client, ContractModel? contract, CandidateModel? candidate, bool isDark) {
+  Widget _buildDocumentsTab(
+    ClientModel client,
+    ContractModel? contract,
+    CandidateModel? candidate,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -809,23 +1055,52 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         const SizedBox(height: 24),
         if (contract != null) ...[
           _buildSectionCard('Contract & Legal Documents', isDark, [
-            _documentRow('Service Agreement (Signed)', null, isDark, required: true),
+            _documentRow(
+              'Service Agreement (Signed)',
+              null,
+              isDark,
+              required: true,
+            ),
             _documentRow('Payment Receipt', null, isDark, required: false),
           ]),
           const SizedBox(height: 24),
         ],
         if (candidate != null) ...[
-          _buildSectionCard('Candidate Documents (${candidate.fullName})', isDark, [
-            _documentRow('Aadhaar Card', candidate.aadhaarDocUrl, isDark, required: true),
-            _documentRow('Police Verification', candidate.policeVerificationDocUrl, isDark, required: true),
-            _documentRow('Medical Clearance', candidate.medicalClearanceDocUrl, isDark, required: false),
-          ]),
+          _buildSectionCard(
+            'Candidate Documents (${candidate.fullName})',
+            isDark,
+            [
+              _documentRow(
+                'Aadhaar Card',
+                candidate.aadhaarDocUrl,
+                isDark,
+                required: true,
+              ),
+              _documentRow(
+                'Police Verification',
+                candidate.policeVerificationDocUrl,
+                isDark,
+                required: true,
+              ),
+              _documentRow(
+                'Medical Clearance',
+                candidate.medicalClearanceDocUrl,
+                isDark,
+                required: false,
+              ),
+            ],
+          ),
         ],
       ],
     );
   }
 
-  Widget _documentRow(String name, String? url, bool isDark, {bool required = false}) {
+  Widget _documentRow(
+    String name,
+    String? url,
+    bool isDark, {
+    bool required = false,
+  }) {
     final hasDoc = url != null && url.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -870,10 +1145,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             TextButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.upload_file, size: 16),
-              label: Text(
-                'Upload',
-                style: GoogleFonts.poppins(fontSize: 12),
-              ),
+              label: Text('Upload', style: GoogleFonts.poppins(fontSize: 12)),
             ),
           ],
         ],
@@ -977,6 +1249,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         return AppColors.successGreen;
       case ClientStatus.notInterested:
         return AppColors.grey500;
+      case ClientStatus.inactive:
+        throw UnimplementedError();
     }
   }
 
