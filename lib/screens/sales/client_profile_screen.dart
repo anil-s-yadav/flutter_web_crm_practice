@@ -163,18 +163,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   }
 
   Widget _buildClientHeader(BuildContext context, ClientModel client, bool isDark) {
-    ClientStatus? nextStatus;
-    String promoteText = '';
-    if (client.status == ClientStatus.followUp) {
-      nextStatus = ClientStatus.interested;
-      promoteText = 'Promote to Interested';
-    } else if (client.status == ClientStatus.interested) {
-      nextStatus = ClientStatus.converted;
-      promoteText = 'Promote to Converted';
-    } else if (client.status == ClientStatus.notInterested) {
-      nextStatus = ClientStatus.followUp;
-      promoteText = 'Reactivate to Follow Up';
-    }
 
     return Card(
       elevation: 0,
@@ -234,19 +222,44 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 ],
               ),
             ),
-            if (nextStatus != null)
+            if (client.status == ClientStatus.followUp) ...[
               ElevatedButton.icon(
-                onPressed: () {
-                  final state = Provider.of<GlobalAppState>(context, listen: false);
-                  state.updateClient(client.copyWith(status: nextStatus));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Client promoted to ${nextStatus!.displayName}'),
-                    ),
-                  );
-                },
+                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.interested, 'Client promoted to Interested'),
                 icon: const Icon(Icons.arrow_upward, size: 18),
-                label: Text(promoteText),
+                label: const Text('Promote to Interested'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.notInterested, 'Client marked as Not Interested'),
+                icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
+                label: const Text('Not Interested'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.criticalRed,
+                  side: const BorderSide(color: AppColors.criticalRed),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+            ] else if (client.status == ClientStatus.interested)
+              OutlinedButton.icon(
+                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.notInterested, 'Client marked as Not Interested'),
+                icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
+                label: const Text('Not Interested'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.criticalRed,
+                  side: const BorderSide(color: AppColors.criticalRed),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              )
+            else if (client.status == ClientStatus.notInterested)
+              ElevatedButton.icon(
+                onPressed: () => _showStatusChangeDialog(context, client, ClientStatus.followUp, 'Client reactivated to Follow Up'),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Reactivate to Follow Up'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.navyBlue,
@@ -256,6 +269,74 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showStatusChangeDialog(BuildContext context, ClientModel client, ClientStatus nextStatus, String successMessage) async {
+    final TextEditingController noteController = TextEditingController();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Status Change Note', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Please add a note explaining why this client is being moved to ${nextStatus.displayName}.',
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Mandatory Note',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel', style: GoogleFonts.poppins()),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyBlue,
+              ),
+              child: Text('Update Status', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              onPressed: () {
+                final note = noteController.text.trim();
+                if (note.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('A note is absolutely required to change status.')),
+                  );
+                  return;
+                }
+                
+                final state = Provider.of<GlobalAppState>(context, listen: false);
+                final timestamp = DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now());
+                
+                final newRemarks = (client.remarks == null || client.remarks!.isEmpty) 
+                    ? '[$timestamp] Status changed to ${nextStatus.displayName}: $note' 
+                    : '${client.remarks}\n\n[$timestamp] Status changed to ${nextStatus.displayName}: $note';
+
+                state.updateClient(client.copyWith(status: nextStatus, remarks: newRemarks));
+                
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(successMessage)),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

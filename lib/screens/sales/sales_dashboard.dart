@@ -52,12 +52,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final notInterested =
         myClients.where((c) => c.status == ClientStatus.notInterested).length;
     final converted =
-        myClients
-            .where(
-              (c) =>
-                  c.status == ClientStatus.converted,
-            )
-            .length;
+        myClients.where((c) => c.status == ClientStatus.converted).length;
     final totalPipeline = followUps + interested + notInterested + converted;
 
     // Other Stats
@@ -155,8 +150,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
     // Top Categories
     final categoryCounts = <String, int>{};
     for (var client in myClients.where(
-      (c) =>
-          c.status == ClientStatus.converted,
+      (c) => c.status == ClientStatus.converted,
     )) {
       categoryCounts[client.preferredCandidateCategory] =
           (categoryCounts[client.preferredCandidateCategory] ?? 0) + 1;
@@ -225,7 +219,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 final isDesktop = constraints.maxWidth > 900;
                 final isTablet = constraints.maxWidth > 600 && !isDesktop;
 
-                final revenueTrend = lastMonthRevenue > 0 ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0.0;
+                final revenueTrend =
+                    lastMonthRevenue > 0
+                        ? ((currentMonthRevenue - lastMonthRevenue) /
+                                lastMonthRevenue) *
+                            100
+                        : 0.0;
                 final revenueCard = _buildStatCard(
                   icon: Icons.currency_rupee,
                   iconColor: AppColors.gold,
@@ -237,7 +236,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   trend: revenueTrend,
                 );
 
-                final contractsTrend = lastMonthClosed > 0 ? ((currentMonthClosed - lastMonthClosed) / lastMonthClosed) * 100 : 0.0;
+                final contractsTrend =
+                    lastMonthClosed > 0
+                        ? ((currentMonthClosed - lastMonthClosed) /
+                                lastMonthClosed) *
+                            100
+                        : 0.0;
                 final contractsCard = _buildStatCard(
                   icon: Icons.handshake_outlined,
                   iconColor: AppColors.successGreen,
@@ -258,7 +262,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   subtitle: '< 1 month left',
                 );
 
-                final conversionTrend = lastConversionRate > 0 ? ((currentConversionRate - lastConversionRate) / lastConversionRate) * 100 : 0.0;
+                final conversionTrend =
+                    lastConversionRate > 0
+                        ? ((currentConversionRate - lastConversionRate) /
+                                lastConversionRate) *
+                            100
+                        : 0.0;
                 final conversionCard = _buildStatCard(
                   icon: Icons.trending_up,
                   iconColor: AppColors.infoBlue,
@@ -270,7 +279,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   trend: conversionTrend,
                 );
 
-                final avgDealTrend = lastAvgDeal > 0 ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) * 100 : 0.0;
+                final avgDealTrend =
+                    lastAvgDeal > 0
+                        ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) * 100
+                        : 0.0;
                 final avgDealCard = _buildStatCard(
                   icon: Icons.monetization_on_outlined,
                   iconColor: AppColors.successGreen,
@@ -562,24 +574,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (trend != null && trend != 0) ...[
-                          Icon(
-                            trend > 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                            size: 14,
-                            color: trend > 0 ? AppColors.successGreen : AppColors.criticalRed,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          subtitle,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: isDark ? AppColors.grey500 : AppColors.grey500,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.grey500,
+                      ),
                     ),
                   ],
                 ],
