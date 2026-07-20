@@ -6,6 +6,7 @@ import 'package:practice_app/layouts/desktop_shell.dart';
 import 'package:practice_app/layouts/executive_shell.dart';
 import 'package:practice_app/screens/admin/admin_dashboard.dart';
 import 'package:practice_app/screens/admin/admin_audit_trail_screen.dart';
+import 'package:practice_app/screens/admin/admin_settings_screen.dart';
 import 'package:practice_app/screens/sales/sales_dashboard.dart';
 import 'package:practice_app/screens/sales/add_client_screen.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
@@ -115,6 +116,36 @@ class AppRouter {
               builder: (context, state) => const ClientListScreen(),
             ),
             GoRoute(
+              path: '/admin/clients/followup',
+              builder:
+                  (context, state) =>
+                      const ClientListScreen(initialStatus: ClientStatus.followUp),
+            ),
+            GoRoute(
+              path: '/admin/clients/interested',
+              builder:
+                  (context, state) =>
+                      const ClientListScreen(initialStatus: ClientStatus.interested),
+            ),
+            GoRoute(
+              path: '/admin/clients/not_interested',
+              builder:
+                  (context, state) =>
+                      const ClientListScreen(initialStatus: ClientStatus.notInterested),
+            ),
+            GoRoute(
+              path: '/admin/clients/active',
+              builder:
+                  (context, state) =>
+                      const ClientListScreen(initialStatus: ClientStatus.converted),
+            ),
+            GoRoute(
+              path: '/admin/clients/past',
+              builder:
+                  (context, state) =>
+                      const ClientListScreen(initialStatus: ClientStatus.inactive),
+            ),
+            GoRoute(
               path: '/admin/audit',
               builder: (context, state) => const AdminAuditTrailScreen(),
             ),
@@ -128,9 +159,8 @@ class AppRouter {
             GoRoute(
               path: '/admin/clients/:id/edit',
               builder:
-                  (context, state) => EditClientScreen(
-                    clientId: state.pathParameters['id']!,
-                  ),
+                  (context, state) =>
+                      EditClientScreen(clientId: state.pathParameters['id']!),
             ),
             GoRoute(
               path: '/admin/contracts',
@@ -142,10 +172,7 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/settings',
-              builder:
-                  (context, state) => const Scaffold(
-                    body: Center(child: Text('Settings - Coming Soon')),
-                  ),
+              builder: (context, state) => const AdminSettingsScreen(),
             ),
             GoRoute(
               path: '/admin/learning',
@@ -214,9 +241,8 @@ class AppRouter {
             GoRoute(
               path: '/sales/clients/:id/edit',
               builder:
-                  (context, state) => EditClientScreen(
-                    clientId: state.pathParameters['id']!,
-                  ),
+                  (context, state) =>
+                      EditClientScreen(clientId: state.pathParameters['id']!),
             ),
             GoRoute(
               path: '/sales/candidates',
