@@ -1040,11 +1040,13 @@ class _DesktopShellState extends State<DesktopShell> {
 
     // Generic sub-routes
     if (location.endsWith('/candidates')) return 'Candidate Directory';
+    if (location.contains('/candidates/') && location.endsWith('/edit')) return 'Edit Candidate Details';
     if (location.contains('/candidates/')) return 'Candidate Profile';
     if (location.endsWith('/clients')) return 'Clients';
     if (location.endsWith('/clients/new')) return 'New Inquiries';
     if (location.endsWith('/clients/followup')) return 'Follow Ups';
     if (location.endsWith('/clients/active')) return 'Converted (Active)';
+    if (location.contains('/clients/') && location.endsWith('/edit')) return 'Edit Client Details';
     if (location.contains('/clients/')) return 'Client Profile';
     if (location.endsWith('/contracts')) return 'Contracts';
     if (location.endsWith('/tickets')) return 'Tickets';

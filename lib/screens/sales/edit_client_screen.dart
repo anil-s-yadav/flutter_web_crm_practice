@@ -2,61 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
-import 'package:practice_app/models/candidate_model.dart';
+import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 
-class EditCandidateScreen extends StatefulWidget {
-  final String candidateId;
-  const EditCandidateScreen({super.key, required this.candidateId});
+class EditClientScreen extends StatefulWidget {
+  final String clientId;
+  const EditClientScreen({super.key, required this.clientId});
 
   @override
-  State<EditCandidateScreen> createState() => _EditCandidateScreenState();
+  State<EditClientScreen> createState() => _EditClientScreenState();
 }
 
-class _EditCandidateScreenState extends State<EditCandidateScreen> {
+class _EditClientScreenState extends State<EditClientScreen> {
   final _formKey = GlobalKey<FormState>();
-  late CandidateModel _candidate;
+  late ClientModel _client;
   bool _isLoading = true;
 
-  // Form fields
-  String _name = '';
+  // Personal Info
+  String _fullName = '';
   String _phone = '';
-  int _age = 0;
+  String _email = '';
+  String _locality = '';
   String _city = '';
   String _address = '';
-  String _religion = '';
-  String _education = '';
-  String _category = '';
-  List<String> _languages = [];
-  int _experienceYears = 0;
-  String _expectedSalary = '';
+
+  // Household Details
+  String _houseType = '';
+  int _familySize = 0;
+  bool _hasPets = false;
+  String _petDetails = '';
+  bool _hasElderlyMembers = false;
+  bool _hasChildren = false;
+  int _childrenCount = 0;
+
+  // Service Requirements
+  String _preferredCategory = '';
+  String _budgetRange = '';
+
+  final List<String> _houseTypes = [
+    '1BHK',
+    '2BHK',
+    '3BHK',
+    '4BHK',
+    'Villa',
+    'Bungalow',
+    'Penthouse',
+    'Duplex',
+  ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
-      final found = state.getCandidate(widget.candidateId);
-      if (found != null) {
+      try {
+        final found = state.clients.firstWhere((c) => c.id == widget.clientId);
         setState(() {
-          _candidate = found;
-          _name = _candidate.fullName;
-          _phone = _candidate.phone;
-          _age = _candidate.age;
-          _city = _candidate.city;
-          _address = _candidate.address;
-          _religion = _candidate.religion;
-          _education = _candidate.education;
-          _category = _candidate.category;
-          _languages = List.from(_candidate.languages);
-          _experienceYears = _candidate.experienceYears;
-          _expectedSalary = _candidate.expectedSalary;
+          _client = found;
+          _fullName = _client.fullName;
+          _phone = _client.phone;
+          _email = _client.email;
+          _locality = _client.locality;
+          _city = _client.city;
+          _address = _client.address;
+
+          _houseType = _client.houseType;
+          _familySize = _client.familySize;
+          _hasPets = _client.hasPets;
+          _petDetails = _client.petDetails ?? '';
+          _hasElderlyMembers = _client.hasElderlyMembers;
+          _hasChildren = _client.hasChildren;
+          _childrenCount = _client.childrenCount ?? 0;
+
+          _preferredCategory = _client.preferredCandidateCategory;
+          _budgetRange = _client.budgetRange;
+
           _isLoading = false;
         });
-      } else {
+      } catch (_) {
         context.pop();
       }
     });
@@ -65,55 +91,38 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
       final state = Provider.of<GlobalAppState>(context, listen: false);
 
-      // Determine what changed for the audit log
-      List<String> changes = [];
-      if (_name != _candidate.fullName) changes.add('Name');
-      if (_phone != _candidate.phone) changes.add('Phone');
-      if (_age != _candidate.age) changes.add('Age');
-      if (_city != _candidate.city || _address != _candidate.address) {
-        changes.add('Address');
-      }
-      if (_religion != _candidate.religion) changes.add('Religion');
-      if (_education != _candidate.education) changes.add('Education');
-      if (_category != _candidate.category) changes.add('Category');
-      if (_languages.join(',') != _candidate.languages.join(',')) {
-        changes.add('Languages');
-      }
-      if (_experienceYears != _candidate.experienceYears) {
-        changes.add('Experience');
-      }
-      if (_expectedSalary != _candidate.expectedSalary) changes.add('Salary');
-
-      if (changes.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('No changes made.')));
-        context.pop();
-        return;
-      }
-
-      final updatedCandidate = _candidate.copyWith(
-        fullName: _name,
-        age: _age,
+      final updatedClient = ClientModel(
+        id: _client.id,
+        fullName: _fullName,
         phone: _phone,
+        altPhone: _client.altPhone,
+        email: _email,
         address: _address,
         city: _city,
-        category: _category,
-        languages: _languages,
-        religion: _religion,
-        education: _education,
-        experienceYears: _experienceYears,
-        expectedSalary: _expectedSalary,
+        locality: _locality,
+        houseType: _houseType,
+        familySize: _familySize,
+        hasPets: _hasPets,
+        petDetails: _hasPets ? _petDetails : null,
+        hasElderlyMembers: _hasElderlyMembers,
+        hasChildren: _hasChildren,
+        childrenCount: _hasChildren ? _childrenCount : null,
+        preferredCandidateCategory: _preferredCategory,
+        requiredSkills: _client.requiredSkills,
+        budgetRange: _budgetRange,
+        status: _client.status,
+        assignedEmployeeId: _client.assignedEmployeeId,
+        source: _client.source,
+        inquiryDate: _client.inquiryDate,
+        remarks: _client.remarks,
       );
 
-      final summary = 'Updated: ${changes.join(', ')}';
-      state.updateCandidate(updatedCandidate, summary);
+      state.updateClient(updatedClient);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully.')),
+        const SnackBar(content: Text('Client Profile updated successfully.')),
       );
       context.pop();
     }
@@ -124,17 +133,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     final isDark = context.themeRef.brightness == Brightness.dark;
-    final languageOptions = [
-      'Hindi',
-      'Marathi',
-      'English',
-      'Tamil',
-      'Telugu',
-      'Gujarati',
-      'Bengali',
-    ];
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -170,9 +169,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       _buildTextField(
                         label: 'Full Name',
                         isDark: isDark,
-                        initialValue: _name,
+                        initialValue: _fullName,
                         validator: (v) => v!.isEmpty ? 'Required' : null,
-                        onSaved: (v) => _name = v!,
+                        onSaved: (v) => _fullName = v!,
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -183,24 +182,18 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                               isDark: isDark,
                               initialValue: _phone,
                               validator:
-                                  (v) =>
-                                      v!.length < 10 ? 'Invalid phone' : null,
+                                  (v) => v!.length < 10 ? 'Invalid' : null,
                               onSaved: (v) => _phone = v!,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildTextField(
-                              label: 'Age',
+                              label: 'Email',
                               isDark: isDark,
-                              initialValue: _age.toString(),
-                              keyboardType: TextInputType.number,
-                              validator:
-                                  (v) =>
-                                      int.tryParse(v!) == null
-                                          ? 'Invalid'
-                                          : null,
-                              onSaved: (v) => _age = int.parse(v!),
+                              initialValue: _email,
+                              validator: (v) => v!.isEmpty ? 'Required' : null,
+                              onSaved: (v) => _email = v!,
                             ),
                           ),
                         ],
@@ -218,9 +211,22 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                               onSaved: (v) => _address = v!,
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Locality',
+                              isDark: isDark,
+                              initialValue: _locality,
+                              validator: (v) => v!.isEmpty ? 'Required' : null,
+                              onSaved: (v) => _locality = v!,
+                            ),
+                          ),
                           const SizedBox(width: 16),
                           Expanded(
-                            flex: 1,
                             child: _buildTextField(
                               label: 'City',
                               isDark: isDark,
@@ -231,38 +237,104 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      _buildDropdown<String>(
-                        label: 'Religion',
-                        isDark: isDark,
-                        value: _religion.isEmpty ? 'Hindu' : _religion,
-                        items: [
-                          'Hindu',
-                          'Muslim',
-                          'Christian',
-                          'Sikh',
-                          'Other',
-                        ],
-                        onChanged: (val) => setState(() => _religion = val!),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDropdown<String>(
-                        label: 'Education',
-                        isDark: isDark,
-                        value:
-                            _education.isEmpty ? 'Not Specified' : _education,
-                        items: [
-                          'Not Specified',
-                          'Below 10th',
-                          '10th Pass',
-                          '12th Pass',
-                          'Graduate',
-                        ],
-                        onChanged: (val) => setState(() => _education = val!),
-                      ),
                       const SizedBox(height: 32),
                       Text(
-                        'Professional Details',
+                        'Household Details',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'House Type',
+                              isDark: isDark,
+                              value: _houseType,
+                              items:
+                                  _houseTypes.contains(_houseType)
+                                      ? _houseTypes
+                                      : [..._houseTypes, _houseType],
+                              onChanged:
+                                  (val) => setState(() => _houseType = val!),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Family Size',
+                              isDark: isDark,
+                              initialValue: _familySize.toString(),
+                              keyboardType: TextInputType.number,
+                              validator:
+                                  (v) =>
+                                      int.tryParse(v!) == null
+                                          ? 'Invalid'
+                                          : null,
+                              onSaved: (v) => _familySize = int.parse(v!),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: Text(
+                          'Has Pets',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                        value: _hasPets,
+                        onChanged: (val) => setState(() => _hasPets = val),
+                        activeThumbColor: AppColors.navyBlue,
+                      ),
+                      if (_hasPets)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: _buildTextField(
+                            label: 'Pet Details',
+                            isDark: isDark,
+                            initialValue: _petDetails,
+                            onSaved: (v) => _petDetails = v ?? '',
+                          ),
+                        ),
+                      SwitchListTile(
+                        title: Text(
+                          'Has Elderly Members',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                        value: _hasElderlyMembers,
+                        onChanged:
+                            (val) => setState(() => _hasElderlyMembers = val),
+                        activeThumbColor: AppColors.navyBlue,
+                      ),
+                      SwitchListTile(
+                        title: Text(
+                          'Has Children',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                        value: _hasChildren,
+                        onChanged: (val) => setState(() => _hasChildren = val),
+                        activeThumbColor: AppColors.navyBlue,
+                      ),
+                      if (_hasChildren)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: _buildTextField(
+                            label: 'Children Count',
+                            isDark: isDark,
+                            initialValue: _childrenCount.toString(),
+                            keyboardType: TextInputType.number,
+                            onSaved:
+                                (v) =>
+                                    _childrenCount =
+                                        int.tryParse(v ?? '0') ?? 0,
+                          ),
+                        ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'Service Requirements',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -271,81 +343,28 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildDropdown<String>(
-                        label: 'Service Category',
+                        label: 'Preferred Category',
                         isDark: isDark,
-                        value:
-                            _category.isEmpty
-                                ? CategoryConstants.categories.first
-                                : _category,
+                        value: _preferredCategory,
                         items:
-                            CategoryConstants.categories.contains(_category)
+                            CategoryConstants.categories.contains(
+                                  _preferredCategory,
+                                )
                                 ? CategoryConstants.categories
-                                : [...CategoryConstants.categories, _category],
-                        onChanged: (val) {
-                          setState(() {
-                            _category = val!;
-                          });
-                        },
+                                : [
+                                  ...CategoryConstants.categories,
+                                  _preferredCategory,
+                                ],
+                        onChanged:
+                            (val) => setState(() => _preferredCategory = val!),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        'Languages Spoken',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children:
-                            languageOptions.map((lang) {
-                              final isSelected = _languages.contains(lang);
-                              return FilterChip(
-                                label: Text(lang),
-                                selected: isSelected,
-                                selectedColor: AppColors.gold.withValues(
-                                  alpha: 0.3,
-                                ),
-                                checkmarkColor: AppColors.navyBlue,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _languages.add(lang);
-                                    } else {
-                                      _languages.remove(lang);
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Experience (Years)',
-                              isDark: isDark,
-                              initialValue: _experienceYears.toString(),
-                              keyboardType: TextInputType.number,
-                              validator:
-                                  (v) =>
-                                      int.tryParse(v!) == null
-                                          ? 'Invalid'
-                                          : null,
-                              onSaved: (v) => _experienceYears = int.parse(v!),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Expected Salary',
-                              isDark: isDark,
-                              initialValue: _expectedSalary,
-                              validator: (v) => v!.isEmpty ? 'Required' : null,
-                              onSaved: (v) => _expectedSalary = v!,
-                            ),
-                          ),
-                        ],
+                      _buildTextField(
+                        label: 'Budget Range',
+                        isDark: isDark,
+                        initialValue: _budgetRange,
+                        validator: (v) => v!.isEmpty ? 'Required' : null,
+                        onSaved: (v) => _budgetRange = v!,
                       ),
                       const SizedBox(height: 32),
                       SizedBox(

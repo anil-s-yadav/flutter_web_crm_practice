@@ -22,6 +22,8 @@ import 'package:practice_app/screens/contracts/contract_list_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_list_screen.dart';
 import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
 import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
+import 'package:practice_app/screens/sales/edit_client_screen.dart';
+import 'package:practice_app/screens/sales/financials_screen.dart';
 import 'package:practice_app/models/client_model.dart';
 
 class AppRouter {
@@ -124,6 +126,13 @@ class AppRouter {
                   ),
             ),
             GoRoute(
+              path: '/admin/clients/:id/edit',
+              builder:
+                  (context, state) => EditClientScreen(
+                    clientId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/admin/contracts',
               builder: (context, state) => const ContractListScreen(),
             ),
@@ -203,11 +212,25 @@ class AppRouter {
                   ),
             ),
             GoRoute(
+              path: '/sales/clients/:id/edit',
+              builder:
+                  (context, state) => EditClientScreen(
+                    clientId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/sales/candidates',
               builder:
                   (context, state) => const CandidateDirectoryScreen(
                     type: CandidateDirectoryType.readyToPlace,
                     readOnly: true,
+                  ),
+            ),
+            GoRoute(
+              path: '/sales/candidates/:id',
+              builder:
+                  (context, state) => CandidateProfileScreen(
+                    candidateId: state.pathParameters['id']!,
                   ),
             ),
             GoRoute(
@@ -242,12 +265,7 @@ class AppRouter {
             ),
             GoRoute(
               path: '/sales/financials',
-              builder:
-                  (context, state) => const Scaffold(
-                    body: Center(
-                      child: Text('Financials & Payments (Coming Soon)'),
-                    ),
-                  ),
+              builder: (context, state) => const FinancialsScreen(),
             ),
           ],
         ),

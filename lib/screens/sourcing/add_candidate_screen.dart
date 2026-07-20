@@ -16,11 +16,9 @@ class AddCandidateScreen extends StatefulWidget {
 }
 
 class _AddCandidateScreenState extends State<AddCandidateScreen> {
-  int _currentStep = 0;
-  final _formKey1 = GlobalKey<FormState>();
-  final _formKey3 = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-  // Step 1: Personal Info
+  // Personal Info
   String _name = '';
   String _phone = '';
   int _age = 25;
@@ -29,19 +27,24 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
   String _religion = 'Hindu';
   String _education = '10th Pass';
 
-  // Step 2: Role & Experience
+  // Role & Experience
   String _category = CategoryConstants.categories.first;
   final List<String> _languages = ['Hindi'];
   int _experienceYears = 0;
 
-  // Step 3: Salary
+  // Salary
   double _expectedSalary = CategoryConstants.baseSalaries.values.first;
 
-  // Step 4: Documents (Simulated)
+  // Documents
   bool _hasAadhaar = false;
   bool _hasPhoto = false;
+  bool _hasPan = false;
+  bool _hasPoliceClearance = false;
 
   void _addCandidate() {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
     final state = Provider.of<GlobalAppState>(context, listen: false);
 
     // Generate an ID
@@ -66,8 +69,8 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       workingHoursPerDay: _category == 'Driver' ? 12 : 10,
       status: CandidateStatus.newlyAdded,
       isMedicalCleared: false,
-      isPoliceVerified: false,
-      isAadhaarVerified: false,
+      isPoliceVerified: _hasPoliceClearance,
+      isAadhaarVerified: _hasAadhaar,
       aadhaarDocUrl: _hasAadhaar ? 'simulated_aadhaar_url.pdf' : null,
       photoUrl: _hasPhoto ? 'simulated_photo_url.jpg' : '',
       addedBy: state.currentUser?.name ?? 'System',
@@ -86,82 +89,71 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.successGreen.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    color: AppColors.successGreen,
-                    size: 64,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Candidate Added!',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.white : AppColors.navyBlue,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$_name has been successfully added to the system and is now in the pipeline.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: isDark ? AppColors.grey400 : AppColors.grey600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close dialog
-                        context.pop(); // Go back to directory
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: isDark ? AppColors.grey300 : AppColors.grey700,
-                      ),
-                      child: Text(
-                        'View Directory',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                      ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.successGreen.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                    ElevatedButton(
+                    child: const Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.successGreen,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Candidate Added',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$_name has been added to the pool.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: isDark ? AppColors.grey300 : AppColors.grey600,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 45,
+                    child: ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close dialog
-                        _resetForm(); // Reset the form
+                        Navigator.pop(context); // close dialog
+                        context.pop(); // go back
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.navyBlue,
-                        foregroundColor: AppColors.white,
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyBlue,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
                       child: Text(
-                        'Add Another',
+                        'Done',
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -169,214 +161,9 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     );
   }
 
-  void _resetForm() {
-    _formKey1.currentState?.reset();
-    _formKey3.currentState?.reset();
-    setState(() {
-      _currentStep = 0;
-      _name = '';
-      _phone = '';
-      _age = 25;
-      _city = 'Mumbai';
-      _address = '';
-      _religion = 'Hindu';
-      _education = '10th Pass';
-      _category = CategoryConstants.categories.first;
-      _languages.clear();
-      _languages.add('Hindi');
-      _experienceYears = 0;
-      _expectedSalary = CategoryConstants.baseSalaries.values.first;
-      _hasAadhaar = false;
-      _hasPhoto = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = context.themeRef.brightness == Brightness.dark;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Add New Candidate',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-      ),
-      body: Stepper(
-        type:
-            context.media.width > 600
-                ? StepperType.horizontal
-                : StepperType.vertical,
-        currentStep: _currentStep,
-        onStepContinue: () {
-          bool isValid = true;
-          if (_currentStep == 0) {
-            isValid = _formKey1.currentState?.validate() ?? false;
-            if (isValid) _formKey1.currentState?.save();
-          } else if (_currentStep == 1) {
-            isValid = _formKey3.currentState?.validate() ?? false;
-            if (isValid) _formKey3.currentState?.save();
-          }
-
-          if (isValid) {
-            if (_currentStep < 2) {
-              setState(() => _currentStep++);
-            } else {
-              _addCandidate();
-            }
-          }
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) {
-            setState(() => _currentStep--);
-          } else {
-            context.pop();
-          }
-        },
-        controlsBuilder: (context, details) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Row(
-              children: [
-                ElevatedButton(
-                  onPressed: details.onStepContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navyBlue,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: Text(
-                    _currentStep == 2 ? 'Save Candidate' : 'Continue',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (_currentStep > 0)
-                  TextButton(
-                    onPressed: details.onStepCancel,
-                    child: Text(
-                      'Back',
-                      style: GoogleFonts.poppins(color: AppColors.grey500),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
-        steps: [_buildStep1(isDark), _buildStep2(isDark), _buildStep3(isDark)],
-      ),
-    );
-  }
-
-  Step _buildStep1(bool isDark) {
-    return Step(
-      title: const Text('Personal Details'),
-      isActive: _currentStep >= 0,
-      state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-      content: Form(
-        key: _formKey1,
-        child: Column(
-          children: [
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-              onSaved: (v) => _name = v!,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    maxLength: 10,
-                    decoration: const InputDecoration(
-                      counterText: "",
-                      labelText: 'Phone Number',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) => v!.length < 10 ? 'Invalid phone' : null,
-                    onSaved: (v) => _phone = v!,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Age',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    initialValue: _age.toString(),
-                    validator:
-                        (v) => int.tryParse(v!) == null ? 'Invalid' : null,
-                    onSaved: (v) => _age = int.parse(v!),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'City',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _city,
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-              onSaved: (v) => _city = v!,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Address',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-              onSaved: (v) => _address = v!,
-            ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Religion',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _religion,
-              items:
-                  ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Other'].map((
-                    String val,
-                  ) {
-                    return DropdownMenuItem(value: val, child: Text(val));
-                  }).toList(),
-              onChanged: (val) => setState(() => _religion = val!),
-            ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Education',
-                border: OutlineInputBorder(),
-              ),
-              initialValue: _education,
-              items:
-                  ['Below 10th', '10th Pass', '12th Pass', 'Graduate'].map((
-                    String val,
-                  ) {
-                    return DropdownMenuItem(value: val, child: Text(val));
-                  }).toList(),
-              onChanged: (val) => setState(() => _education = val!),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Step _buildStep2(bool isDark) {
     final languageOptions = [
       'Hindi',
       'Marathi',
@@ -387,185 +174,629 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       'Bengali',
     ];
 
-    return Step(
-      title: const Text('Role & Experience'),
-      isActive: _currentStep >= 1,
-      state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-      content: Form(
-        key: _formKey3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Service Category',
-                border: OutlineInputBorder(),
+    return Scaffold(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
               ),
-              initialValue: _category,
-              items:
-                  CategoryConstants.categories.map((String val) {
-                    return DropdownMenuItem(value: val, child: Text(val));
-                  }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _category = val!;
-                  _expectedSalary =
-                      CategoryConstants.baseSalaries[_category] ?? 10000;
-                });
-              },
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Years of Experience',
-                border: OutlineInputBorder(),
-                suffixText: 'Years',
+              color: isDark ? AppColors.darkSurface : AppColors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Text(
+                      //   'Add New Candidate',
+                      //   style: GoogleFonts.poppins(
+                      //     fontSize: 24,
+                      //     fontWeight: FontWeight.bold,
+                      //     color: isDark ? AppColors.white : AppColors.navyBlue,
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 8),
+                      // Text(
+                      //   'Enter the candidate details to add them to the sourcing pool.',
+                      //   style: GoogleFonts.poppins(
+                      //     fontSize: 14,
+                      //     color: isDark ? AppColors.grey400 : AppColors.grey600,
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 32),
+
+                      // --- Personal Info Section ---
+                      _buildSectionTitle(
+                        'Personal Information',
+                        Icons.person_outline,
+                        isDark,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Full Name',
+                              isDark: isDark,
+                              initialValue: _name,
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Required'
+                                          : null,
+                              onSaved: (v) => _name = v ?? '',
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Phone Number',
+                              isDark: isDark,
+                              initialValue: _phone,
+                              keyboardType: TextInputType.phone,
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Required'
+                                          : null,
+                              onSaved: (v) => _phone = v ?? '',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Age',
+                              isDark: isDark,
+                              initialValue: _age.toString(),
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Required';
+                                if (int.tryParse(v) == null) {
+                                  return 'Invalid number';
+                                }
+                                return null;
+                              },
+                              onSaved: (v) => _age = int.parse(v ?? '25'),
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Religion',
+                              value: _religion,
+                              items: const [
+                                'Hindu',
+                                'Muslim',
+                                'Christian',
+                                'Sikh',
+                                'Other',
+                              ],
+                              onChanged: (v) => setState(() => _religion = v!),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildTextField(
+                        label: 'Address',
+                        isDark: isDark,
+                        initialValue: _address,
+                        maxLines: 2,
+                        validator:
+                            (v) => v == null || v.isEmpty ? 'Required' : null,
+                        onSaved: (v) => _address = v ?? '',
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'City',
+                              value: _city,
+                              items: const [
+                                'Mumbai',
+                                'Pune',
+                                'Delhi',
+                                'Bangalore',
+                              ],
+                              onChanged: (v) => setState(() => _city = v!),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Education',
+                              value: _education,
+                              items: const [
+                                'None',
+                                '8th Pass',
+                                '10th Pass',
+                                '12th Pass',
+                                'Graduate',
+                              ],
+                              onChanged: (v) => setState(() => _education = v!),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 48),
+
+                      // --- Role & Experience Section ---
+                      _buildSectionTitle(
+                        'Role & Experience',
+                        Icons.work_outline,
+                        isDark,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Job Category',
+                              value: _category,
+                              items: CategoryConstants.categories,
+                              onChanged: (v) {
+                                setState(() {
+                                  _category = v!;
+                                  _expectedSalary =
+                                      CategoryConstants
+                                          .baseSalaries[_category] ??
+                                      15000;
+                                });
+                              },
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Experience (Years)',
+                              isDark: isDark,
+                              initialValue: _experienceYears.toString(),
+                              keyboardType: TextInputType.number,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Required';
+                                if (int.tryParse(v) == null)
+                                  return 'Invalid number';
+                                return null;
+                              },
+                              onSaved:
+                                  (v) => _experienceYears = int.parse(v ?? '0'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Languages Spoken',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.grey300 : AppColors.grey700,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            languageOptions.map((lang) {
+                              final isSelected = _languages.contains(lang);
+                              return FilterChip(
+                                label: Text(lang),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _languages.add(lang);
+                                    } else {
+                                      _languages.remove(lang);
+                                    }
+                                  });
+                                },
+                                backgroundColor:
+                                    isDark
+                                        ? AppColors.darkSurfaceVariant
+                                        : AppColors.grey50,
+                                selectedColor: AppColors.gold.withValues(
+                                  alpha: 0.2,
+                                ),
+                                checkmarkColor: AppColors.goldDark,
+                                labelStyle: GoogleFonts.poppins(
+                                  color:
+                                      isSelected
+                                          ? (isDark
+                                              ? AppColors.gold
+                                              : AppColors.goldDark)
+                                          : (isDark
+                                              ? AppColors.grey400
+                                              : AppColors.grey700),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(
+                                    color:
+                                        isSelected
+                                            ? AppColors.gold
+                                            : (isDark
+                                                ? AppColors.dividerDark
+                                                : AppColors.grey300),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                      ),
+                      const SizedBox(height: 48),
+
+                      // --- Salary Expectations Section ---
+                      _buildSectionTitle(
+                        'Salary Expectations',
+                        Icons.attach_money,
+                        isDark,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Expected Monthly Salary: ₹${_expectedSalary.toInt()}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: AppColors.gold,
+                          inactiveTrackColor:
+                              isDark
+                                  ? AppColors.darkSurfaceVariant
+                                  : AppColors.grey200,
+                          thumbColor: AppColors.gold,
+                          overlayColor: AppColors.gold.withValues(alpha: 0.2),
+                          valueIndicatorColor: AppColors.navyBlue,
+                        ),
+                        child: Slider(
+                          value: _expectedSalary.clamp(5000, 100000),
+                          min: 5000,
+                          max: 100000,
+                          divisions: 95,
+                          label: '₹${_expectedSalary.toInt()}',
+                          onChanged: (v) => setState(() => _expectedSalary = v),
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+
+                      // --- Documents Section ---
+                      _buildSectionTitle(
+                        'Document Status',
+                        Icons.folder_open,
+                        isDark,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildUploadCard(
+                              title: 'Aadhaar Card',
+                              isUploaded: _hasAadhaar,
+                              onUpload:
+                                  () => setState(() => _hasAadhaar = true),
+                              onRemove:
+                                  () => setState(() => _hasAadhaar = false),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildUploadCard(
+                              title: 'PAN Card',
+                              isUploaded: _hasPan,
+                              onUpload: () => setState(() => _hasPan = true),
+                              onRemove: () => setState(() => _hasPan = false),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildUploadCard(
+                              title: 'Passport Photo',
+                              isUploaded: _hasPhoto,
+                              onUpload: () => setState(() => _hasPhoto = true),
+                              onRemove: () => setState(() => _hasPhoto = false),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: _buildUploadCard(
+                              title: 'Police Clearance',
+                              isUploaded: _hasPoliceClearance,
+                              onUpload:
+                                  () => setState(
+                                    () => _hasPoliceClearance = true,
+                                  ),
+                              onRemove:
+                                  () => setState(
+                                    () => _hasPoliceClearance = false,
+                                  ),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 48),
+
+                      // --- Save Button ---
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _addCandidate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: AppColors.navyBlue,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: Text(
+                            'Add Candidate',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              keyboardType: TextInputType.number,
-              initialValue: _experienceYears.toString(),
-              validator: (v) => int.tryParse(v!) == null ? 'Invalid' : null,
-              onSaved: (v) => _experienceYears = int.parse(v!),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Languages Spoken',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  languageOptions.map((lang) {
-                    final isSelected = _languages.contains(lang);
-                    return FilterChip(
-                      label: Text(lang),
-                      selected: isSelected,
-                      selectedColor: AppColors.gold.withValues(alpha: 0.3),
-                      checkmarkColor: AppColors.navyBlue,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _languages.add(lang);
-                          } else {
-                            _languages.remove(lang);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Step _buildStep3(bool isDark) {
-    return Step(
-      title: const Text('Salary & Docs'),
-      isActive: _currentStep >= 2,
-      state: StepState.indexed,
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Expected Salary (Monthly)',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+  Widget _buildSectionTitle(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: isDark ? AppColors.grey400 : AppColors.navyBlue,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.white : AppColors.navyBlue,
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Base salary for $_category typically starts at ₹${CategoryConstants.baseSalaries[_category]?.toInt() ?? ""}',
-            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey500),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Divider(
+            color: isDark ? AppColors.dividerDark : AppColors.grey200,
           ),
-          const SizedBox(height: 12),
-          TextFormField(
-            decoration: const InputDecoration(
-              labelText: 'Salary (₹)',
-              border: OutlineInputBorder(),
-              prefixText: '₹ ',
-            ),
-            keyboardType: TextInputType.number,
-            initialValue: _expectedSalary.toInt().toString(),
-            onChanged:
-                (v) => setState(
-                  () => _expectedSalary = double.tryParse(v) ?? _expectedSalary,
-                ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Initial Documents (Optional)',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          _buildSimulatedUploadBox(
-            'Aadhaar Card',
-            _hasAadhaar,
-            (val) => setState(() => _hasAadhaar = val),
-            isDark,
-          ),
-          const SizedBox(height: 16),
-          _buildSimulatedUploadBox(
-            'Profile Photo',
-            _hasPhoto,
-            (val) => setState(() => _hasPhoto = val),
-            isDark,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildSimulatedUploadBox(
-    String label,
-    bool isUploaded,
-    Function(bool) onChanged,
-    bool isDark,
-  ) {
+  Widget _buildTextField({
+    required String label,
+    required bool isDark,
+    String? initialValue,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+    void Function(String?)? onSaved,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+          ),
+          style: GoogleFonts.poppins(fontSize: 14),
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          validator: validator,
+          onSaved: onSaved,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required String label,
+    required T value,
+    required List<T> items,
+    required void Function(T?) onChanged,
+    required bool isDark,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T>(
+          value: value,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+          ),
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: isDark ? AppColors.white : AppColors.navyBlue,
+          ),
+          dropdownColor: isDark ? AppColors.darkSurface : AppColors.white,
+          items:
+              items.map((item) {
+                return DropdownMenuItem<T>(
+                  value: item,
+                  child: Text(item.toString()),
+                );
+              }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUploadCard({
+    required String title,
+    required bool isUploaded,
+    required VoidCallback onUpload,
+    required VoidCallback onRemove,
+    required bool isDark,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:
-            isUploaded
-                ? AppColors.successGreen.withValues(alpha: 0.1)
-                : (isDark ? AppColors.darkSurfaceVariant : AppColors.grey50),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color:
               isUploaded
                   ? AppColors.successGreen
-                  : (isDark ? AppColors.dividerDark : AppColors.grey200),
+                  : (isDark ? AppColors.dividerDark : AppColors.grey300),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            isUploaded ? Icons.check_circle : Icons.upload_file,
-            color: isUploaded ? AppColors.successGreen : AppColors.grey500,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color:
+                  isUploaded
+                      ? AppColors.successGreen.withValues(alpha: 0.1)
+                      : (isDark ? AppColors.darkSurface : AppColors.white),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isUploaded ? Icons.check : Icons.upload_file,
+              color:
+                  isUploaded
+                      ? AppColors.successGreen
+                      : (isDark ? AppColors.grey400 : AppColors.navyBlue),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                ),
+                if (isUploaded)
+                  Text(
+                    'document_attached.pdf',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.successGreen,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (!isUploaded)
-            ElevatedButton(
-              onPressed: () => onChanged(true),
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              child: const Text('Simulate Upload'),
+          if (isUploaded)
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              color: AppColors.criticalRed,
+              onPressed: onRemove,
             )
           else
             TextButton(
-              onPressed: () => onChanged(false),
-              child: const Text(
-                'Remove',
-                style: TextStyle(color: AppColors.criticalRed),
-              ),
+              onPressed: onUpload,
+              style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+              child: const Text('Upload'),
             ),
         ],
       ),

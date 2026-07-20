@@ -55,14 +55,15 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
       widget.type == CandidateDirectoryType.verificationPending;
 
   void _onRowTap(CandidateModel candidate) {
-    if (!widget.readOnly) {
-      final state = Provider.of<GlobalAppState>(context, listen: false);
-      final routePrefix =
-          state.currentUser?.role == UserRole.admin ? '/admin' : '/sourcing';
-      context.push(
-        '$routePrefix/candidates/${candidate.id}?from=${widget.type.name}',
-      );
-    }
+    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final role = state.currentUser?.role;
+    String routePrefix = '/sourcing';
+    if (role == UserRole.admin) routePrefix = '/admin';
+    if (role == UserRole.sales) routePrefix = '/sales';
+    
+    context.push(
+      '$routePrefix/candidates/${candidate.id}?from=${widget.type.name}',
+    );
   }
 
   void _onActionTap(CandidateModel candidate, String action) {

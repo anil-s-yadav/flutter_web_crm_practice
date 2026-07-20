@@ -306,6 +306,7 @@ class CandidateProfileScreen extends StatelessWidget {
       runSpacing: 8,
       children: [
 
+        if (state.currentUser?.role != UserRole.sales)
           ElevatedButton.icon(
             onPressed: () {
               final routePrefix =
@@ -1049,19 +1050,20 @@ class CandidateProfileScreen extends StatelessWidget {
         alignment: WrapAlignment.center,
         children: [
           if (candidate.status == CandidateStatus.newlyAdded) ...[
-            _actionButton(
-              'Edit Profile',
-              Icons.edit,
-              AppColors.navyBlue,
-              isDark,
-              () {
-                final routePrefix =
-                    state.currentUser?.role == UserRole.admin
-                        ? '/admin'
-                        : '/sourcing';
-                context.go('$routePrefix/candidates/${candidate.id}/edit');
-              },
-            ),
+            if (state.currentUser?.role != UserRole.sales)
+              _actionButton(
+                'Edit Profile',
+                Icons.edit,
+                AppColors.navyBlue,
+                isDark,
+                () {
+                  final routePrefix =
+                      state.currentUser?.role == UserRole.admin
+                          ? '/admin'
+                          : '/sourcing';
+                  context.go('$routePrefix/candidates/${candidate.id}/edit');
+                },
+              ),
             _actionButton(
               'Move to Verification',
               Icons.fact_check,

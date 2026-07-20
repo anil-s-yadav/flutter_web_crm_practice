@@ -6,7 +6,6 @@ import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -228,11 +227,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
             ElevatedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Edit Client functionality coming soon.'),
-                  ),
-                );
+                final currentLocation =
+                    GoRouterState.of(context).uri.toString();
+                final routePrefix =
+                    currentLocation.startsWith('/admin') ? '/admin' : '/sales';
+                context.push('$routePrefix/clients/${client.id}/edit');
               },
               icon: const Icon(Icons.edit, size: 16),
               label: Text(

@@ -8,6 +8,7 @@ import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/models/notification_model.dart';
+import 'package:practice_app/models/invoice_model.dart';
 
 class GlobalAppState extends ChangeNotifier {
   List<ClientModel> _clients = [];
@@ -17,6 +18,7 @@ class GlobalAppState extends ChangeNotifier {
   List<ExecutiveTaskModel> _tasks = [];
   final List<AuditLogModel> _auditLogs = [];
   List<NotificationModel> _notifications = [];
+  List<InvoiceModel> _invoices = [];
 
   UserModel? _currentUser;
 
@@ -30,6 +32,7 @@ class GlobalAppState extends ChangeNotifier {
   List<ExecutiveTaskModel> get tasks => _tasks;
   List<AuditLogModel> get auditLogs => _auditLogs;
   List<NotificationModel> get notifications => _notifications;
+  List<InvoiceModel> get invoices => _invoices;
   int get unreadNotificationCount =>
       _notifications.where((n) => !n.isRead).length;
   UserModel? get currentUser => _currentUser;
@@ -470,6 +473,39 @@ class GlobalAppState extends ChangeNotifier {
       );
     } catch (_) {
       return null;
+    }
+  }
+
+  void updateInvoiceStatus(String invoiceId, InvoiceStatus newStatus) {
+    final index = _invoices.indexWhere((i) => i.id == invoiceId);
+    if (index != -1) {
+      final old = _invoices[index];
+      _invoices[index] = InvoiceModel(
+        id: old.id,
+        clientId: old.clientId,
+        clientName: old.clientName,
+        candidateName: old.candidateName,
+        amount: old.amount,
+        date: old.date,
+        dueDate: old.dueDate,
+        status: newStatus,
+      );
+      
+      _auditLogs.insert(
+        0,
+        AuditLogModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          timestamp: DateTime.now(),
+          userId: _currentUser?.id.toString() ?? 'unknown',
+          userName: _currentUser?.name ?? 'Unknown',
+          userRole: _currentUser?.role ?? UserRole.sales,
+          actionType: ActionType.statusChange,
+          targetId: invoiceId,
+          description: 'Invoice Status changed to ${newStatus.displayName}',
+        ),
+      );
+      
+      notifyListeners();
     }
   }
 }

@@ -25,7 +25,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
 
   List<TicketModel> _allTickets = [];
   TicketDataSource? _ticketDataSource;
-  String _searchQuery = '';
+  final String _searchQuery = '';
   TicketStatus? _selectedStatus;
   TicketPriority? _selectedPriority;
 
@@ -127,20 +127,24 @@ class _TicketListScreenState extends State<TicketListScreen> {
           //     ],
           //   ),
           // ),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
               border: Border(
-                bottom: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+                bottom: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
               ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
-                const Text('Filters:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Filters:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(width: 12),
                 SizedBox(
                   width: 160,
@@ -148,21 +152,43 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   child: DropdownButtonFormField<TicketPriority?>(
                     initialValue: _selectedPriority,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 0,
+                      ),
                       filled: true,
-                      fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                      fillColor:
+                          isDark ? AppColors.darkSurface : AppColors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('All Priorities')),
-                      ...TicketPriority.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All Priorities'),
+                      ),
+                      ...TicketPriority.values.map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s.displayName),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       setState(() => _selectedPriority = val);
@@ -177,21 +203,43 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   child: DropdownButtonFormField<TicketStatus?>(
                     initialValue: _selectedStatus,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 0,
+                      ),
                       filled: true,
-                      fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                      fillColor:
+                          isDark ? AppColors.darkSurface : AppColors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                        borderSide: BorderSide(
+                          color:
+                              isDark
+                                  ? AppColors.dividerDark
+                                  : AppColors.grey300,
+                        ),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('All Statuses')),
-                      ...TicketStatus.values.map((s) => DropdownMenuItem(value: s, child: Text(s.displayName))),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All Statuses'),
+                      ),
+                      ...TicketStatus.values.map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s.displayName),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       setState(() => _selectedStatus = val);
@@ -211,8 +259,10 @@ class _TicketListScreenState extends State<TicketListScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
-                    headerColor: isDark ? AppColors.darkSurface : AppColors.grey50,
-                    gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                    headerColor:
+                        isDark ? AppColors.darkSurface : AppColors.grey50,
+                    gridLineColor:
+                        isDark ? AppColors.dividerDark : AppColors.grey200,
                     gridLineStrokeWidth: 1,
                     rowHoverColor:
                         isDark
@@ -222,6 +272,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   ),
                   child: SfDataGrid(
                     source: _ticketDataSource!,
+
                     allowSorting: true,
                     allowMultiColumnSorting: false,
                     columnWidthMode: ColumnWidthMode.auto,
@@ -250,7 +301,10 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Created At', style: _headerStyle(isDark)),
+                          child: Text(
+                            'Created At',
+                            style: _headerStyle(isDark),
+                          ),
                         ),
                       ),
                       GridColumn(
@@ -286,12 +340,15 @@ class _TicketListScreenState extends State<TicketListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Assigned To', style: _headerStyle(isDark)),
+                          child: Text(
+                            'Assigned To',
+                            style: _headerStyle(isDark),
+                          ),
                         ),
                       ),
                       GridColumn(
                         columnName: 'actions',
-                        width: 90,
+                        width: 100,
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.center,
@@ -325,7 +382,10 @@ class _TicketListScreenState extends State<TicketListScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.white.withValues(alpha: 0.1) : AppColors.criticalRed.withValues(alpha: 0.08),
+                    color:
+                        isDark
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.criticalRed.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

@@ -22,7 +22,7 @@ class ContractListScreen extends StatefulWidget {
 }
 
 class _ContractListScreenState extends State<ContractListScreen> {
-  String _searchQuery = '';
+  final String _searchQuery = '';
   String? _currentViewMode;
   ContractStatus? _selectedStatus;
   ContractDataSource? _contractDataSource;
@@ -64,17 +64,21 @@ class _ContractListScreenState extends State<ContractListScreen> {
         allContracts.where((c) {
           if (_currentViewMode != null) {
             if (_currentViewMode == 'active' &&
-                c.contractStatus != ContractStatus.active)
+                c.contractStatus != ContractStatus.active) {
               return false;
-            if (_currentViewMode == 'expired' && c.isGuaranteeActive)
+            }
+            if (_currentViewMode == 'expired' && c.isGuaranteeActive) {
               return false;
+            }
             if (_currentViewMode == 'renewals' &&
-                (!c.isGuaranteeActive || c.daysRemainingInGuarantee > 30))
+                (!c.isGuaranteeActive || c.daysRemainingInGuarantee > 30)) {
               return false;
+            }
             if (_currentViewMode == 'replacements' &&
                 !c.isReplacementUsed &&
-                c.contractStatus != ContractStatus.rePlaced)
+                c.contractStatus != ContractStatus.rePlaced) {
               return false;
+            }
           } else if (_selectedStatus != null &&
               c.contractStatus != _selectedStatus) {
             return false;
@@ -162,7 +166,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                         columnName: 'sr_no',
                         // width: 90,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           alignment: Alignment.centerLeft,
                           child: Text('Sr No', style: _headerStyle(isDark)),
                         ),
@@ -171,7 +175,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                         columnName: 'details',
                         width: 240,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Contract Details',
@@ -184,7 +188,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'date',
                           width: 120,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Placed On',
@@ -196,7 +200,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                         columnName: 'expires_on',
                         width: 120,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Expires On',
@@ -210,7 +214,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'duration',
                           width: 100,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Duration',
@@ -223,7 +227,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'financials',
                           width: 130,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Financials',
@@ -237,7 +241,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'paymentStatus',
                           width: 130,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.centerLeft,
                             child: Text('Payment', style: _headerStyle(isDark)),
                           ),
@@ -247,7 +251,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'contractStatus',
                           width: 130,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.centerLeft,
                             child: Text('Status', style: _headerStyle(isDark)),
                           ),
@@ -257,7 +261,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                           columnName: 'actions',
                           width: 90,
                           label: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.center,
                             child: Text('Action', style: _headerStyle(isDark)),
                           ),
@@ -271,7 +275,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
 
           // Pagination
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
               border: Border(

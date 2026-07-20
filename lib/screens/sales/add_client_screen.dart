@@ -175,15 +175,6 @@ class _AddClientScreenState extends State<AddClientScreen> {
     final isMobile = context.media.width < 700;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Add New Client',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),

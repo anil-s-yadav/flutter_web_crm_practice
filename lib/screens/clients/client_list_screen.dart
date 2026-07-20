@@ -22,7 +22,7 @@ class ClientListScreen extends StatefulWidget {
 }
 
 class _ClientListScreenState extends State<ClientListScreen> {
-  String _searchQuery = '';
+  final String _searchQuery = '';
   ClientStatus? _selectedStatus;
   ClientDataSource? _clientDataSource;
 
@@ -125,7 +125,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
               ),
               child: Row(
                 children: [
-                  const Text('Filter by Status:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Filter by Status:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(width: 12),
                   SizedBox(
                     width: 200,
@@ -133,22 +136,42 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     child: DropdownButtonFormField<ClientStatus?>(
                       initialValue: _selectedStatus,
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 0,
+                        ),
                         filled: true,
-                        fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                        fillColor:
+                            isDark ? AppColors.darkSurface : AppColors.white,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                          borderSide: BorderSide(
+                            color:
+                                isDark
+                                    ? AppColors.dividerDark
+                                    : AppColors.grey300,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                          borderSide: BorderSide(
+                            color:
+                                isDark
+                                    ? AppColors.dividerDark
+                                    : AppColors.grey300,
+                          ),
                         ),
                       ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('All Statuses')),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('All Statuses'),
+                        ),
                         ...ClientStatus.values.map(
-                          (s) => DropdownMenuItem(value: s, child: Text(s.displayName)),
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(s.displayName),
+                          ),
                         ),
                       ],
                       onChanged: (val) {
@@ -168,8 +191,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
-                    headerColor: isDark ? AppColors.darkSurface : AppColors.grey50,
-                    gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
+                    headerColor:
+                        isDark ? AppColors.darkSurface : AppColors.grey50,
+                    gridLineColor:
+                        isDark ? AppColors.dividerDark : AppColors.grey200,
                     gridLineStrokeWidth: 1,
                     rowHoverColor:
                         isDark
@@ -234,7 +259,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
-                          child: Text('Looking For', style: _headerStyle(isDark)),
+                          child: Text(
+                            'Looking For',
+                            style: _headerStyle(isDark),
+                          ),
                         ),
                       ),
                       GridColumn(
@@ -292,7 +320,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.white.withValues(alpha: 0.1) : AppColors.navyBlue.withValues(alpha: 0.08),
+                    color:
+                        isDark
+                            ? AppColors.white.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
