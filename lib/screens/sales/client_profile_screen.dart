@@ -6,6 +6,7 @@ import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
+import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -167,6 +168,105 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     ClientModel client,
     bool isDark,
   ) {
+    final isMobile = context.media.width < 800;
+
+    final actionButtons = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        ElevatedButton.icon(
+          onPressed: () {
+            final currentLocation = GoRouterState.of(context).uri.toString();
+            final routePrefix =
+                currentLocation.startsWith('/admin') ? '/admin' : '/sales';
+            context.push('$routePrefix/clients/${client.id}/edit');
+          },
+          icon: const Icon(Icons.edit, size: 16),
+          label: Text(
+            'Edit',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+            foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
+            elevation: 0,
+            side: BorderSide(
+              color: (isDark ? AppColors.white : AppColors.navyBlue)
+                  .withValues(alpha: 0.2),
+            ),
+          ),
+        ),
+        if (client.status == ClientStatus.followUp) ...[
+          ElevatedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.interested,
+                  'Client promoted to Interested',
+                ),
+            icon: const Icon(Icons.arrow_upward, size: 18),
+            label: const Text('Promote to Interested'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.notInterested,
+                  'Client marked as Not Interested',
+                ),
+            icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
+            label: const Text('Not Interested'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.criticalRed,
+              side: const BorderSide(color: AppColors.criticalRed),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+        ] else if (client.status == ClientStatus.interested)
+          OutlinedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.notInterested,
+                  'Client marked as Not Interested',
+                ),
+            icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
+            label: const Text('Not Interested'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.criticalRed,
+              side: const BorderSide(color: AppColors.criticalRed),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          )
+        else if (client.status == ClientStatus.notInterested)
+          ElevatedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.followUp,
+                  'Client reactivated to Follow Up',
+                ),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Reactivate to Follow Up'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+      ],
+    );
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -178,160 +278,109 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       color: isDark ? AppColors.darkSurface : AppColors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: AppColors.gold.withValues(alpha: 0.1),
-              child: Text(
-                client.fullName.isNotEmpty ? client.fullName[0] : '?',
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.gold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
+        child: isMobile
+            ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        client.fullName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                      CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppColors.gold.withValues(alpha: 0.1),
+                        child: Text(
+                          client.fullName.isNotEmpty ? client.fullName[0] : '?',
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.gold,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      _buildBadge(
-                        client.status.displayName,
-                        _statusColor(client.status),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              client.fullName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? AppColors.white : AppColors.navyBlue,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            _buildBadge(
+                              client.status.displayName,
+                              _statusColor(client.status),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'ID: ${client.id} • ${client.locality}, ${client.city}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: isDark ? AppColors.grey400 : AppColors.grey600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'ID: ${client.id} • ${client.locality}, ${client.city}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  const SizedBox(height: 20),
+                  actionButtons,
+                ],
+              )
+            : Row(
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: AppColors.gold.withValues(alpha: 0.1),
+                    child: Text(
+                      client.fullName.isNotEmpty ? client.fullName[0] : '?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.gold,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              client.fullName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? AppColors.white : AppColors.navyBlue,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _buildBadge(
+                              client.status.displayName,
+                              _statusColor(client.status),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'ID: ${client.id} • ${client.locality}, ${client.city}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: isDark ? AppColors.grey400 : AppColors.grey600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actionButtons,
                 ],
               ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                final currentLocation =
-                    GoRouterState.of(context).uri.toString();
-                final routePrefix =
-                    currentLocation.startsWith('/admin') ? '/admin' : '/sales';
-                context.push('$routePrefix/clients/${client.id}/edit');
-              },
-              icon: const Icon(Icons.edit, size: 16),
-              label: Text(
-                'Edit',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDark ? AppColors.darkSurfaceVariant : AppColors.white,
-                foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
-                elevation: 0,
-                side: BorderSide(
-                  color: (isDark ? AppColors.white : AppColors.navyBlue)
-                      .withValues(alpha: 0.2),
-                ),
-              ),
-            ),
-            if (client.status == ClientStatus.followUp) ...[
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed:
-                    () => _showStatusChangeDialog(
-                      context,
-                      client,
-                      ClientStatus.interested,
-                      'Client promoted to Interested',
-                    ),
-                icon: const Icon(Icons.arrow_upward, size: 18),
-                label: const Text('Promote to Interested'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed:
-                    () => _showStatusChangeDialog(
-                      context,
-                      client,
-                      ClientStatus.notInterested,
-                      'Client marked as Not Interested',
-                    ),
-                icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
-                label: const Text('Not Interested'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.criticalRed,
-                  side: const BorderSide(color: AppColors.criticalRed),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ] else if (client.status == ClientStatus.interested)
-              OutlinedButton.icon(
-                onPressed:
-                    () => _showStatusChangeDialog(
-                      context,
-                      client,
-                      ClientStatus.notInterested,
-                      'Client marked as Not Interested',
-                    ),
-                icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
-                label: const Text('Not Interested'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.criticalRed,
-                  side: const BorderSide(color: AppColors.criticalRed),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              )
-            else if (client.status == ClientStatus.notInterested)
-              ElevatedButton.icon(
-                onPressed:
-                    () => _showStatusChangeDialog(
-                      context,
-                      client,
-                      ClientStatus.followUp,
-                      'Client reactivated to Follow Up',
-                    ),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Reactivate to Follow Up'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -432,6 +481,68 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     ClientModel client,
     bool isDark,
   ) {
+    final isMobile = context.media.width < 800;
+
+    final reqColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.assignment_outlined, size: 20, color: AppColors.gold),
+            const SizedBox(width: 8),
+            Text(
+              'Service Requirements',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _infoRow('Looking For', client.preferredCandidateCategory, isDark),
+        _infoRow('Budget', client.budgetRange, isDark),
+        _infoRow('Source', client.source, isDark),
+        _infoRow('Inquiry Date', DateFormat('dd MMM yyyy').format(client.inquiryDate), isDark),
+        if (client.assignedEmployeeId != null)
+          _infoRow('Sales Rep ID', client.assignedEmployeeId!, isDark),
+      ],
+    );
+
+    final detailsColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.home_outlined, size: 20, color: AppColors.gold),
+            const SizedBox(width: 8),
+            Text(
+              'Household & Contact Details',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _infoRow('House Type', client.houseType, isDark),
+        _infoRow('Family Size', '${client.familySize} Members', isDark),
+        _infoRow('Has Children', client.hasChildren ? 'Yes (${client.childrenCount})' : 'No', isDark),
+        _infoRow('Has Elderly', client.hasElderlyMembers ? 'Yes' : 'No', isDark),
+        _infoRow('Has Pets', client.hasPets ? 'Yes (${client.petDetails ?? ""})' : 'No', isDark),
+        const SizedBox(height: 12),
+        _infoRow('Address', '${client.address}, ${client.locality}, ${client.city}', isDark),
+        const SizedBox(height: 12),
+        _infoRow('Phone', client.phone, isDark),
+        if (client.altPhone != null && client.altPhone!.isNotEmpty)
+          _infoRow('Alt Phone', client.altPhone!, isDark),
+        _infoRow('Email', client.email, isDark),
+      ],
+    );
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -466,10 +577,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color:
-                    isDark
-                        ? AppColors.darkSurfaceVariant
-                        : AppColors.surfaceLight,
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(8),
                 border: const Border(
                   left: BorderSide(color: AppColors.gold, width: 4),
@@ -493,129 +601,34 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
             const SizedBox(height: 32),
             // TWO COLUMNS: REQUIREMENTS AND DETAILS
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Column 1: Service Requirements
-                Expanded(
-                  child: Column(
+            isMobile
+                ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.assignment_outlined,
-                            size: 20,
-                            color: AppColors.gold,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Service Requirements',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isDark ? AppColors.white : AppColors.navyBlue,
-                            ),
-                          ),
-                        ],
+                      reqColumn,
+                      const SizedBox(height: 32),
+                      Divider(
+                        height: 1,
+                        color: isDark ? AppColors.dividerDark : AppColors.grey200,
                       ),
-                      const SizedBox(height: 20),
-                      _infoRow(
-                        'Looking For',
-                        client.preferredCandidateCategory,
-                        isDark,
-                      ),
-                      _infoRow('Budget', client.budgetRange, isDark),
-                      _infoRow('Source', client.source, isDark),
-                      _infoRow(
-                        'Inquiry Date',
-                        DateFormat('dd MMM yyyy').format(client.inquiryDate),
-                        isDark,
-                      ),
-                      if (client.assignedEmployeeId != null)
-                        _infoRow(
-                          'Sales Rep ID',
-                          client.assignedEmployeeId!,
-                          isDark,
-                        ),
+                      const SizedBox(height: 32),
+                      detailsColumn,
                     ],
-                  ),
-                ),
-                const SizedBox(width: 32),
-                Container(
-                  width: 1,
-                  height: 250, // Line separator
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                ),
-                const SizedBox(width: 32),
-                // Column 2: Household Details
-                Expanded(
-                  child: Column(
+                  )
+                : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.home_outlined,
-                            size: 20,
-                            color: AppColors.gold,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Household & Contact Details',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isDark ? AppColors.white : AppColors.navyBlue,
-                            ),
-                          ),
-                        ],
+                      Expanded(child: reqColumn),
+                      const SizedBox(width: 32),
+                      Container(
+                        width: 1,
+                        height: 250, // Line separator
+                        color: isDark ? AppColors.dividerDark : AppColors.grey200,
                       ),
-                      const SizedBox(height: 20),
-                      _infoRow('House Type', client.houseType, isDark),
-                      _infoRow(
-                        'Family Size',
-                        '${client.familySize} Members',
-                        isDark,
-                      ),
-                      _infoRow(
-                        'Has Children',
-                        client.hasChildren
-                            ? 'Yes (${client.childrenCount})'
-                            : 'No',
-                        isDark,
-                      ),
-                      _infoRow(
-                        'Has Elderly',
-                        client.hasElderlyMembers ? 'Yes' : 'No',
-                        isDark,
-                      ),
-                      _infoRow(
-                        'Has Pets',
-                        client.hasPets
-                            ? 'Yes (${client.petDetails ?? ""})'
-                            : 'No',
-                        isDark,
-                      ),
-                      const SizedBox(height: 12),
-                      _infoRow(
-                        'Address',
-                        '${client.address}, ${client.locality}, ${client.city}',
-                        isDark,
-                      ),
-                      const SizedBox(height: 12),
-                      _infoRow('Phone', client.phone, isDark),
-                      if (client.altPhone != null &&
-                          client.altPhone!.isNotEmpty)
-                        _infoRow('Alt Phone', client.altPhone!, isDark),
-                      _infoRow('Email', client.email, isDark),
+                      const SizedBox(width: 32),
+                      Expanded(child: detailsColumn),
                     ],
                   ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -714,8 +727,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 20),
                         onPressed:
-                            () =>
-                                context.go('/sales/candidates/${candidate.id}'),
+                            () {
+                               final state = Provider.of<GlobalAppState>(context, listen: false);
+                               final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+                               context.push('$routePrefix/candidates/${candidate.id}');
+                            },
                         tooltip: 'View Candidate Profile',
                       ),
                     ],
@@ -1115,14 +1131,17 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                Expanded(
+                  child: Text(
+                    name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 if (!hasDoc && required)
                   _buildBadge('Required', AppColors.criticalRed)
                 else if (!hasDoc && !required)

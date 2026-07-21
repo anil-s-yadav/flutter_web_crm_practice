@@ -320,6 +320,11 @@ class GlobalAppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addNotification(NotificationModel notification) {
+    _notifications.insert(0, notification);
+    notifyListeners();
+  }
+
   void setCurrentUser(UserModel user) {
     _currentUser = user;
     notifyListeners();

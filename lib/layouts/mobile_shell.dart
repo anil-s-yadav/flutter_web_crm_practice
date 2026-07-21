@@ -54,6 +54,12 @@ class _MobileShellState extends State<MobileShell> {
       label: 'Learning',
       route: '/sourcing/learning',
     ),
+    _TabItem(
+      icon: Icons.confirmation_number_outlined,
+      activeIcon: Icons.confirmation_number,
+      label: 'Tickets',
+      route: '/sourcing/tickets',
+    ),
   ];
 
   @override
@@ -96,6 +102,10 @@ class _MobileShellState extends State<MobileShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search, size: 22),
+            onPressed: () {},
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined, size: 22),
             onPressed: () {},

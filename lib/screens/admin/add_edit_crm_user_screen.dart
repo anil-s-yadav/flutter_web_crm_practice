@@ -85,7 +85,11 @@ class _AddEditCrmUserScreenState extends State<AddEditCrmUserScreen> {
         backgroundColor: AppColors.successGreen,
       ),
     );
-    context.go('/admin/team');
+    if (GoRouter.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go('/admin/team');
+    }
   }
 
   @override
@@ -108,7 +112,13 @@ class _AddEditCrmUserScreenState extends State<AddEditCrmUserScreen> {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () => context.go('/admin/team'),
+                        onPressed: () {
+                          if (GoRouter.of(context).canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/admin/team');
+                          }
+                        },
                         icon: const Icon(Icons.arrow_back),
                       ),
                       const SizedBox(width: 8),

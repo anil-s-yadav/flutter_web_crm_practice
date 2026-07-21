@@ -18,77 +18,81 @@ class NotificationPanel extends StatelessWidget {
     return Container(
       width: 400,
       color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.cardDark : AppColors.white,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.white10 : Colors.grey[200]!,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : AppColors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.white10 : Colors.grey[200]!,
+                  ),
                 ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Notifications',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Notifications',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                if (state.unreadNotificationCount > 0)
-                  TextButton(
-                    onPressed: () => state.markAllNotificationsRead(),
-                    child: Text(
-                      'Mark all as read',
-                      style: GoogleFonts.poppins(
-                        color: AppColors.standardBlue,
-                        fontWeight: FontWeight.w600,
+                  if (state.unreadNotificationCount > 0)
+                    TextButton(
+                      onPressed: () => state.markAllNotificationsRead(),
+                      child: Text(
+                        'Mark all as read',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.standardBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // List
-          Expanded(
-            child: notifications.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_off_outlined,
-                          size: 64,
-                          color: isDark ? Colors.white24 : Colors.grey[300],
+            // List
+            Expanded(
+              child:
+                  notifications.isEmpty
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_off_outlined,
+                              size: 64,
+                              color: isDark ? Colors.white24 : Colors.grey[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No notifications yet',
+                              style: GoogleFonts.poppins(
+                                color:
+                                    isDark ? Colors.white54 : Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No notifications yet',
-                          style: GoogleFonts.poppins(
-                            color: isDark ? Colors.white54 : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notif = notifications[index];
-                      return _NotificationItem(
-                        notification: notif,
-                        onTap: () => state.markNotificationRead(notif.id),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                      )
+                      : ListView.builder(
+                        itemCount: notifications.length,
+                        itemBuilder: (context, index) {
+                          final notif = notifications[index];
+                          return _NotificationItem(
+                            notification: notif,
+                            onTap: () => state.markNotificationRead(notif.id),
+                          );
+                        },
+                      ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -98,10 +102,7 @@ class _NotificationItem extends StatelessWidget {
   final NotificationModel notification;
   final VoidCallback onTap;
 
-  const _NotificationItem({
-    required this.notification,
-    required this.onTap,
-  });
+  const _NotificationItem({required this.notification, required this.onTap});
 
   IconData _getIcon() {
     switch (notification.type) {
@@ -133,15 +134,16 @@ class _NotificationItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = _getColor();
-    
+
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: notification.isRead
-              ? Colors.transparent
-              : color.withValues(alpha: 0.05),
+          color:
+              notification.isRead
+                  ? Colors.transparent
+                  : color.withValues(alpha: 0.05),
           border: Border(
             bottom: BorderSide(
               color: isDark ? Colors.white10 : Colors.grey[200]!,
@@ -171,10 +173,12 @@ class _NotificationItem extends StatelessWidget {
                         child: Text(
                           notification.title,
                           style: GoogleFonts.poppins(
-                            fontWeight: notification.isRead
-                                ? FontWeight.w500
-                                : FontWeight.bold,
-                            color: isDark ? AppColors.white : AppColors.navyBlue,
+                            fontWeight:
+                                notification.isRead
+                                    ? FontWeight.w500
+                                    : FontWeight.bold,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
                           ),
                         ),
                       ),

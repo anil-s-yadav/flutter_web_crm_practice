@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
+import 'package:provider/provider.dart';
+import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/models/notification_model.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -169,6 +172,42 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       _slaBreach,
                       (v) => setState(() => _slaBreach = v),
                       isDark,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                _buildSection(
+                  title: 'Staff Communication',
+                  icon: Icons.campaign_outlined,
+                  isDark: isDark,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Send a direct notification to all staff members immediately. This will appear in their notification panel.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color:
+                                  isDark
+                                      ? AppColors.grey400
+                                      : AppColors.grey600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          onPressed: _showSendNotificationDialog,
+                          icon: const Icon(Icons.send, size: 16),
+                          label: const Text('Send Notification'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: AppColors.navyBlue,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -392,6 +431,149 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showSendNotificationDialog() async {
+    final titleController = TextEditingController();
+    final messageController = TextEditingController();
+    NotificationType selectedType = NotificationType.info;
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = context.themeRef.brightness == Brightness.dark;
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+              title: Text(
+                'Send Staff Notification',
+                style: GoogleFonts.poppins(
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
+              ),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                        labelStyle: GoogleFonts.poppins(
+                          color: isDark ? AppColors.grey400 : AppColors.grey600,
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: messageController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Message',
+                        border: OutlineInputBorder(),
+                        labelStyle: GoogleFonts.poppins(
+                          color: isDark ? AppColors.grey400 : AppColors.grey600,
+                        ),
+                      ),
+                      style: GoogleFonts.poppins(
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<NotificationType>(
+                      value: selectedType,
+                      decoration: InputDecoration(
+                        labelText: 'Type',
+                        border: OutlineInputBorder(),
+                        labelStyle: GoogleFonts.poppins(
+                          color: isDark ? AppColors.grey400 : AppColors.grey600,
+                        ),
+                      ),
+                      dropdownColor:
+                          isDark
+                              ? AppColors.darkSurfaceVariant
+                              : AppColors.white,
+                      items:
+                          NotificationType.values.map((t) {
+                            return DropdownMenuItem(
+                              value: t,
+                              child: Text(
+                                t.name.toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  color:
+                                      isDark
+                                          ? AppColors.white
+                                          : AppColors.navyBlue,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                      onChanged: (v) {
+                        if (v != null) setStateDialog(() => selectedType = v);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.poppins(color: AppColors.grey500),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.isEmpty ||
+                        messageController.text.isEmpty)
+                      return;
+
+                    final newNotif = NotificationModel(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      title: titleController.text,
+                      message: messageController.text,
+                      createdAt: DateTime.now(),
+                      type: selectedType,
+                    );
+
+                    Provider.of<GlobalAppState>(
+                      context,
+                      listen: false,
+                    ).addNotification(newNotif);
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Notification sent to staff successfully.',
+                          style: GoogleFonts.poppins(),
+                        ),
+                        backgroundColor: AppColors.successGreen,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyBlue,
+                  ),
+                  child: Text(
+                    'Send',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

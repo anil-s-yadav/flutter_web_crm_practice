@@ -150,8 +150,6 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 24),
         _buildPersonalDetails(candidate, isDark),
         const SizedBox(height: 16),
-        _buildLanguages(candidate, isDark),
-        const SizedBox(height: 16),
         _buildVerificationStatus(candidate, isDark),
         const SizedBox(height: 16),
         _buildDocuments(candidate, isDark),
@@ -217,7 +215,6 @@ class CandidateProfileScreen extends StatelessWidget {
           _buildActionBar(context, candidate, isDark),
           const SizedBox(height: 16),
         ],
-        _buildLanguages(candidate, isDark),
         const SizedBox(height: 32),
         AuditLogWidget(
           logs: relevantLogs.cast(),
@@ -251,9 +248,7 @@ class CandidateProfileScreen extends StatelessWidget {
               if (state.currentUser?.role == UserRole.sourcing ||
                   state.currentUser?.role == UserRole.admin) ...[
                 _buildActionBar(context, candidate, isDark),
-                const SizedBox(height: 16),
               ],
-              _buildLanguages(candidate, isDark),
             ],
           ),
         ),
@@ -945,31 +940,12 @@ class CandidateProfileScreen extends StatelessWidget {
       ),
       if (candidate.preferredWorkType != null)
         _infoRow('Pref. Work Type', candidate.preferredWorkType!, isDark),
+      if (candidate.languages.isNotEmpty)
+        _infoRow('Languages', candidate.languages.join(', '), isDark),
     ]);
   }
 
-  Widget _buildLanguages(CandidateModel candidate, bool isDark) {
-    return _buildSection('Languages', isDark, [
-      Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children:
-            candidate.languages
-                .map(
-                  (l) => Chip(
-                    label: Text(l),
-                    labelStyle: GoogleFonts.poppins(fontSize: 11),
-                    backgroundColor: AppColors.stageInterviewed.withValues(
-                      alpha: 0.1,
-                    ),
-                    side: BorderSide.none,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                )
-                .toList(),
-      ),
-    ]);
-  }
+
 
   Widget _buildVerificationStatus(CandidateModel candidate, bool isDark) {
     return _buildSection('Verification Hub', isDark, [
@@ -1061,7 +1037,7 @@ class CandidateProfileScreen extends StatelessWidget {
                       state.currentUser?.role == UserRole.admin
                           ? '/admin'
                           : '/sourcing';
-                  context.go('$routePrefix/candidates/${candidate.id}/edit');
+                  context.push('$routePrefix/candidates/${candidate.id}/edit');
                 },
               ),
             _actionButton(

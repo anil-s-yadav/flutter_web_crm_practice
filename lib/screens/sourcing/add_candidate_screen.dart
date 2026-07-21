@@ -221,77 +221,53 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                         isDark,
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Full Name',
-                              isDark: isDark,
-                              initialValue: _name,
-                              validator:
-                                  (v) =>
-                                      v == null || v.isEmpty
-                                          ? 'Required'
-                                          : null,
-                              onSaved: (v) => _name = v ?? '',
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Phone Number',
-                              isDark: isDark,
-                              initialValue: _phone,
-                              keyboardType: TextInputType.phone,
-                              validator:
-                                  (v) =>
-                                      v == null || v.isEmpty
-                                          ? 'Required'
-                                          : null,
-                              onSaved: (v) => _phone = v ?? '',
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildTextField(
+                          label: 'Full Name',
+                          isDark: isDark,
+                          initialValue: _name,
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                          onSaved: (v) => _name = v ?? '',
+                        ),
+                        _buildTextField(
+                          label: 'Phone Number',
+                          isDark: isDark,
+                          initialValue: _phone,
+                          keyboardType: TextInputType.phone,
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                          onSaved: (v) => _phone = v ?? '',
+                        ),
+                      ]),
                       const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Age',
-                              isDark: isDark,
-                              initialValue: _age.toString(),
-                              keyboardType: TextInputType.number,
-                              validator: (v) {
-                                if (v == null || v.isEmpty) return 'Required';
-                                if (int.tryParse(v) == null) {
-                                  return 'Invalid number';
-                                }
-                                return null;
-                              },
-                              onSaved: (v) => _age = int.parse(v ?? '25'),
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildDropdown<String>(
-                              label: 'Religion',
-                              value: _religion,
-                              items: const [
-                                'Hindu',
-                                'Muslim',
-                                'Christian',
-                                'Sikh',
-                                'Other',
-                              ],
-                              onChanged: (v) => setState(() => _religion = v!),
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildTextField(
+                          label: 'Age',
+                          isDark: isDark,
+                          initialValue: _age.toString(),
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (int.tryParse(v) == null) {
+                              return 'Invalid number';
+                            }
+                            return null;
+                          },
+                          onSaved: (v) => _age = int.parse(v ?? '25'),
+                        ),
+                        _buildDropdown<String>(
+                          label: 'Religion',
+                          value: _religion,
+                          items: const [
+                            'Hindu',
+                            'Muslim',
+                            'Christian',
+                            'Sikh',
+                            'Other',
+                          ],
+                          onChanged: (v) => setState(() => _religion = v!),
+                          isDark: isDark,
+                        ),
+                      ]),
                       const SizedBox(height: 24),
                       _buildTextField(
                         label: 'Address',
@@ -303,41 +279,33 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                         onSaved: (v) => _address = v ?? '',
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _buildDropdown<String>(
-                              label: 'City',
-                              value: _city,
-                              items: const [
-                                'Mumbai',
-                                'Pune',
-                                'Delhi',
-                                'Bangalore',
-                              ],
-                              onChanged: (v) => setState(() => _city = v!),
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildDropdown<String>(
-                              label: 'Education',
-                              value: _education,
-                              items: const [
-                                'None',
-                                '8th Pass',
-                                '10th Pass',
-                                '12th Pass',
-                                'Graduate',
-                              ],
-                              onChanged: (v) => setState(() => _education = v!),
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildDropdown<String>(
+                          label: 'City',
+                          value: _city,
+                          items: const [
+                            'Mumbai',
+                            'Pune',
+                            'Delhi',
+                            'Bangalore',
+                          ],
+                          onChanged: (v) => setState(() => _city = v!),
+                          isDark: isDark,
+                        ),
+                        _buildDropdown<String>(
+                          label: 'Education',
+                          value: _education,
+                          items: const [
+                            'None',
+                            '8th Pass',
+                            '10th Pass',
+                            '12th Pass',
+                            'Graduate',
+                          ],
+                          onChanged: (v) => setState(() => _education = v!),
+                          isDark: isDark,
+                        ),
+                      ]),
                       const SizedBox(height: 48),
 
                       // --- Role & Experience Section ---
@@ -347,46 +315,35 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                         isDark,
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _buildDropdown<String>(
-                              label: 'Job Category',
-                              value: _category,
-                              items: CategoryConstants.categories,
-                              onChanged: (v) {
-                                setState(() {
-                                  _category = v!;
-                                  _expectedSalary =
-                                      CategoryConstants
-                                          .baseSalaries[_category] ??
-                                      15000;
-                                });
-                              },
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'Experience (Years)',
-                              isDark: isDark,
-                              initialValue: _experienceYears.toString(),
-                              keyboardType: TextInputType.number,
-                              validator: (v) {
-                                if (v == null || v.isEmpty) return 'Required';
-                                if (int.tryParse(v) == null) {
-                                  return 'Invalid number';
-                                }
-                                return null;
-                              },
-                              onSaved:
-                                  (v) => _experienceYears = int.parse(v ?? '0'),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildDropdown<String>(
+                          label: 'Job Category',
+                          value: _category,
+                          items: CategoryConstants.categories,
+                          onChanged: (v) {
+                            setState(() {
+                              _category = v!;
+                              _expectedSalary =
+                                  CategoryConstants.baseSalaries[_category] ?? 15000;
+                            });
+                          },
+                          isDark: isDark,
+                        ),
+                        _buildTextField(
+                          label: 'Experience (Years)',
+                          isDark: isDark,
+                          initialValue: _experienceYears.toString(),
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (int.tryParse(v) == null) {
+                              return 'Invalid number';
+                            }
+                            return null;
+                          },
+                          onSaved: (v) => _experienceYears = int.parse(v ?? '0'),
+                        ),
+                      ]),
                       const SizedBox(height: 24),
                       Text(
                         'Languages Spoken',
@@ -494,61 +451,39 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                         isDark,
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildUploadCard(
-                              title: 'Aadhaar Card',
-                              isUploaded: _hasAadhaar,
-                              onUpload:
-                                  () => setState(() => _hasAadhaar = true),
-                              onRemove:
-                                  () => setState(() => _hasAadhaar = false),
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildUploadCard(
-                              title: 'PAN Card',
-                              isUploaded: _hasPan,
-                              onUpload: () => setState(() => _hasPan = true),
-                              onRemove: () => setState(() => _hasPan = false),
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildUploadCard(
+                          title: 'Aadhaar Card',
+                          isUploaded: _hasAadhaar,
+                          onUpload: () => setState(() => _hasAadhaar = true),
+                          onRemove: () => setState(() => _hasAadhaar = false),
+                          isDark: isDark,
+                        ),
+                        _buildUploadCard(
+                          title: 'PAN Card',
+                          isUploaded: _hasPan,
+                          onUpload: () => setState(() => _hasPan = true),
+                          onRemove: () => setState(() => _hasPan = false),
+                          isDark: isDark,
+                        ),
+                      ]),
                       const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildUploadCard(
-                              title: 'Passport Photo',
-                              isUploaded: _hasPhoto,
-                              onUpload: () => setState(() => _hasPhoto = true),
-                              onRemove: () => setState(() => _hasPhoto = false),
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: _buildUploadCard(
-                              title: 'Police Clearance',
-                              isUploaded: _hasPoliceClearance,
-                              onUpload:
-                                  () => setState(
-                                    () => _hasPoliceClearance = true,
-                                  ),
-                              onRemove:
-                                  () => setState(
-                                    () => _hasPoliceClearance = false,
-                                  ),
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildResponsiveFields(context, [
+                        _buildUploadCard(
+                          title: 'Passport Photo',
+                          isUploaded: _hasPhoto,
+                          onUpload: () => setState(() => _hasPhoto = true),
+                          onRemove: () => setState(() => _hasPhoto = false),
+                          isDark: isDark,
+                        ),
+                        _buildUploadCard(
+                          title: 'Police Clearance',
+                          isUploaded: _hasPoliceClearance,
+                          onUpload: () => setState(() => _hasPoliceClearance = true),
+                          onRemove: () => setState(() => _hasPoliceClearance = false),
+                          isDark: isDark,
+                        ),
+                      ]),
                       const SizedBox(height: 48),
 
                       // --- Save Button ---
@@ -582,6 +517,20 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildResponsiveFields(BuildContext context, List<Widget> fields) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: fields.expand((f) => [f, const SizedBox(height: 24)]).toList()..removeLast(),
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: fields.expand((f) => [Expanded(child: f), const SizedBox(width: 24)]).toList()..removeLast(),
     );
   }
 

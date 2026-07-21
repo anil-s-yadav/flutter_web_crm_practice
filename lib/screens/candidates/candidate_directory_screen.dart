@@ -60,7 +60,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     String routePrefix = '/sourcing';
     if (role == UserRole.admin) routePrefix = '/admin';
     if (role == UserRole.sales) routePrefix = '/sales';
-    
+
     context.push(
       '$routePrefix/candidates/${candidate.id}?from=${widget.type.name}',
     );
@@ -512,7 +512,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     final isMobile = context.media.width < 900;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       margin: EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
@@ -535,7 +535,9 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     bool showFiltersArea = _isNewStyle ? true : _showFilters;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (!_isNewStyle) ...[
           Row(
@@ -543,7 +545,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 6,
+                  vertical: 2,
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.successGreen.withValues(alpha: 0.1),
@@ -562,10 +564,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               InkWell(
                 onTap: () => setState(() => _showFilters = !_showFilters),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: isDark ? AppColors.dividerDark : AppColors.grey300,
@@ -597,9 +596,9 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
         ],
         if (showFiltersArea || _isNewStyle) ...[
+          const SizedBox(height: 10),
           SizedBox(
             height: 38,
             child: TextField(
@@ -901,178 +900,181 @@ class _CandidateGridView extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: Container(
-            // margin: const EdgeInsets.symmetric(horizontal: 10),
-            margin: const EdgeInsets.all(5),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: SfDataGridTheme(
-                data: SfDataGridThemeData(
-                  headerColor:
-                      isDark ? AppColors.darkSurface : AppColors.grey50,
-                  gridLineColor:
-                      isDark ? AppColors.dividerDark : AppColors.grey200,
-                  gridLineStrokeWidth: 1,
-                  rowHoverColor:
-                      isDark
-                          ? AppColors.navyBlue.withValues(alpha: 0.1)
-                          : AppColors.navyBlue.withValues(alpha: 0.04),
-                  sortIconColor: AppColors.gold,
-                ),
-                child: SfDataGrid(
-                  source: dataSource,
-                  allowSorting: true,
-                  allowMultiColumnSorting: false,
-                  columnWidthMode: ColumnWidthMode.auto,
-                  gridLinesVisibility: GridLinesVisibility.both,
-                  headerGridLinesVisibility: GridLinesVisibility.both,
-                  columns: <GridColumn>[
-                    GridColumn(
-                      columnName: 'id',
-                      visible: false,
-                      label: const SizedBox.shrink(),
-                    ),
-                    GridColumn(
-                      columnName: 'sr_no',
-                      columnWidthMode: ColumnWidthMode.auto,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'ID',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              // margin: const EdgeInsets.symmetric(horizontal: 10),
+              margin: const EdgeInsets.all(5),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: SfDataGridTheme(
+                  data: SfDataGridThemeData(
+                    headerColor:
+                        isDark ? AppColors.darkSurface : AppColors.grey50,
+                    gridLineColor:
+                        isDark ? AppColors.dividerDark : AppColors.grey200,
+                    gridLineStrokeWidth: 1,
+                    rowHoverColor:
+                        isDark
+                            ? AppColors.navyBlue.withValues(alpha: 0.1)
+                            : AppColors.navyBlue.withValues(alpha: 0.04),
+                    sortIconColor: AppColors.gold,
+                  ),
+                  child: SfDataGrid(
+                    source: dataSource,
+                    allowSorting: true,
+                    allowMultiColumnSorting: false,
+                    columnWidthMode: ColumnWidthMode.auto,
+                    gridLinesVisibility: GridLinesVisibility.both,
+                    headerGridLinesVisibility: GridLinesVisibility.both,
+                    columns: <GridColumn>[
+                      GridColumn(
+                        columnName: 'id',
+                        visible: false,
+                        label: const SizedBox.shrink(),
+                      ),
+                      GridColumn(
+                        columnName: 'sr_no',
+                        columnWidthMode: ColumnWidthMode.auto,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'ID',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'date',
-                      width: 120,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Date',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'date',
+                        width: 120,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Date',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'candidate',
-                      width: 220,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Profile',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'candidate',
+                        width: 220,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Profile',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'category',
-                      minimumWidth: 120,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Category',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'category',
+                        minimumWidth: 120,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Category',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'experience',
-                      width: 100,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Exp (Yrs)',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'experience',
+                        width: 100,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Exp (Yrs)',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'salary',
-                      minimumWidth: 140,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Expected Salary',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'salary',
+                        minimumWidth: 140,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Expected Salary',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'education',
-                      minimumWidth: 120,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Education',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'education',
+                        minimumWidth: 120,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Education',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'languages',
-                      minimumWidth: 120,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Lang',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'languages',
+                        minimumWidth: 120,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Lang',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'status',
-                      width: 150,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Status',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'status',
+                        width: 150,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Status',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    GridColumn(
-                      columnName: 'actions',
-                      width: 80,
-                      label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Actions',
-                          style: _headerStyle(isDark),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      GridColumn(
+                        columnName: 'actions',
+                        width: 80,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Actions',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1144,7 +1146,7 @@ class _CandidateGridView extends StatelessWidget {
 
   Widget _buildMobileList(bool isDark, List<CandidateModel> candidates) {
     return ListView.separated(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       itemCount: candidates.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
@@ -1254,7 +1256,7 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
           });
         },
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

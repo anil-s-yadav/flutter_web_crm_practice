@@ -22,6 +22,7 @@ import 'package:practice_app/screens/clients/client_list_screen.dart';
 import 'package:practice_app/screens/sales/client_profile_screen.dart';
 import 'package:practice_app/screens/contracts/contract_list_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_list_screen.dart';
+import 'package:practice_app/screens/tickets/ticket_details_screen.dart';
 import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
 import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
 import 'package:practice_app/screens/sales/edit_client_screen.dart';
@@ -178,6 +179,13 @@ class AppRouter {
               builder: (context, state) => const TicketListScreen(),
             ),
             GoRoute(
+              path: '/admin/tickets/:id',
+              builder:
+                  (context, state) => TicketDetailsScreen(
+                    ticketId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/admin/settings',
               builder: (context, state) => const AdminSettingsScreen(),
             ),
@@ -319,6 +327,13 @@ class AppRouter {
               builder: (context, state) => const TicketListScreen(),
             ),
             GoRoute(
+              path: '/sales/tickets/:id',
+              builder:
+                  (context, state) => TicketDetailsScreen(
+                    ticketId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/sales/learning',
               builder: (context, state) => const LearningScreen(),
             ),
@@ -398,6 +413,17 @@ class AppRouter {
               builder:
                   (context, state) => EditCandidateScreen(
                     candidateId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
+              path: '/sourcing/tickets',
+              builder: (context, state) => const TicketListScreen(),
+            ),
+            GoRoute(
+              path: '/sourcing/tickets/:id',
+              builder:
+                  (context, state) => TicketDetailsScreen(
+                    ticketId: state.pathParameters['id']!,
                   ),
             ),
           ],

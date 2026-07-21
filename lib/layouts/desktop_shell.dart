@@ -339,6 +339,12 @@ class _DesktopShellState extends State<DesktopShell> {
             label: 'Blacklisted',
             route: '/sourcing/candidates/blacklisted',
           ),
+          _SidebarItem(
+            icon: Icons.confirmation_number_outlined,
+            activeIcon: Icons.confirmation_number,
+            label: 'Tickets',
+            route: '/sourcing/tickets',
+          ),
         ];
       case UserRole.executive:
         return [
@@ -476,16 +482,31 @@ class _DesktopShellState extends State<DesktopShell> {
     final user = UserManager().currentUser;
     final timerProvider = context.watch<LogoutTimerProvider>();
 
+    String dashboardPath = '/login';
+    if (currentLocation.startsWith('/admin')) {
+      dashboardPath = '/admin';
+    } else if (currentLocation.startsWith('/sales')) {
+      dashboardPath = '/sales';
+    } else if (currentLocation.startsWith('/sourcing')) {
+      dashboardPath = '/sourcing';
+    } else if (currentLocation.startsWith('/executive')) {
+      dashboardPath = '/executive';
+    }
+
+    final bool isDashboard = currentLocation == dashboardPath;
+
+    Widget mainScaffold;
+
     if (isNarrow) {
-      return Scaffold(
+      mainScaffold = Scaffold(
         endDrawer: const NotificationPanel(),
         appBar: _buildAppBar(context, isDark, currentLocation, timerProvider),
         drawer: _buildDrawer(isDark, currentLocation, user),
         body: widget.child,
       );
-    }
+    } else {
 
-    return Scaffold(
+      mainScaffold = Scaffold(
       endDrawer: const NotificationPanel(),
       body: Row(
         children: [
@@ -503,6 +524,18 @@ class _DesktopShellState extends State<DesktopShell> {
         ],
       ),
     );
+    }
+
+    return PopScope(
+      canPop: isDashboard,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (!isDashboard) {
+          context.go(dashboardPath);
+        }
+      },
+      child: mainScaffold,
+    );
   }
 
   PreferredSizeWidget _buildAppBar(
@@ -512,8 +545,7 @@ class _DesktopShellState extends State<DesktopShell> {
     LogoutTimerProvider timerProvider,
   ) {
     return AppBar(
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.goldDark,
-      foregroundColor: isDark ? AppColors.white : AppColors.goldDark,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.gold,
       title: Text(
         _getPageTitle(currentLocation),
         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
@@ -1017,6 +1049,7 @@ class _DesktopShellState extends State<DesktopShell> {
             ),
 
           if (currentLocation.startsWith('/sales/tickets') ||
+              currentLocation.startsWith('/sourcing/tickets') ||
               currentLocation.startsWith('/admin/tickets'))
             Padding(
               padding: const EdgeInsets.only(left: 16.0),
@@ -1155,16 +1188,21 @@ class _DesktopShellState extends State<DesktopShell> {
 
     // Generic sub-routes
     if (location.endsWith('/candidates')) return 'Candidate Directory';
-    if (location.contains('/candidates/') && location.endsWith('/edit')) return 'Edit Candidate Details';
+    if (location.contains('/candidates/') && location.endsWith('/edit')) {
+      return 'Edit Candidate Details';
+    }
     if (location.contains('/candidates/')) return 'Candidate Profile';
     if (location.endsWith('/clients')) return 'Clients';
     if (location.endsWith('/clients/new')) return 'New Inquiries';
     if (location.endsWith('/clients/followup')) return 'Follow Ups';
     if (location.endsWith('/clients/active')) return 'Converted (Active)';
-    if (location.contains('/clients/') && location.endsWith('/edit')) return 'Edit Client Details';
+    if (location.contains('/clients/') && location.endsWith('/edit')) {
+      return 'Edit Client Details';
+    }
     if (location.contains('/clients/')) return 'Client Profile';
     if (location.endsWith('/contracts')) return 'Contracts';
     if (location.endsWith('/tickets')) return 'Tickets';
+    if (location.contains('/tickets/')) return 'Ticket Details';
     if (location.endsWith('/settings')) return 'Settings';
     if (location.endsWith('/audit')) return 'Audit Trail';
 
@@ -1194,7 +1232,9 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location == '/admin/team/sourcing') return 'Sourcing Team';
     if (location == '/admin/team/executives') return 'Executives';
     if (location == '/admin/team/add') return 'Add Team Member';
-    if (location.contains('/admin/team/') && location.endsWith('/edit')) return 'Edit Team Member';
+    if (location.contains('/admin/team/') && location.endsWith('/edit')) {
+      return 'Edit Team Member';
+    }
 
     return 'Dashboard';
   }

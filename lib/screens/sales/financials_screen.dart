@@ -20,6 +20,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
     final state = Provider.of<GlobalAppState>(context);
     final invoices = state.invoices;
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     // Calculate metrics
     final totalRevenue = invoices
@@ -48,16 +49,25 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildKPIs(isDark, totalRevenue, pendingCollections, expectedCommission),
+            _buildKPIs(isDark, totalRevenue, pendingCollections, expectedCommission, isMobile),
             const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 2, child: _buildRevenueChart(isDark)),
-                const SizedBox(width: 24),
-                Expanded(flex: 1, child: _buildStatusBreakdown(isDark, invoices)),
-              ],
-            ),
+            if (isMobile)
+              Column(
+                children: [
+                  _buildRevenueChart(isDark),
+                  const SizedBox(height: 24),
+                  _buildStatusBreakdown(isDark, invoices),
+                ],
+              )
+            else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 2, child: _buildRevenueChart(isDark)),
+                  const SizedBox(width: 24),
+                  Expanded(flex: 1, child: _buildStatusBreakdown(isDark, invoices)),
+                ],
+              ),
             const SizedBox(height: 24),
             _buildTransactionsList(isDark, invoices, state),
           ],
@@ -66,8 +76,20 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     );
   }
 
-  Widget _buildKPIs(bool isDark, double revenue, double pending, double commission) {
+  Widget _buildKPIs(bool isDark, double revenue, double pending, double commission, bool isMobile) {
     final currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    
+    if (isMobile) {
+      return Column(
+        children: [
+          _buildKPICard('Total Revenue (MTD)', currency.format(revenue), Icons.account_balance_wallet, AppColors.gold, isDark),
+          const SizedBox(height: 16),
+          _buildKPICard('Pending Collections', currency.format(pending), Icons.pending_actions, AppColors.warningOrange, isDark),
+          const SizedBox(height: 16),
+          _buildKPICard('Expected Commission', currency.format(commission), Icons.card_giftcard, AppColors.successGreen, isDark),
+        ],
+      );
+    }
     
     return Row(
       children: [
@@ -290,12 +312,14 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recent Transactions & Invoices',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                Expanded(
+                  child: Text(
+                    'Recent Transactions & Invoices',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
                   ),
                 ),
                 TextButton.icon(
