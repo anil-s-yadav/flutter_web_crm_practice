@@ -130,6 +130,38 @@ class _DesktopShellState extends State<DesktopShell> {
             route: '/admin/tickets',
           ),
           _SidebarItem(
+            icon: Icons.groups_outlined,
+            activeIcon: Icons.groups,
+            label: 'Team',
+            route: '/admin/team',
+            children: [
+              _SidebarItem(
+                icon: Icons.people_outline,
+                activeIcon: Icons.people,
+                label: 'All Members',
+                route: '/admin/team',
+              ),
+              _SidebarItem(
+                icon: Icons.handshake_outlined,
+                activeIcon: Icons.handshake,
+                label: 'Sales Team',
+                route: '/admin/team/sales',
+              ),
+              _SidebarItem(
+                icon: Icons.person_search_outlined,
+                activeIcon: Icons.person_search,
+                label: 'Sourcing Team',
+                route: '/admin/team/sourcing',
+              ),
+              _SidebarItem(
+                icon: Icons.directions_run_outlined,
+                activeIcon: Icons.directions_run,
+                label: 'Executives',
+                route: '/admin/team/executives',
+              ),
+            ],
+          ),
+          _SidebarItem(
             icon: Icons.history_outlined,
             activeIcon: Icons.history,
             label: 'Audit Trail',
@@ -418,6 +450,19 @@ class _DesktopShellState extends State<DesktopShell> {
               !currentLocation.startsWith('/sales/contracts/renewals') &&
               !currentLocation.startsWith('/sales/contracts/replacements') &&
               !currentLocation.contains('fromContractMode='));
+    }
+
+    if (route == '/admin/team') {
+      return currentLocation == route;
+    }
+    if (route == '/admin/team/sales') {
+      return currentLocation == route;
+    }
+    if (route == '/admin/team/sourcing') {
+      return currentLocation == route;
+    }
+    if (route == '/admin/team/executives') {
+      return currentLocation == route;
     }
 
     return currentLocation.startsWith(route);
@@ -1143,6 +1188,13 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location.endsWith('/contracts')) return 'Contracts';
 
     if (location.endsWith('/financials')) return 'Financials & Payments';
+
+    if (location == '/admin/team') return 'Team Management';
+    if (location == '/admin/team/sales') return 'Sales Team';
+    if (location == '/admin/team/sourcing') return 'Sourcing Team';
+    if (location == '/admin/team/executives') return 'Executives';
+    if (location == '/admin/team/add') return 'Add Team Member';
+    if (location.contains('/admin/team/') && location.endsWith('/edit')) return 'Edit Team Member';
 
     return 'Dashboard';
   }

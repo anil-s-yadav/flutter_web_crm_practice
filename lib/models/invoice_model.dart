@@ -1,5 +1,3 @@
-import 'package:practice_app/models/client_model.dart';
-
 enum InvoiceStatus { paid, pending, overdue }
 
 extension InvoiceStatusExtension on InvoiceStatus {

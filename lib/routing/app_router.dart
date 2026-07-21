@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:practice_app/auth/login_screen.dart';
 import 'package:practice_app/auth/user_manager.dart';
@@ -7,6 +6,8 @@ import 'package:practice_app/layouts/executive_shell.dart';
 import 'package:practice_app/screens/admin/admin_dashboard.dart';
 import 'package:practice_app/screens/admin/admin_audit_trail_screen.dart';
 import 'package:practice_app/screens/admin/admin_settings_screen.dart';
+import 'package:practice_app/screens/admin/team_list_screen.dart';
+import 'package:practice_app/screens/admin/add_edit_crm_user_screen.dart';
 import 'package:practice_app/screens/sales/sales_dashboard.dart';
 import 'package:practice_app/screens/sales/add_client_screen.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
@@ -26,6 +27,7 @@ import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
 import 'package:practice_app/screens/sales/edit_client_screen.dart';
 import 'package:practice_app/screens/sales/financials_screen.dart';
 import 'package:practice_app/models/client_model.dart';
+import 'package:practice_app/models/user_model.dart';
 
 class AppRouter {
   static GoRouter createRouter() {
@@ -118,32 +120,37 @@ class AppRouter {
             GoRoute(
               path: '/admin/clients/followup',
               builder:
-                  (context, state) =>
-                      const ClientListScreen(initialStatus: ClientStatus.followUp),
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.followUp,
+                  ),
             ),
             GoRoute(
               path: '/admin/clients/interested',
               builder:
-                  (context, state) =>
-                      const ClientListScreen(initialStatus: ClientStatus.interested),
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.interested,
+                  ),
             ),
             GoRoute(
               path: '/admin/clients/not_interested',
               builder:
-                  (context, state) =>
-                      const ClientListScreen(initialStatus: ClientStatus.notInterested),
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.notInterested,
+                  ),
             ),
             GoRoute(
               path: '/admin/clients/active',
               builder:
-                  (context, state) =>
-                      const ClientListScreen(initialStatus: ClientStatus.converted),
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.converted,
+                  ),
             ),
             GoRoute(
               path: '/admin/clients/past',
               builder:
-                  (context, state) =>
-                      const ClientListScreen(initialStatus: ClientStatus.inactive),
+                  (context, state) => const ClientListScreen(
+                    initialStatus: ClientStatus.inactive,
+                  ),
             ),
             GoRoute(
               path: '/admin/audit',
@@ -177,6 +184,32 @@ class AppRouter {
             GoRoute(
               path: '/admin/learning',
               builder: (context, state) => const LearningScreen(),
+            ),
+            GoRoute(
+              path: '/admin/team',
+              builder: (context, state) => const TeamListScreen(),
+            ),
+            GoRoute(
+              path: '/admin/team/sales',
+              builder: (context, state) => const TeamListScreen(filterRole: UserRole.sales),
+            ),
+            GoRoute(
+              path: '/admin/team/sourcing',
+              builder: (context, state) => const TeamListScreen(filterRole: UserRole.sourcing),
+            ),
+            GoRoute(
+              path: '/admin/team/executives',
+              builder: (context, state) => const TeamListScreen(filterRole: UserRole.executive),
+            ),
+            GoRoute(
+              path: '/admin/team/add',
+              builder: (context, state) => const AddEditCrmUserScreen(),
+            ),
+            GoRoute(
+              path: '/admin/team/:id/edit',
+              builder: (context, state) => AddEditCrmUserScreen(
+                userId: state.pathParameters['id']!,
+              ),
             ),
           ],
         ),

@@ -164,25 +164,6 @@ class AdminDashboard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Welcome ---
-          Text(
-            'Welcome back, Admin',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Here\'s your complete business overview.',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: isDark ? AppColors.grey400 : AppColors.grey600,
-            ),
-          ),
-          const SizedBox(height: 24),
-
           // --- Period Comparison Cards ---
           _buildSectionTitle('Business Metrics', isDark),
           const SizedBox(height: 16),

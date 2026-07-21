@@ -376,8 +376,9 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                               keyboardType: TextInputType.number,
                               validator: (v) {
                                 if (v == null || v.isEmpty) return 'Required';
-                                if (int.tryParse(v) == null)
+                                if (int.tryParse(v) == null) {
                                   return 'Invalid number';
+                                }
                                 return null;
                               },
                               onSaved:
@@ -684,7 +685,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

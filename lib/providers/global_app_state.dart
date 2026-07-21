@@ -3,6 +3,7 @@ import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
+import 'package:practice_app/models/crm_user_model.dart';
 import 'package:practice_app/models/executive_task_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/ticket_model.dart';
@@ -18,7 +19,8 @@ class GlobalAppState extends ChangeNotifier {
   List<ExecutiveTaskModel> _tasks = [];
   final List<AuditLogModel> _auditLogs = [];
   List<NotificationModel> _notifications = [];
-  List<InvoiceModel> _invoices = [];
+  final List<InvoiceModel> _invoices = [];
+  List<CrmUserModel> _crmUsers = [];
 
   UserModel? _currentUser;
 
@@ -33,6 +35,7 @@ class GlobalAppState extends ChangeNotifier {
   List<AuditLogModel> get auditLogs => _auditLogs;
   List<NotificationModel> get notifications => _notifications;
   List<InvoiceModel> get invoices => _invoices;
+  List<CrmUserModel> get crmUsers => _crmUsers;
   int get unreadNotificationCount =>
       _notifications.where((n) => !n.isRead).length;
   UserModel? get currentUser => _currentUser;
@@ -163,7 +166,143 @@ class GlobalAppState extends ChangeNotifier {
       ),
     ];
 
+    // Seed CRM team members
+    _crmUsers = [
+      CrmUserModel(
+        id: 'USR001',
+        name: 'Anil Yadav',
+        email: 'anil@verifiedmaids.com',
+        phone: '+91 98765 43210',
+        role: UserRole.admin,
+        joinedDate: DateTime(2023, 1, 15),
+        lastLogin: DateTime.now().subtract(const Duration(minutes: 10)),
+        candidatesAdded: 0,
+        clientsConverted: 0,
+        contractsClosed: 0,
+      ),
+      CrmUserModel(
+        id: 'USR002',
+        name: 'Priya Mehta',
+        email: 'priya@verifiedmaids.com',
+        phone: '+91 87654 32109',
+        role: UserRole.sales,
+        joinedDate: DateTime(2023, 6, 10),
+        lastLogin: DateTime.now().subtract(const Duration(hours: 1)),
+        candidatesAdded: 12,
+        clientsConverted: 45,
+        contractsClosed: 38,
+      ),
+      CrmUserModel(
+        id: 'USR003',
+        name: 'Rahul Sharma',
+        email: 'rahul@verifiedmaids.com',
+        phone: '+91 76543 21098',
+        role: UserRole.sales,
+        joinedDate: DateTime(2024, 2, 1),
+        lastLogin: DateTime.now().subtract(const Duration(days: 2)),
+        candidatesAdded: 8,
+        clientsConverted: 22,
+        contractsClosed: 15,
+      ),
+      CrmUserModel(
+        id: 'USR004',
+        name: 'Sunita Devi',
+        email: 'sunita@verifiedmaids.com',
+        phone: '+91 65432 10987',
+        role: UserRole.sourcing,
+        joinedDate: DateTime(2023, 9, 20),
+        lastLogin: DateTime.now().subtract(const Duration(hours: 5)),
+        candidatesAdded: 320,
+        clientsConverted: 0,
+        contractsClosed: 0,
+      ),
+      CrmUserModel(
+        id: 'USR005',
+        name: 'Deepak Patel',
+        email: 'deepak@verifiedmaids.com',
+        phone: '+91 54321 09876',
+        role: UserRole.sourcing,
+        joinedDate: DateTime(2024, 5, 12),
+        lastLogin: DateTime.now().subtract(const Duration(days: 1)),
+        candidatesAdded: 180,
+        clientsConverted: 0,
+        contractsClosed: 0,
+      ),
+      CrmUserModel(
+        id: 'USR006',
+        name: 'Kavita Joshi',
+        email: 'kavita@verifiedmaids.com',
+        phone: '+91 43210 98765',
+        role: UserRole.executive,
+        joinedDate: DateTime(2024, 8, 1),
+        lastLogin: DateTime.now().subtract(const Duration(hours: 12)),
+        candidatesAdded: 0,
+        clientsConverted: 0,
+        contractsClosed: 0,
+      ),
+      CrmUserModel(
+        id: 'USR007',
+        name: 'Manish Gupta',
+        email: 'manish@verifiedmaids.com',
+        phone: '+91 32109 87654',
+        role: UserRole.executive,
+        joinedDate: DateTime(2025, 1, 10),
+        lastLogin: DateTime.now().subtract(const Duration(days: 5)),
+        candidatesAdded: 0,
+        clientsConverted: 0,
+        contractsClosed: 0,
+      ),
+      CrmUserModel(
+        id: 'USR008',
+        name: 'Neha Verma',
+        email: 'neha@verifiedmaids.com',
+        phone: '+91 21098 76543',
+        role: UserRole.sales,
+        status: CrmUserStatus.inactive,
+        joinedDate: DateTime(2024, 3, 15),
+        lastLogin: DateTime(2025, 6, 1),
+        candidatesAdded: 5,
+        clientsConverted: 10,
+        contractsClosed: 6,
+      ),
+    ];
+
     notifyListeners();
+  }
+
+  // --- CRM User Methods ---
+  void addCrmUser(CrmUserModel user) {
+    _crmUsers.add(user);
+    notifyListeners();
+  }
+
+  void updateCrmUser(CrmUserModel updated) {
+    final index = _crmUsers.indexWhere((u) => u.id == updated.id);
+    if (index != -1) {
+      _crmUsers[index] = updated;
+      notifyListeners();
+    }
+  }
+
+  void toggleCrmUserStatus(String userId) {
+    final index = _crmUsers.indexWhere((u) => u.id == userId);
+    if (index != -1) {
+      final user = _crmUsers[index];
+      _crmUsers[index] = user.copyWith(
+        status: user.status == CrmUserStatus.active
+            ? CrmUserStatus.inactive
+            : CrmUserStatus.active,
+      );
+      notifyListeners();
+    }
+  }
+
+  void resetCrmUserPassword(String userId, String newPassword) {
+    final index = _crmUsers.indexWhere((u) => u.id == userId);
+    if (index != -1) {
+      _crmUsers[index] = _crmUsers[index].copyWith(password: newPassword);
+      notifyListeners();
+    }
   }
 
   // --- Notification Methods ---
@@ -490,7 +629,7 @@ class GlobalAppState extends ChangeNotifier {
         dueDate: old.dueDate,
         status: newStatus,
       );
-      
+
       _auditLogs.insert(
         0,
         AuditLogModel(
@@ -504,7 +643,7 @@ class GlobalAppState extends ChangeNotifier {
           description: 'Invoice Status changed to ${newStatus.displayName}',
         ),
       );
-      
+
       notifyListeners();
     }
   }
