@@ -10,6 +10,7 @@ import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/models/notification_model.dart';
 import 'package:practice_app/models/invoice_model.dart';
+import 'package:practice_app/auth/user_manager.dart';
 
 class GlobalAppState extends ChangeNotifier {
   List<ClientModel> _clients = [];
@@ -38,7 +39,7 @@ class GlobalAppState extends ChangeNotifier {
   List<CrmUserModel> get crmUsers => _crmUsers;
   int get unreadNotificationCount =>
       _notifications.where((n) => !n.isRead).length;
-  UserModel? get currentUser => _currentUser;
+  UserModel? get currentUser => UserManager().currentUser ?? _currentUser;
 
   Future<void> initializeData() async {
     if (_isInitialized) return;

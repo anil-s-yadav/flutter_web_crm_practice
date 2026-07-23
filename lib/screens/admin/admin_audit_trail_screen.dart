@@ -50,11 +50,13 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
             if (!matches) return false;
           }
           // Action type filter
-          if (_selectedAction != null && l.actionType != _selectedAction)
+          if (_selectedAction != null && l.actionType != _selectedAction) {
             return false;
+          }
           // Role filter
-          if (_selectedRole != null && l.userRole != _selectedRole)
+          if (_selectedRole != null && l.userRole != _selectedRole) {
             return false;
+          }
           // Date range filter
           if (_selectedDateRange != null) {
             if (l.timestamp.isBefore(_selectedDateRange!.start) ||
@@ -83,61 +85,65 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
           // --- Filter Bar ---
           if (!isMobile || _showFilters)
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.maxFinite,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              margin: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : AppColors.white,
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
                 border: Border(
                   bottom: BorderSide(
                     color: isDark ? AppColors.dividerDark : AppColors.grey200,
                   ),
                 ),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Wrap(
+                // crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 5,
+                runSpacing: 5,
                 children: [
-                  // Search
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: InputDecoration(
-                      hintText:
-                          'Search logs by user, action, target ID, or description...',
-                      hintStyle: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: isDark ? AppColors.grey500 : AppColors.grey400,
+                  SizedBox(
+                    width: 350,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                      decoration: InputDecoration(
+                        hintText: 'Search logs by user, action, target ID...',
+                        hintStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: isDark ? AppColors.grey500 : AppColors.grey400,
+                        ),
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        filled: true,
+                        fillColor:
+                            isDark ? AppColors.darkSurface : AppColors.grey100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      filled: true,
-                      fillColor:
-                          isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.grey50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      style: GoogleFonts.poppins(fontSize: 14),
                     ),
-                    style: GoogleFonts.poppins(fontSize: 14),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(width: 12),
                   // Filter chips row
                   Wrap(
                     spacing: 12,
                     runSpacing: 8,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(
-                        'Filters:',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.grey400 : AppColors.grey600,
-                        ),
-                      ),
+                      // Text(
+                      //   'Filters:',
+                      //   style: GoogleFonts.poppins(
+                      //     fontSize: 12,
+                      //     fontWeight: FontWeight.w600,
+                      //     color: isDark ? AppColors.grey400 : AppColors.grey600,
+                      //   ),
+                      // ),
 
                       // Action Type dropdown
                       _buildFilterDropdown<ActionType>(
@@ -170,8 +176,9 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                             lastDate: DateTime.now(),
                             initialDateRange: _selectedDateRange,
                           );
-                          if (range != null)
+                          if (range != null) {
                             setState(() => _selectedDateRange = range);
+                          }
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
@@ -184,8 +191,8 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                                 _selectedDateRange != null
                                     ? AppColors.gold.withValues(alpha: 0.1)
                                     : (isDark
-                                        ? AppColors.darkSurfaceVariant
-                                        : AppColors.grey50),
+                                        ? AppColors.darkSurface
+                                        : AppColors.grey100),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color:
@@ -257,8 +264,8 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                         decoration: BoxDecoration(
                           color:
                               isDark
-                                  ? AppColors.darkSurfaceVariant
-                                  : AppColors.grey50,
+                                  ? AppColors.darkSurface
+                                  : AppColors.grey100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -302,7 +309,7 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                                   ),
                                   color:
                                       isDark
-                                          ? AppColors.darkSurfaceVariant
+                                          ? AppColors.darkSurface
                                           : AppColors.grey50,
                                   child: Row(
                                     children: [
@@ -571,7 +578,7 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                     size: 16,
                     color:
                         _showFilters
-                            ? AppColors.navyBlue
+                            ? (isDark ? AppColors.white : AppColors.darkNavy)
                             : (isDark ? AppColors.grey400 : AppColors.grey600),
                   ),
                   const SizedBox(width: 4),
@@ -581,7 +588,7 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
                       fontSize: 12,
                       color:
                           _showFilters
-                              ? AppColors.navyBlue
+                              ? (isDark ? AppColors.white : AppColors.darkNavy)
                               : (isDark
                                   ? AppColors.grey400
                                   : AppColors.grey600),
@@ -760,11 +767,12 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
     final isActive = value != null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 40,
       decoration: BoxDecoration(
         color:
             isActive
                 ? AppColors.gold.withValues(alpha: 0.1)
-                : (isDark ? AppColors.darkSurfaceVariant : AppColors.grey50),
+                : (isDark ? AppColors.darkSurface : AppColors.grey200),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color:
@@ -797,7 +805,7 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
           items: [
             DropdownMenuItem<T?>(
               value: null,
-              child: Text('All', style: GoogleFonts.poppins(fontSize: 12)),
+              child: Text(label, style: GoogleFonts.poppins(fontSize: 12)),
             ),
             ...items.map(
               (item) => DropdownMenuItem<T?>(

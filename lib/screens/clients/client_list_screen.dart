@@ -30,6 +30,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
   bool _showFilters = false;
   List<ClientModel> _filteredClients = [];
 
+  String? _selectedCity;
+  String? _selectedCategory;
+  String? _selectedDateRange;
+
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
 
   @override
@@ -73,6 +77,25 @@ class _ClientListScreenState extends State<ClientListScreen> {
         allMyClients.where((c) {
           if (_selectedStatus != null && c.status != _selectedStatus) {
             return false;
+          }
+          if (_selectedCity != null && c.city != _selectedCity) {
+            return false;
+          }
+          if (_selectedCategory != null &&
+              c.preferredCandidateCategory != _selectedCategory) {
+            return false;
+          }
+          if (_selectedDateRange != null) {
+            final now = DateTime.now();
+            final diff = now.difference(c.inquiryDate).inDays;
+            if (_selectedDateRange == 'Last 30 Days' && diff > 30) {
+              return false;
+            } else if (_selectedDateRange == 'Last 6 Months' && diff > 180) {
+              return false;
+            } else if (_selectedDateRange == 'This Year' &&
+                c.inquiryDate.year != now.year) {
+              return false;
+            }
           }
           if (_searchQuery.isNotEmpty) {
             final query = _searchQuery.toLowerCase();
@@ -125,8 +148,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     final statuses = [null, ...ClientStatus.values];
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
       body: Column(
         children: [
           // 1. Horizontal ChoiceChip Tabs
@@ -200,8 +221,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             ),
 
           // 2. Toolbar
-          // if (_showFilters || !isMobile)
-          //   _buildToolbar(isDark, _filteredClients.length, isMobile),
+          _buildToolbar(isDark, _filteredClients.length, isMobile),
 
           // 3. Grid / Mobile List
           Expanded(
@@ -216,125 +236,113 @@ class _ClientListScreenState extends State<ClientListScreen> {
                           alignment: Alignment.topCenter,
                           child: SfDataGridTheme(
                             data: SfDataGridThemeData(
-                            headerColor:
-                                isDark
-                                    ? AppColors.darkSurface
-                                    : AppColors.grey50,
-                            gridLineColor:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey200,
-                            gridLineStrokeWidth: 1,
-                            rowHoverColor:
-                                isDark
-                                    ? AppColors.navyBlue.withValues(alpha: 0.1)
-                                    : AppColors.navyBlue.withValues(
-                                      alpha: 0.04,
-                                    ),
-                            sortIconColor: AppColors.gold,
-                          ),
-                          child: SfDataGrid(
-                            source: _clientDataSource!,
-                            allowSorting: true,
-                            allowMultiColumnSorting: false,
-                            columnWidthMode: ColumnWidthMode.auto,
-                            headerRowHeight: 48,
-                            rowHeight: 56,
-                            gridLinesVisibility: GridLinesVisibility.both,
-                            headerGridLinesVisibility: GridLinesVisibility.both,
-                            columns: [
-                              GridColumn(
-                                columnName: 'id',
-                                visible: false,
-                                label: const SizedBox.shrink(),
-                              ),
-                              GridColumn(
-                                columnName: 'sr_no',
-                                width: 100,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Sr No',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              GridColumn(
-                                columnName: 'date',
-                                width: 130,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Date',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              GridColumn(
-                                columnName: 'client',
-                                maximumWidth: 300,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Client',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              GridColumn(
-                                columnName: 'phone',
-                                width: 140,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Mobile',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              GridColumn(
-                                columnName: 'requirement',
-                                width: 150,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Looking For',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              GridColumn(
-                                columnName: 'budget',
-                                minimumWidth: 160,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Budget',
-                                    style: _headerStyle(isDark),
-                                  ),
-                                ),
-                              ),
-                              if (widget.initialStatus == null)
+                              headerColor:
+                                  isDark
+                                      ? AppColors.darkSurface
+                                      : AppColors.grey50,
+                              gridLineColor:
+                                  isDark
+                                      ? AppColors.dividerDark
+                                      : AppColors.grey200,
+                              gridLineStrokeWidth: 1,
+                              rowHoverColor:
+                                  isDark
+                                      ? AppColors.navyBlue.withValues(
+                                        alpha: 0.1,
+                                      )
+                                      : AppColors.navyBlue.withValues(
+                                        alpha: 0.04,
+                                      ),
+                              sortIconColor: AppColors.gold,
+                            ),
+                            child: SfDataGrid(
+                              source: _clientDataSource!,
+                              allowSorting: true,
+                              allowMultiColumnSorting: false,
+                              columnWidthMode: ColumnWidthMode.auto,
+                              headerRowHeight: 48,
+                              rowHeight: 56,
+                              gridLinesVisibility: GridLinesVisibility.both,
+                              headerGridLinesVisibility:
+                                  GridLinesVisibility.both,
+                              columns: [
                                 GridColumn(
-                                  columnName: 'status',
+                                  columnName: 'id',
+                                  visible: false,
+                                  label: const SizedBox.shrink(),
+                                ),
+                                GridColumn(
+                                  columnName: 'sr_no',
+                                  width: 100,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Sr No',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'date',
+                                  width: 130,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Date',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'client',
+                                  maximumWidth: 300,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Client',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'phone',
+                                  width: 140,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Mobile',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'requirement',
+                                  width: 150,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Looking For',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'budget',
                                   minimumWidth: 160,
                                   label: Container(
                                     padding: const EdgeInsets.symmetric(
@@ -342,28 +350,43 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                     ),
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      'Status',
+                                      'Budget',
                                       style: _headerStyle(isDark),
                                     ),
                                   ),
                                 ),
-                              GridColumn(
-                                columnName: 'notes',
-                                width: 200,
-                                label: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
+                                if (widget.initialStatus == null)
+                                  GridColumn(
+                                    columnName: 'status',
+                                    minimumWidth: 160,
+                                    label: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'Status',
+                                        style: _headerStyle(isDark),
+                                      ),
+                                    ),
                                   ),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    'Notes',
-                                    style: _headerStyle(isDark),
+                                GridColumn(
+                                  columnName: 'notes',
+                                  width: 200,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Notes',
+                                      style: _headerStyle(isDark),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                         ),
               ),
             ),
@@ -371,7 +394,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
           // 4. Pagination
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
               border: Border(
@@ -386,7 +409,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 6,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.successGreen.withValues(alpha: 0.1),
@@ -395,7 +418,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                   child: Text(
                     '${_indianFormat.format(_filteredClients.length)} Clients found',
                     style: GoogleFonts.poppins(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.successGreen,
                     ),
@@ -408,17 +431,23 @@ class _ClientListScreenState extends State<ClientListScreen> {
                     const IconButton(
                       icon: Icon(Icons.chevron_left, size: 20),
                       onPressed: null, // Stubbed for mock data
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       'Page 1 of 1',
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     const IconButton(
                       icon: Icon(Icons.chevron_right, size: 20),
                       onPressed: null, // Stubbed for mock data
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
                     ),
                   ],
                 ),
@@ -431,136 +460,282 @@ class _ClientListScreenState extends State<ClientListScreen> {
     );
   }
 
-  // Widget _buildToolbar(bool isDark, int count, bool isMobile) {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //     margin: const EdgeInsets.all(6),
-  //     decoration: BoxDecoration(
-  //       color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-  //       border: Border(
-  //         bottom: BorderSide(
-  //           color: isDark ? AppColors.dividerDark : AppColors.grey200,
-  //         ),
-  //       ),
-  //       borderRadius: BorderRadius.circular(10),
-  //     ),
-  //     child:
-  //         isMobile
-  //             ? _buildMobileToolbar(isDark, count)
-  //             // : _buildDesktopToolbar(isDark, count),
-  //             : null,
-  //   );
-  // }
+  Widget _buildToolbar(bool isDark, int count, bool isMobile) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      margin: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.dividerDark : AppColors.grey200,
+          ),
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child:
+          isMobile
+              ? _buildMobileToolbar(isDark, count)
+              : _buildDesktopToolbar(isDark, count),
+    );
+  }
 
-  // Widget _buildMobileToolbar(bool isDark, int count) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.stretch,
-  //     children: [
-  //       if (_showFilters) ...[
-  //         // Search Field
-  //         SizedBox(
-  //           height: 40,
-  //           child: TextField(
-  //             controller: _searchController,
-  //             onChanged: (val) {
-  //               setState(() => _searchQuery = val);
-  //               _initializeDataSource();
-  //             },
-  //             decoration: InputDecoration(
-  //               hintText: 'Search clients...',
-  //               prefixIcon: const Icon(Icons.search, size: 20),
-  //               filled: true,
-  //               fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-  //               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-  //               border: OutlineInputBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 borderSide: BorderSide(
-  //                   color: isDark ? AppColors.dividerDark : AppColors.grey300,
-  //                 ),
-  //               ),
-  //               enabledBorder: OutlineInputBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //                 borderSide: BorderSide(
-  //                   color: isDark ? AppColors.dividerDark : AppColors.grey300,
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(height: 12),
-  //       ],
-  //       ElevatedButton.icon(
-  //         onPressed: () => context.push('/admin/clients/add'),
-  //         icon: const Icon(Icons.add, size: 18),
-  //         label: const Text('Add Client'),
-  //         style: ElevatedButton.styleFrom(
-  //           backgroundColor: AppColors.gold,
-  //           foregroundColor: AppColors.navyBlue,
-  //           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(8),
-  //           ),
-  //           elevation: 0,
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
+  List<Widget> _buildFilters(bool isDark) {
+    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final cities = state.clients.map((c) => c.city).toSet().toList()..sort();
+    final categories =
+        state.clients.map((c) => c.preferredCandidateCategory).toSet().toList()
+          ..sort();
 
-  // Widget _buildDesktopToolbar(bool isDark, int count) {
-  //   return Row(
-  //     children: [
-  //       // Total Clients Badge
-  //       Container(
-  //         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  //         decoration: BoxDecoration(
-  //           color: AppColors.successGreen.withValues(alpha: 0.1),
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         child: Text(
-  //           '${_indianFormat.format(count)} Clients found',
-  //           style: GoogleFonts.poppins(
-  //             fontSize: 13,
-  //             fontWeight: FontWeight.w600,
-  //             color: AppColors.successGreen,
-  //           ),
-  //         ),
-  //       ),
-  //       const Spacer(),
-  //       // Search Field
-  //       SizedBox(
-  //         width: 250,
-  //         height: 38,
-  //         child: TextField(
-  //           controller: _searchController,
-  //           onChanged: (val) {
-  //             setState(() => _searchQuery = val);
-  //             _initializeDataSource();
-  //           },
-  //           decoration: InputDecoration(
-  //             hintText: 'Search clients...',
-  //             prefixIcon: const Icon(Icons.search, size: 18),
-  //             filled: true,
-  //             fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-  //             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-  //             border: OutlineInputBorder(
-  //               borderRadius: BorderRadius.circular(8),
-  //               borderSide: BorderSide(
-  //                 color: isDark ? AppColors.dividerDark : AppColors.grey300,
-  //               ),
-  //             ),
-  //             enabledBorder: OutlineInputBorder(
-  //               borderRadius: BorderRadius.circular(8),
-  //               borderSide: BorderSide(
-  //                 color: isDark ? AppColors.dividerDark : AppColors.grey300,
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
+    return [
+      SizedBox(
+        width: 140,
+        height: 38,
+        child: DropdownButtonFormField<String?>(
+          isExpanded: true,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark ? AppColors.grey400 : AppColors.grey600,
+          ),
+          value: _selectedCity,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 0,
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+          ),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('City')),
+            ...cities.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedCity = val);
+            _initializeDataSource();
+          },
+        ),
+      ),
+
+      SizedBox(
+        width: 150,
+        height: 38,
+        child: DropdownButtonFormField<String?>(
+          isExpanded: true,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark ? AppColors.grey400 : AppColors.grey600,
+          ),
+          value: _selectedCategory,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 0,
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey500,
+              ),
+            ),
+          ),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('Category')),
+            ...categories.map(
+              (c) => DropdownMenuItem(value: c, child: Text(c)),
+            ),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedCategory = val);
+            _initializeDataSource();
+          },
+        ),
+      ),
+
+      SizedBox(
+        width: 140,
+        height: 38,
+        child: DropdownButtonFormField<String?>(
+          isExpanded: true,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark ? AppColors.grey400 : AppColors.grey600,
+          ),
+          value: _selectedDateRange,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 0,
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+            ),
+          ),
+          items: const [
+            DropdownMenuItem(value: null, child: Text('Date Range')),
+            DropdownMenuItem(
+              value: 'Last 30 Days',
+              child: Text('Last 30 Days'),
+            ),
+            DropdownMenuItem(
+              value: 'Last 6 Months',
+              child: Text('Last 6 Months'),
+            ),
+            DropdownMenuItem(value: 'This Year', child: Text('This Year')),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedDateRange = val);
+            _initializeDataSource();
+          },
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildMobileToolbar(bool isDark, int count) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) {
+                  setState(() => _searchQuery = val);
+                  _initializeDataSource();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search clients...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  filled: true,
+                  fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: Icon(
+                _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+              tooltip: 'Toggle Filters',
+              onPressed: () {
+                setState(() {
+                  _showFilters = !_showFilters;
+                });
+              },
+            ),
+          ],
+        ),
+        if (_showFilters) ...[
+          const SizedBox(height: 12),
+          Wrap(spacing: 12, runSpacing: 12, children: _buildFilters(isDark)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDesktopToolbar(bool isDark, int count) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.successGreen.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '${NumberFormat('#,##,###', 'en_IN').format(count)} Clients found',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.successGreen,
+            ),
+          ),
+        ),
+        const Spacer(),
+        ..._buildFilters(isDark).map(
+          (w) => Padding(padding: const EdgeInsets.only(right: 8), child: w),
+        ),
+        SizedBox(
+          width: 250,
+          height: 38,
+          child: TextField(
+            controller: _searchController,
+            onChanged: (val) {
+              setState(() => _searchQuery = val);
+              _initializeDataSource();
+            },
+            decoration: InputDecoration(
+              hintText: 'Search clients...',
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark ? AppColors.grey500 : AppColors.grey400,
+              ),
+              prefixIcon: const Icon(Icons.search, size: 18),
+              filled: true,
+              fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 0,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildMobileList(bool isDark, GlobalAppState state) {
     final clients = _filteredClients;

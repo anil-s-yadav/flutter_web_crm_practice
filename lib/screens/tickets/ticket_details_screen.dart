@@ -266,7 +266,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         icon: Icons.flag,
                         isDark: isDark,
                         child: DropdownButtonFormField<TicketStatus>(
-                          value: ticket.status,
+                          initialValue: ticket.status,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor:
@@ -394,15 +394,15 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     Color fg;
     switch (priority) {
       case TicketPriority.critical:
-        bg = AppColors.criticalRed.withOpacity(0.1);
+        bg = AppColors.criticalRed.withValues(alpha: 0.1);
         fg = AppColors.criticalRed;
         break;
       case TicketPriority.urgent:
-        bg = AppColors.gold.withOpacity(0.1);
+        bg = AppColors.gold.withValues(alpha: 0.1);
         fg = AppColors.gold;
         break;
       case TicketPriority.standard:
-        bg = AppColors.navyBlue.withOpacity(0.1);
+        bg = AppColors.navyBlue.withValues(alpha: 0.1);
         fg = AppColors.navyBlue;
         break;
     }

@@ -1082,7 +1082,7 @@ class _CandidateGridView extends StatelessWidget {
         ),
         // Pagination
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
             border: Border(
@@ -1101,9 +1101,9 @@ class _CandidateGridView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 6,
+                    vertical: 4,
                   ),
-                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  margin: const EdgeInsets.symmetric(vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.successGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -1123,17 +1123,23 @@ class _CandidateGridView extends StatelessWidget {
                   const IconButton(
                     icon: Icon(Icons.chevron_left, size: 20),
                     onPressed: null,
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     'Page 1 of 1',
                     style: GoogleFonts.poppins(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const IconButton(
                     icon: Icon(Icons.chevron_right, size: 20),
                     onPressed: null,
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
                   ),
                 ],
               ),

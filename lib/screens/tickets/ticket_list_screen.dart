@@ -116,9 +116,9 @@ class _TicketListScreenState extends State<TicketListScreen> {
     final isMobile = context.media.width < 800;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Mobile Toolbar
           if (isMobile) _buildMobileToolbar(isDark, _filteredTickets.length),
@@ -136,134 +136,40 @@ class _TicketListScreenState extends State<TicketListScreen> {
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  const Text(
-                    'Filters:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    height: 38,
-                    child: DropdownButtonFormField<TicketPriority?>(
-                      initialValue: _selectedPriority,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 0,
-                        ),
-                        filled: true,
-                        fillColor:
-                            isDark ? AppColors.darkSurface : AppColors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
+              child:
+                  isMobile
+                      ? Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: _buildFilterWidgets(isDark, context),
+                      )
+                      : Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.successGreen.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${_indianFormat.format(_filteredTickets.length)} Tickets found',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.successGreen,
+                              ),
+                            ),
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
-                          ),
-                        ),
+                          const Spacer(),
+                          ..._buildFilterWidgetsDesktop(isDark, context),
+                        ],
                       ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('All Priorities'),
-                        ),
-                        ...TicketPriority.values.map(
-                          (s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(s.displayName),
-                          ),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        setState(() => _selectedPriority = val);
-                        _initializeDataSource();
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    height: 38,
-                    child: DropdownButtonFormField<TicketStatus?>(
-                      initialValue: _selectedStatus,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 0,
-                        ),
-                        filled: true,
-                        fillColor:
-                            isDark ? AppColors.darkSurface : AppColors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color:
-                                isDark
-                                    ? AppColors.dividerDark
-                                    : AppColors.grey300,
-                          ),
-                        ),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('All Statuses'),
-                        ),
-                        ...TicketStatus.values.map(
-                          (s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(s.displayName),
-                          ),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        setState(() => _selectedStatus = val);
-                        _initializeDataSource();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddTicketDialog(context),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add Ticket'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navyBlue,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
 
           // DataGrid
@@ -424,7 +330,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
           // Pagination
           if (!isMobile)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
                 border: Border(
@@ -439,7 +345,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 6,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color:
@@ -451,7 +357,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                     child: Text(
                       '${_indianFormat.format(_ticketDataSource!.rows.length)} Tickets',
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isDark ? AppColors.white : AppColors.criticalRed,
                       ),
@@ -463,17 +369,23 @@ class _TicketListScreenState extends State<TicketListScreen> {
                       const IconButton(
                         icon: Icon(Icons.chevron_left, size: 20),
                         onPressed: null, // Stubbed for mock data
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         'Page 1 of 1',
                         style: GoogleFonts.poppins(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       const IconButton(
                         icon: Icon(Icons.chevron_right, size: 20),
                         onPressed: null, // Stubbed for mock data
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
                       ),
                     ],
                   ),
@@ -482,6 +394,164 @@ class _TicketListScreenState extends State<TicketListScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  List<Widget> _buildFilterWidgets(bool isDark, BuildContext context) {
+    return [
+      _buildSearchField(isDark),
+      _buildPriorityDropdown(isDark),
+      _buildStatusDropdown(isDark),
+      _buildAddButton(context),
+    ];
+  }
+
+  List<Widget> _buildFilterWidgetsDesktop(bool isDark, BuildContext context) {
+    return [
+      _buildPriorityDropdown(isDark),
+      const SizedBox(width: 8),
+      _buildStatusDropdown(isDark),
+      const SizedBox(width: 8),
+      _buildAddButton(context),
+      const SizedBox(width: 12),
+      _buildSearchField(isDark),
+    ];
+  }
+
+  Widget _buildSearchField(bool isDark) {
+    return SizedBox(
+      width: 250,
+      height: 38,
+      child: TextField(
+        controller: _searchController,
+        onChanged: (val) => setState(() => _searchQuery = val),
+        decoration: InputDecoration(
+          hintText: 'Search by title, client...',
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark ? AppColors.grey500 : AppColors.grey400,
+          ),
+          prefixIcon: const Icon(Icons.search, size: 18),
+          filled: true,
+          fillColor: isDark ? AppColors.cardDark : AppColors.grey50,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
+        ),
+        style: GoogleFonts.poppins(fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildPriorityDropdown(bool isDark) {
+    return SizedBox(
+      width: 140,
+      height: 38,
+      child: DropdownButtonFormField<TicketPriority?>(
+        isExpanded: true,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: isDark ? AppColors.grey400 : AppColors.grey600,
+        ),
+        initialValue: _selectedPriority,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
+          filled: true,
+          fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.grey300,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.grey300,
+            ),
+          ),
+        ),
+        items: [
+          const DropdownMenuItem(value: null, child: Text('All Priorities')),
+          ...TicketPriority.values.map(
+            (s) => DropdownMenuItem(value: s, child: Text(s.displayName)),
+          ),
+        ],
+        onChanged: (val) {
+          setState(() => _selectedPriority = val);
+          _initializeDataSource();
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatusDropdown(bool isDark) {
+    return SizedBox(
+      width: 140,
+      height: 38,
+      child: DropdownButtonFormField<TicketStatus?>(
+        isExpanded: true,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: isDark ? AppColors.grey400 : AppColors.grey600,
+        ),
+        initialValue: _selectedStatus,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 0,
+          ),
+          filled: true,
+          fillColor: isDark ? AppColors.darkSurface : AppColors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.grey300,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.grey300,
+            ),
+          ),
+        ),
+        items: [
+          const DropdownMenuItem(value: null, child: Text('All Statuses')),
+          ...TicketStatus.values.map(
+            (s) => DropdownMenuItem(value: s, child: Text(s.displayName)),
+          ),
+        ],
+        onChanged: (val) {
+          setState(() => _selectedStatus = val);
+          _initializeDataSource();
+        },
+      ),
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: ElevatedButton.icon(
+        onPressed: () => _showAddTicketDialog(context),
+        icon: const Icon(Icons.add, size: 16),
+        label: Text('Add Ticket', style: GoogleFonts.poppins(fontSize: 13)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.navyBlue,
+          foregroundColor: AppColors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
       ),
     );
   }
@@ -650,7 +720,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<TicketPriority>(
-                        value: selectedPriority,
+                        initialValue: selectedPriority,
                         decoration: inputDecoration('Priority'),
                         dropdownColor:
                             isDark
@@ -675,8 +745,9 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                 )
                                 .toList(),
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => selectedPriority = val);
+                          }
                         },
                       ),
                       const SizedBox(height: 16),

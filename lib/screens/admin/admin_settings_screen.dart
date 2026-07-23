@@ -488,7 +488,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<NotificationType>(
-                      value: selectedType,
+                      initialValue: selectedType,
                       decoration: InputDecoration(
                         labelText: 'Type',
                         border: OutlineInputBorder(),
@@ -533,8 +533,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (titleController.text.isEmpty ||
-                        messageController.text.isEmpty)
+                        messageController.text.isEmpty) {
                       return;
+                    }
 
                     final newNotif = NotificationModel(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),

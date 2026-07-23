@@ -11,9 +11,9 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class TeamDataSource extends DataGridSource {
   final BuildContext context;
-  final bool isDark;
+  bool isDark;
   final GlobalAppState state;
-  final List<CrmUserModel> teamMembers;
+  List<CrmUserModel> _teamMembers;
   final Function(CrmUserModel) onViewDetails;
   
   List<DataGridRow> _dataGridRows = [];
@@ -22,14 +22,14 @@ class TeamDataSource extends DataGridSource {
     required this.context,
     required this.isDark,
     required this.state,
-    required this.teamMembers,
+    required List<CrmUserModel> teamMembers,
     required this.onViewDetails,
-  }) {
+  }) : _teamMembers = teamMembers {
     _buildDataGridRows();
   }
 
   void _buildDataGridRows() {
-    _dataGridRows = teamMembers.map<DataGridRow>((user) {
+    _dataGridRows = _teamMembers.map<DataGridRow>((user) {
       return DataGridRow(cells: [
         DataGridCell<CrmUserModel>(columnName: 'user', value: user),
         DataGridCell<UserRole>(columnName: 'role', value: user.role),
@@ -44,6 +44,48 @@ class TeamDataSource extends DataGridSource {
 
   @override
   List<DataGridRow> get rows => _dataGridRows;
+
+  void updateData(List<CrmUserModel> newMembers) {
+    _teamMembers = newMembers;
+    _buildDataGridRows();
+    notifyListeners();
+  }
+
+  @override
+  int compare(DataGridRow? a, DataGridRow? b, SortColumnDetails sortColumn) {
+    if (sortColumn.name == 'performance' || sortColumn.name == 'actions') {
+      return 0;
+    }
+    
+    final value1 = a?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value;
+    final value2 = b?.getCells().firstWhere((c) => c.columnName == sortColumn.name).value;
+
+    if (value1 == null || value2 == null) return 0;
+
+    if (sortColumn.name == 'user') {
+      final u1 = value1 as CrmUserModel;
+      final u2 = value2 as CrmUserModel;
+      return u1.name.toLowerCase().compareTo(u2.name.toLowerCase());
+    }
+
+    if (sortColumn.name == 'role') {
+      final r1 = value1 as UserRole;
+      final r2 = value2 as UserRole;
+      return r1.displayName.compareTo(r2.displayName);
+    }
+    
+    if (sortColumn.name == 'status') {
+      final s1 = value1 as CrmUserStatus;
+      final s2 = value2 as CrmUserStatus;
+      return s1.displayName.compareTo(s2.displayName);
+    }
+
+    if (value1 is Comparable && value2 is Comparable) {
+      return value1.compareTo(value2);
+    }
+
+    return 0;
+  }
 
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
