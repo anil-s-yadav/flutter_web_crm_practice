@@ -11,11 +11,29 @@ import 'theme/text.dart';
 import 'theme/theme.dart';
 import 'providers/global_app_state.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
+import 'services/firebase_messaging_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Setup Background Messaging Handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   await LocalStoragePref().initPrefBox();
   await UserManager().init();
   _configLoading();
+
+  // Initialize Foreground Messaging Service
+  FirebaseMessagingService().init();
+
   runApp(
     MultiProvider(
       providers: [

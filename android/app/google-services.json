@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "190632344732",
+    "project_id": "verifiedmaids",
+    "storage_bucket": "verifiedmaids.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:190632344732:android:502be03b0f45c390b70159",
+        "android_client_info": {
+          "package_name": "com.legendarysoftware.crm.practice_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlkfpwrkWSu9KGc4QWBS3Us9hHb5bo9jE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

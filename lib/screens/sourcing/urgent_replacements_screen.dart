@@ -5,7 +5,6 @@ import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -17,48 +16,63 @@ class UrgentReplacementsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Filter requests escalated to Sourcing and not yet resolved
-    final urgentRequests = state.replacementRequests
-        .where((r) => r.isEscalatedToSourcing && r.status != ReplacementStatus.resolved)
-        .toList();
+    final urgentRequests =
+        state.replacementRequests
+            .where(
+              (r) =>
+                  r.isEscalatedToSourcing &&
+                  r.status != ReplacementStatus.resolved,
+            )
+            .toList();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+      backgroundColor:
+          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
       appBar: AppBar(
         title: const Text('Urgent Replacements'),
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDark ? AppColors.white : AppColors.navyBlue),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? AppColors.white : AppColors.navyBlue,
+          ),
           onPressed: () => context.go('/sourcing'),
         ),
       ),
-      body: urgentRequests.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_outline, size: 64, color: AppColors.successGreen),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No urgent replacements needed!',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.grey300 : AppColors.grey700,
+      body:
+          urgentRequests.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 64,
+                      color: AppColors.successGreen,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text(
+                      'No urgent replacements needed!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.grey300 : AppColors.grey700,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.separated(
+                padding: const EdgeInsets.all(24),
+                itemCount: urgentRequests.length,
+                separatorBuilder:
+                    (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  return _UrgentReplacementCard(request: urgentRequests[index]);
+                },
               ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.all(24),
-              itemCount: urgentRequests.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                return _UrgentReplacementCard(request: urgentRequests[index]);
-              },
-            ),
     );
   }
 }
@@ -84,7 +98,10 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
       color: isDark ? AppColors.darkSurface : AppColors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.urgentAmber.withValues(alpha: 0.5), width: 2),
+        side: BorderSide(
+          color: AppColors.urgentAmber.withValues(alpha: 0.5),
+          width: 2,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -103,11 +120,16 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.urgentAmber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.urgentAmber.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.urgentAmber.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     'URGENT',
@@ -140,7 +162,10 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
                 children: [
                   Text(
                     'Replacement Reason:',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -150,39 +175,66 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
                   const Divider(height: 24),
                   Text(
                     'Required Criteria (from Sales):',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.gold),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.gold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.request.requiredCriteria?.isNotEmpty == true ? widget.request.requiredCriteria! : 'No specific criteria provided.',
+                    widget.request.requiredCriteria?.isNotEmpty == true
+                        ? widget.request.requiredCriteria!
+                        : 'No specific criteria provided.',
                     style: GoogleFonts.poppins(fontSize: 13),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Suggested Candidates section
             Text(
               'Selected Candidates for Sales to Review',
-              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             if (_selectedCandidates.isEmpty)
               Text(
                 'No candidates selected yet.',
-                style: GoogleFonts.poppins(fontSize: 13, fontStyle: FontStyle.italic, color: AppColors.grey500),
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.grey500,
+                ),
               )
             else
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _selectedCandidates.map((c) => Chip(
-                  label: Text('${c.fullName} (${c.id})'),
-                  onDeleted: () => setState(() => _selectedCandidates.remove(c)),
-                  backgroundColor: AppColors.standardBlue.withValues(alpha: 0.1),
-                  side: BorderSide(color: AppColors.standardBlue.withValues(alpha: 0.3)),
-                )).toList(),
+                children:
+                    _selectedCandidates
+                        .map(
+                          (c) => Chip(
+                            label: Text('${c.fullName} (${c.id})'),
+                            onDeleted:
+                                () => setState(
+                                  () => _selectedCandidates.remove(c),
+                                ),
+                            backgroundColor: AppColors.standardBlue.withValues(
+                              alpha: 0.1,
+                            ),
+                            side: BorderSide(
+                              color: AppColors.standardBlue.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
               ),
             const SizedBox(height: 16),
             Row(
@@ -198,7 +250,8 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
                 ),
                 const Spacer(),
                 ElevatedButton.icon(
-                  onPressed: _selectedCandidates.isEmpty ? null : _submitFulfillment,
+                  onPressed:
+                      _selectedCandidates.isEmpty ? null : _submitFulfillment,
                   icon: const Icon(Icons.send),
                   label: const Text('Fulfill Request'),
                   style: ElevatedButton.styleFrom(
@@ -218,7 +271,9 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
     final result = await CandidatePickerDialog.show(context);
     if (result != null) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
-      final candidate = state.candidates.firstWhere((c) => c.id == result['id']);
+      final candidate = state.candidates.firstWhere(
+        (c) => c.id == result['id'],
+      );
       if (!_selectedCandidates.any((c) => c.id == candidate.id)) {
         setState(() {
           _selectedCandidates.add(candidate);
@@ -234,7 +289,9 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
       _selectedCandidates.map((c) => c.id).toList(),
     );
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request fulfilled and sent back to Sales!')),
+      const SnackBar(
+        content: Text('Request fulfilled and sent back to Sales!'),
+      ),
     );
   }
 }

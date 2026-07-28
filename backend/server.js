@@ -22,14 +22,15 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the CRM API.' });
 });
 
-// --- Future Routes Placeholder ---
-// app.use('/api/auth', require('./routes/authRoutes'));
-// app.use('/api/users', require('./routes/userRoutes'));
-// app.use('/api/clients', require('./routes/clientRoutes'));
-// app.use('/api/candidates', require('./routes/candidateRoutes'));
-// app.use('/api/contracts', require('./routes/contractRoutes'));
-// app.use('/api/tasks', require('./routes/taskRoutes'));
-// app.use('/api/replacements', require('./routes/replacementRoutes'));
+// --- Routes ---
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/clients', require('./routes/clientRoutes'));
+app.use('/api/candidates', require('./routes/candidateRoutes'));
+app.use('/api/contracts', require('./routes/contractRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes'));
+app.use('/api/replacements', require('./routes/replacementRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
 // ---------------------------------
 
 // Error Handling Middleware

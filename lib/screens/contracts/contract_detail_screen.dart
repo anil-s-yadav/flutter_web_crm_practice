@@ -799,7 +799,7 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
-                value: _selectedTaskType,
+                initialValue: _selectedTaskType,
                 decoration: InputDecoration(
                   labelText: 'Task Type',
                   border: OutlineInputBorder(
@@ -824,7 +824,7 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedExecutive,
+                initialValue: _selectedExecutive,
                 decoration: InputDecoration(
                   labelText: 'Assign To Executive',
                   border: OutlineInputBorder(
