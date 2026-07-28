@@ -395,6 +395,9 @@ class MockDataGenerator {
               ? DateTime.now().add(Duration(days: rng.nextInt(30)))
               : null,
       preferredWorkType: workTypes[rng.nextInt(workTypes.length)],
+      sourcedById: 'USR00${4 + rng.nextInt(2)}', // Simulate Sourcing Team USR004 or USR005
+      sourcedByName: rng.nextBool() ? 'Sunita Devi' : 'Deepak Patel',
+      sourcedByPhone: '+91 9${rng.nextInt(899999999) + 100000000}',
     );
   }
 
@@ -464,10 +467,11 @@ class MockDataGenerator {
       requiredSkills: shuffledSkills.take(numSkills).toList(),
       budgetRange: '\u20B9${budgetBase ~/ 1000}K - \u20B9${budgetEnd ~/ 1000}K',
       status: status,
-      assignedEmployeeId: 'EMP${5001 + rng.nextInt(20)}',
+      assignedEmployeeId: 'EMP1001', // Preeti Sharma
       source: _sources[rng.nextInt(_sources.length)],
-      inquiryDate: DateTime.now().subtract(Duration(days: rng.nextInt(365))),
-      remarks: rng.nextDouble() < 0.3 ? 'Follow up needed' : null,
+      inquiryDate: DateTime.now().subtract(Duration(days: rng.nextInt(365 * 3))),
+      renewalCount: rng.nextInt(4), // Mock renewal count (0 to 3)
+      remarks: 'Looking for a reliable candidate. Detailed check required.',
     );
   }
 
@@ -845,6 +849,7 @@ class MockDataGenerator {
     'addedThisMonth': 680,
     'targetThisMonth': 1000,
     'totalCandidates': 500000,
+    'urgentReplacements': 50,
   };
 
   static Map<String, dynamic> getExecutiveStats() => {

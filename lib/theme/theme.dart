@@ -47,13 +47,13 @@ class MaterialTheme {
       onTertiaryFixed: Color(0xFF072105),
       tertiaryFixedDim: Color(0xFFB0D2A2),
       onTertiaryFixedVariant: Color(0xFF334F2B),
-      surfaceDim: Color(0xFFE0DCD4),
+      surfaceDim: Color(0xFFE2E8F0),
       surfaceBright: AppColors.surfaceLight,
       surfaceContainerLowest: AppColors.white,
-      surfaceContainerLow: Color(0xFFF7F4EF),
-      surfaceContainer: Color(0xFFF0ECE6),
-      surfaceContainerHigh: Color(0xFFEAE6E0),
-      surfaceContainerHighest: Color(0xFFE4E0DA),
+      surfaceContainerLow: Color(0xFFF8FAFC),
+      surfaceContainer: Color(0xFFF1F5F9),
+      surfaceContainerHigh: Color(0xFFE2E8F0),
+      surfaceContainerHighest: Color(0xFFCBD5E1),
     );
   }
 

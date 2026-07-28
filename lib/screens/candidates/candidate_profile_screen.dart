@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
@@ -300,6 +301,41 @@ class CandidateProfileScreen extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
+        ElevatedButton.icon(
+          onPressed: () async {
+            final text = 'Hello, here is a candidate profile from Verified Maids:\n\n'
+                'View Photo: ${candidate.photoUrl}\n\n'
+                'Name: ${candidate.fullName.split(' ').first} (ID: ${candidate.id})\n'
+                'Work profile: ${candidate.category == 'Candidate' ? (candidate.preferredWorkType ?? 'Maid') : candidate.category}\n'
+                'Expected Salary: ${candidate.expectedSalary}\n'
+                'Age: ${candidate.age} | Experience: ${candidate.experienceYears} Years\n'
+                'Religion: ${candidate.religion}\n'
+                'Languages: ${candidate.languages.join(', ')}\n'
+                'Location: ${candidate.city}\n\n'
+                'Please let us know if you are interested in scheduling an interview.';
+            final url = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not open WhatsApp.')),
+              );
+            }
+          },
+          icon: const Icon(Icons.share, size: 16),
+          label: Text(
+            'Share Profile',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.gold,
+            foregroundColor: AppColors.navyBlue,
+            elevation: 0,
+            side: BorderSide(
+              color: AppColors.gold.withValues(alpha: 0.2),
+            ),
+          ),
+        ),
 
         if (state.currentUser?.role != UserRole.sales)
           ElevatedButton.icon(

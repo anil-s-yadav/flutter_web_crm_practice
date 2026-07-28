@@ -82,6 +82,11 @@ class CandidateModel {
   final DateTime? availableFrom;
   final String? remarks;
 
+  // Sourcing User Details
+  final String? sourcedById;
+  final String? sourcedByName;
+  final String? sourcedByPhone;
+
   CandidateModel({
     required this.id,
     required this.fullName,
@@ -116,6 +121,9 @@ class CandidateModel {
     this.datePlaced,
     this.availableFrom,
     this.remarks,
+    this.sourcedById,
+    this.sourcedByName,
+    this.sourcedByPhone,
   });
 
   factory CandidateModel.fromJson(Map<String, dynamic> json) {
@@ -171,6 +179,9 @@ class CandidateModel {
               ? DateTime.parse(json['availableFrom'])
               : null,
       remarks: json['remarks'],
+      sourcedById: json['sourcedById'],
+      sourcedByName: json['sourcedByName'],
+      sourcedByPhone: json['sourcedByPhone'],
     );
   }
 
@@ -209,6 +220,9 @@ class CandidateModel {
       'datePlaced': datePlaced?.toIso8601String(),
       'availableFrom': availableFrom?.toIso8601String(),
       'remarks': remarks,
+      'sourcedById': sourcedById,
+      'sourcedByName': sourcedByName,
+      'sourcedByPhone': sourcedByPhone,
     };
   }
 
@@ -245,6 +259,9 @@ class CandidateModel {
     DateTime? datePlaced,
     DateTime? availableFrom,
     String? remarks,
+    String? sourcedById,
+    String? sourcedByName,
+    String? sourcedByPhone,
   }) {
     return CandidateModel(
       id: id,
@@ -282,6 +299,9 @@ class CandidateModel {
       datePlaced: datePlaced ?? this.datePlaced,
       availableFrom: availableFrom ?? this.availableFrom,
       remarks: remarks ?? this.remarks,
+      sourcedById: sourcedById ?? this.sourcedById,
+      sourcedByName: sourcedByName ?? this.sourcedByName,
+      sourcedByPhone: sourcedByPhone ?? this.sourcedByPhone,
     );
   }
 

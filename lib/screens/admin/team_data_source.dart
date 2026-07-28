@@ -121,7 +121,15 @@ class TeamDataSource extends DataGridSource {
         break;
     }
 
+    final isEven = _dataGridRows.indexOf(row) % 2 == 0;
+
     return DataGridRowAdapter(
+      color:
+          isEven
+              ? (isDark ? AppColors.darkSurface : AppColors.white)
+              : (isDark
+                  ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5)
+                  : AppColors.grey100),
       cells: row.getCells().map<Widget>((dataGridCell) {
         final columnName = dataGridCell.columnName;
 

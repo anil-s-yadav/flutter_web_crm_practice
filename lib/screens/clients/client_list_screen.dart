@@ -497,7 +497,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             fontSize: 12,
             color: isDark ? AppColors.grey400 : AppColors.grey600,
           ),
-          value: _selectedCity,
+          initialValue: _selectedCity,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -538,7 +538,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             fontSize: 12,
             color: isDark ? AppColors.grey400 : AppColors.grey600,
           ),
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -581,7 +581,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             fontSize: 12,
             color: isDark ? AppColors.grey400 : AppColors.grey600,
           ),
-          value: _selectedDateRange,
+          initialValue: _selectedDateRange,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,

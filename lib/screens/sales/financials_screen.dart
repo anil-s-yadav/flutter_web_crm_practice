@@ -180,12 +180,12 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildChartBar('Feb', 0.4, isDark),
-                  _buildChartBar('Mar', 0.6, isDark),
-                  _buildChartBar('Apr', 0.5, isDark),
-                  _buildChartBar('May', 0.8, isDark),
-                  _buildChartBar('Jun', 0.7, isDark),
-                  _buildChartBar('Jul', 1.0, isDark, isCurrent: true),
+                  _buildChartBar('Feb', '₹50K', 0.4, isDark),
+                  _buildChartBar('Mar', '₹75K', 0.6, isDark),
+                  _buildChartBar('Apr', '₹65K', 0.5, isDark),
+                  _buildChartBar('May', '₹1.0L', 0.8, isDark),
+                  _buildChartBar('Jun', '₹85K', 0.7, isDark),
+                  _buildChartBar('Jul', '₹1.3L', 1.0, isDark, isCurrent: true),
                 ],
               ),
             ),
@@ -195,10 +195,19 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     );
   }
 
-  Widget _buildChartBar(String label, double fillPct, bool isDark, {bool isCurrent = false}) {
+  Widget _buildChartBar(String label, String value, double fillPct, bool isDark, {bool isCurrent = false}) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isCurrent ? AppColors.gold : (isDark ? AppColors.grey300 : AppColors.navyBlue),
+          ),
+        ),
+        const SizedBox(height: 6),
         Expanded(
           child: Container(
             width: 40,
@@ -218,7 +227,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
           label,
           style: GoogleFonts.poppins(

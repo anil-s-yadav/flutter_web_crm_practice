@@ -109,9 +109,15 @@ class ClientDataSource extends DataGridSource {
     final client =
         row.getCells().firstWhere((c) => c.columnName == 'client').value
             as ClientModel;
+    final isEven = _dataGridRows.indexOf(row) % 2 == 0;
 
     return DataGridRowAdapter(
-      color: isDark ? AppColors.darkSurface : AppColors.white,
+      color:
+          isEven
+              ? (isDark ? AppColors.darkSurface : AppColors.white)
+              : (isDark
+                  ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5)
+                  : AppColors.grey100),
       cells:
           row.getCells().map<Widget>((dataGridCell) {
             if (dataGridCell.columnName == 'id') {

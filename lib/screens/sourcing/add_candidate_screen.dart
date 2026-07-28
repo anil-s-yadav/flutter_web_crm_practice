@@ -75,6 +75,9 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       photoUrl: _hasPhoto ? 'simulated_photo_url.jpg' : '',
       addedBy: state.currentUser?.name ?? 'System',
       dateAdded: DateTime.now(),
+      sourcedById: state.currentUser?.id.toString(),
+      sourcedByName: state.currentUser?.name,
+      sourcedByPhone: state.currentUser?.phone,
     );
 
     state.addCandidate(candidate);

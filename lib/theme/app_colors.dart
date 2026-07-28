@@ -20,17 +20,17 @@ class AppColors {
   static const Color goldDark = Color(0xFFD97706);
 
   // ─── Surface Colors ───
-  static const Color surfaceLight = Color(0xFFFDFCF8);
+  static const Color surfaceLight = Color(0xFFF1F5F9); // Crisp Slate 100 canvas
   static const Color surfaceDark = Color(0xFF0F172A);
   static const Color cardLight = Color(0xFFFFFFFF);
   static const Color cardDark = Color(0xFF1E293B);
 
   // ─── Neutral Palette ───
-  static const Color grey50 = Color(0xFFFAF9F7);
-  static const Color grey100 = Color(0xFFF4F2EC);
-  static const Color grey200 = Color(0xFFE8E5DF);
-  static const Color grey300 = Color(0xFFD6D2C9);
-  static const Color grey400 = Color(0xFFB5B0A6);
+  static const Color grey50 = Color(0xFFF8FAFC);  // Slate 50
+  static const Color grey100 = Color(0xFFF1F5F9); // Slate 100
+  static const Color grey200 = Color(0xFFE2E8F0); // Slate 200
+  static const Color grey300 = Color(0xFFCBD5E1); // Slate 300
+  static const Color grey400 = Color(0xFF94A3B8); // Slate 400
 
   static const Color grey500 = Color(0xFF64748B);
   static const Color grey600 = Color(0xFF475569);
@@ -77,7 +77,7 @@ class AppColors {
   static const Color statusJobLeft = Color(0xFFF97316);
 
   // ─── Divider ───
-  static const Color dividerLight = Color(0xFFE8E5DF);
+  static const Color dividerLight = Color(0xFFE2E8F0);
   static const Color dividerDark = Color(0xFF334155);
 
   // ─── Dark mode surfaces ───

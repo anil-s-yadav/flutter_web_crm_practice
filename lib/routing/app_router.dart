@@ -21,6 +21,9 @@ import 'package:practice_app/screens/candidates/candidate_profile_screen.dart';
 import 'package:practice_app/screens/clients/client_list_screen.dart';
 import 'package:practice_app/screens/sales/client_profile_screen.dart';
 import 'package:practice_app/screens/contracts/contract_list_screen.dart';
+import 'package:practice_app/screens/contracts/contract_detail_screen.dart';
+import 'package:practice_app/screens/contracts/replacement_detail_screen.dart';
+import 'package:practice_app/screens/sourcing/urgent_replacements_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_list_screen.dart';
 import 'package:practice_app/screens/tickets/ticket_details_screen.dart';
 import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
@@ -175,6 +178,20 @@ class AppRouter {
               builder: (context, state) => const ContractListScreen(),
             ),
             GoRoute(
+              path: '/admin/contracts/replacements/:id',
+              builder:
+                  (context, state) => ReplacementDetailScreen(
+                    requestId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
+              path: '/admin/contracts/:id',
+              builder:
+                  (context, state) => ContractDetailScreen(
+                    contractId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/admin/tickets',
               builder: (context, state) => const TicketListScreen(),
             ),
@@ -199,15 +216,21 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/team/sales',
-              builder: (context, state) => const TeamListScreen(filterRole: UserRole.sales),
+              builder:
+                  (context, state) =>
+                      const TeamListScreen(filterRole: UserRole.sales),
             ),
             GoRoute(
               path: '/admin/team/sourcing',
-              builder: (context, state) => const TeamListScreen(filterRole: UserRole.sourcing),
+              builder:
+                  (context, state) =>
+                      const TeamListScreen(filterRole: UserRole.sourcing),
             ),
             GoRoute(
               path: '/admin/team/executives',
-              builder: (context, state) => const TeamListScreen(filterRole: UserRole.executive),
+              builder:
+                  (context, state) =>
+                      const TeamListScreen(filterRole: UserRole.executive),
             ),
             GoRoute(
               path: '/admin/team/add',
@@ -215,9 +238,9 @@ class AppRouter {
             ),
             GoRoute(
               path: '/admin/team/:id/edit',
-              builder: (context, state) => AddEditCrmUserScreen(
-                userId: state.pathParameters['id']!,
-              ),
+              builder:
+                  (context, state) =>
+                      AddEditCrmUserScreen(userId: state.pathParameters['id']!),
             ),
           ],
         ),
@@ -323,6 +346,20 @@ class AppRouter {
                       const ContractListScreen(initialViewMode: 'replacements'),
             ),
             GoRoute(
+              path: '/sales/contracts/replacements/:id',
+              builder:
+                  (context, state) => ReplacementDetailScreen(
+                    requestId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
+              path: '/sales/contracts/:id',
+              builder:
+                  (context, state) => ContractDetailScreen(
+                    contractId: state.pathParameters['id']!,
+                  ),
+            ),
+            GoRoute(
               path: '/sales/tickets',
               builder: (context, state) => const TicketListScreen(),
             ),
@@ -358,6 +395,10 @@ class AppRouter {
             GoRoute(
               path: '/sourcing/learning',
               builder: (context, state) => const LearningScreen(),
+            ),
+            GoRoute(
+              path: '/sourcing/replacements',
+              builder: (context, state) => const UrgentReplacementsScreen(),
             ),
             GoRoute(
               path: '/sourcing/candidates/ready',

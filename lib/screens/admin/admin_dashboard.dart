@@ -7,6 +7,7 @@ import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/invoice_model.dart';
+import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -140,7 +141,15 @@ class AdminDashboard extends StatelessWidget {
     // --- Active vs Expired contracts ---
     final activeContracts =
         allContracts
-            .where((c) => c.contractStatus == ContractStatus.active)
+            .where((c) => !c.isRenewal && c.contractStatus == ContractStatus.active)
+            .length;
+    final renewedContracts =
+        allContracts
+            .where((c) => c.isRenewal)
+            .length;
+    final pendingReplacements =
+        state.replacementRequests
+            .where((r) => r.status != ReplacementStatus.resolved)
             .length;
     final expiredContracts =
         allContracts
@@ -240,7 +249,7 @@ class AdminDashboard extends StatelessWidget {
                   child: _buildKPICard(
                     icon: Icons.handshake,
                     iconColor: AppColors.stageVerified,
-                    title: 'Active Contracts',
+                    title: 'Fresh Contracts',
                     value: activeContracts.toString(),
                     subtitle: 'Currently running',
                     isDark: isDark,
@@ -298,7 +307,7 @@ class AdminDashboard extends StatelessWidget {
                       child: _buildKPICard(
                         icon: Icons.handshake,
                         iconColor: AppColors.stageVerified,
-                        title: 'Active Contracts',
+                        title: 'Fresh Contracts',
                         value: activeContracts.toString(),
                         subtitle: 'Currently running',
                         isDark: isDark,
@@ -1007,12 +1016,12 @@ class AdminDashboard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildChartBar('Feb', 0.35, isDark),
-                  _buildChartBar('Mar', 0.55, isDark),
-                  _buildChartBar('Apr', 0.45, isDark),
-                  _buildChartBar('May', 0.75, isDark),
-                  _buildChartBar('Jun', 0.65, isDark),
-                  _buildChartBar('Jul', 1.0, isDark, isCurrent: true),
+                  _buildChartBar('Feb', '₹45K', 0.35, isDark),
+                  _buildChartBar('Mar', '₹70K', 0.55, isDark),
+                  _buildChartBar('Apr', '₹60K', 0.45, isDark),
+                  _buildChartBar('May', '₹95K', 0.75, isDark),
+                  _buildChartBar('Jun', '₹80K', 0.65, isDark),
+                  _buildChartBar('Jul', '₹1.3L', 1.0, isDark, isCurrent: true),
                 ],
               ),
             ),
@@ -1063,6 +1072,7 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _buildChartBar(
     String label,
+    String value,
     double fillPct,
     bool isDark, {
     bool isCurrent = false,
@@ -1073,6 +1083,15 @@ class AdminDashboard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isCurrent ? AppColors.gold : (isDark ? AppColors.grey300 : AppColors.navyBlue),
+              ),
+            ),
+            const SizedBox(height: 6),
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -1098,7 +1117,7 @@ class AdminDashboard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               label,
               style: GoogleFonts.poppins(

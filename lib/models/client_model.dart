@@ -60,6 +60,7 @@ class ClientModel {
   final String? assignedEmployeeId;
   final String source;
   final DateTime inquiryDate;
+  final int renewalCount;
   final String? remarks;
 
   const ClientModel({
@@ -85,6 +86,7 @@ class ClientModel {
     this.assignedEmployeeId,
     required this.source,
     required this.inquiryDate,
+    this.renewalCount = 0,
     this.remarks
   });
 
@@ -112,6 +114,7 @@ class ClientModel {
       assignedEmployeeId: json['assignedEmployeeId'] as String?,
       source: json['source'] as String,
       inquiryDate: DateTime.parse(json['inquiryDate'] as String),
+      renewalCount: (json['renewalCount'] as int?) ?? 0,
       remarks: json['remarks'] as String?
     );
   }
@@ -140,6 +143,7 @@ class ClientModel {
       'assignedEmployeeId': assignedEmployeeId,
       'source': source,
       'inquiryDate': inquiryDate.toIso8601String(),
+      'renewalCount': renewalCount,
       'remarks': remarks
     };
   }
@@ -169,6 +173,7 @@ class ClientModel {
     String? assignedEmployeeId,
     String? source,
     DateTime? inquiryDate,
+    int? renewalCount,
     String? remarks
   }) {
     return ClientModel(
@@ -194,6 +199,7 @@ class ClientModel {
       assignedEmployeeId: assignedEmployeeId ?? this.assignedEmployeeId,
       source: source ?? this.source,
       inquiryDate: inquiryDate ?? this.inquiryDate,
+      renewalCount: renewalCount ?? this.renewalCount,
       remarks: remarks ?? this.remarks
     );
   }

@@ -66,6 +66,9 @@ class ContractModel {
   final bool isReplacementUsed;
   final DateTime? replacementDate;
   final String? replacementCandidateId;
+  final DateTime? renewedOn;
+  final bool isRenewal;
+  final int replacementsUsed;
   final String createdBy;
   final String? remarks;
 
@@ -85,6 +88,9 @@ class ContractModel {
     this.isReplacementUsed = false,
     this.replacementDate,
     this.replacementCandidateId,
+    this.renewedOn,
+    this.isRenewal = false,
+    this.replacementsUsed = 0,
     required this.createdBy,
     this.remarks,
   });
@@ -93,6 +99,16 @@ class ContractModel {
     final now = DateTime.now();
     if (now.isAfter(guaranteeEndDate)) return 0;
     return guaranteeEndDate.difference(now).inDays;
+  }
+
+  DateTime get contractExpiryDate {
+    return DateTime(placementDate.year + 1, placementDate.month, placementDate.day);
+  }
+
+  int get daysRemainingInContract {
+    final now = DateTime.now();
+    if (now.isAfter(contractExpiryDate)) return 0;
+    return contractExpiryDate.difference(now).inDays;
   }
 
   bool get isGuaranteeActive {
@@ -123,6 +139,12 @@ class ContractModel {
               ? DateTime.parse(json['replacementDate'] as String)
               : null,
       replacementCandidateId: json['replacementCandidateId'] as String?,
+      renewedOn:
+          json['renewedOn'] != null
+              ? DateTime.parse(json['renewedOn'] as String)
+              : null,
+      isRenewal: (json['isRenewal'] as bool?) ?? false,
+      replacementsUsed: (json['replacementsUsed'] as int?) ?? 0,
       createdBy: json['createdBy'] as String,
       remarks: json['remarks'] as String?,
     );
@@ -145,6 +167,9 @@ class ContractModel {
       'isReplacementUsed': isReplacementUsed,
       'replacementDate': replacementDate?.toIso8601String(),
       'replacementCandidateId': replacementCandidateId,
+      'renewedOn': renewedOn?.toIso8601String(),
+      'isRenewal': isRenewal,
+      'replacementsUsed': replacementsUsed,
       'createdBy': createdBy,
       'remarks': remarks,
     };
@@ -168,6 +193,9 @@ class ContractModel {
     bool? isReplacementUsed,
     DateTime? replacementDate,
     String? replacementCandidateId,
+    DateTime? renewedOn,
+    bool? isRenewal,
+    int? replacementsUsed,
     String? createdBy,
     String? remarks,
   }) {
@@ -188,6 +216,9 @@ class ContractModel {
       replacementDate: replacementDate ?? this.replacementDate,
       replacementCandidateId:
           replacementCandidateId ?? this.replacementCandidateId,
+      renewedOn: renewedOn ?? this.renewedOn,
+      isRenewal: isRenewal ?? this.isRenewal,
+      replacementsUsed: replacementsUsed ?? this.replacementsUsed,
       createdBy: createdBy ?? this.createdBy,
       remarks: remarks ?? this.remarks,
     );

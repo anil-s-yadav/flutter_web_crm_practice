@@ -20,6 +20,66 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
     }
   }
 
+  void _showReceiptDialog(BuildContext context, ExecutiveTaskModel task) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.receipt_long, color: AppColors.successGreen),
+              const SizedBox(width: 8),
+              Text('Digital Receipt', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Payment received successfully.', style: GoogleFonts.poppins(fontSize: 14)),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.grey50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.grey200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(DateTime.now())}', style: GoogleFonts.poppins(fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('Client: ${task.clientName}', style: GoogleFonts.poppins(fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text('Task ID: ${task.id}', style: GoogleFonts.poppins(fontSize: 12)),
+                    const Divider(),
+                    Text('Amount Paid: ₹${task.paymentAmount?.toStringAsFixed(0) ?? "0"}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                EasyLoading.showSuccess('Receipt sent via WhatsApp');
+              },
+              icon: const Icon(Icons.share, size: 16),
+              label: const Text('Share Receipt'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.navyBlue, foregroundColor: Colors.white),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showUpdateStatusSheet(
     BuildContext context,
     ExecutiveTaskModel task,
@@ -44,32 +104,67 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Update Task Status',
+                task.type == TaskType.candidateDrop ? 'Deployment Checklist' : 'Update Task Status',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(
-                  Icons.check_circle,
-                  color: AppColors.successGreen,
+              
+              if (task.type == TaskType.candidateDrop) ...[
+                ListTile(
+                  leading: const Icon(Icons.person_pin_circle, color: AppColors.navyBlue),
+                  title: const Text('Mark Staff as Dropped'),
+                  subtitle: Text(task.status == TaskStatus.completed ? 'Completed' : 'Pending', style: GoogleFonts.poppins(fontSize: 12)),
+                  trailing: task.status == TaskStatus.completed ? const Icon(Icons.check_circle, color: AppColors.successGreen) : null,
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.markTaskCompleted(task.id);
+                    EasyLoading.showSuccess('Staff Dropped Successfully');
+                  },
                 ),
-                title: const Text('Mark as Completed'),
-                onTap: () {
-                  Navigator.pop(context);
-                  state.markTaskCompleted(task.id);
-                  EasyLoading.showSuccess('Task Completed');
-                },
-              ),
+                ListTile(
+                  leading: const Icon(Icons.document_scanner, color: AppColors.gold),
+                  title: const Text('Upload Signed Contract'),
+                  subtitle: Text(task.isContractUploaded ? 'Uploaded' : 'Pending', style: GoogleFonts.poppins(fontSize: 12)),
+                  trailing: task.isContractUploaded ? const Icon(Icons.check_circle, color: AppColors.successGreen) : null,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    EasyLoading.show(status: 'Uploading...');
+                    await Future.delayed(const Duration(seconds: 1));
+                    state.updateTask(task.copyWith(isContractUploaded: true));
+                    EasyLoading.showSuccess('Contract Uploaded');
+                  },
+                ),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(
+                    Icons.check_circle,
+                    color: AppColors.successGreen,
+                  ),
+                  title: const Text('Mark as Completed'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    state.markTaskCompleted(task.id);
+                    EasyLoading.showSuccess('Task Completed');
+                  },
+                ),
+              ],
+              
               ListTile(
-                leading: const Icon(Icons.payment, color: AppColors.gold),
-                title: const Text('Mark Payment Collected'),
+                leading: const Icon(Icons.payments, color: AppColors.statusPlaced),
+                title: const Text('Log Payment & Issue Receipt'),
+                subtitle: Text(task.isPaymentCollected ? 'Collected' : 'Pending', style: GoogleFonts.poppins(fontSize: 12)),
+                trailing: task.isPaymentCollected ? const Icon(Icons.check_circle, color: AppColors.successGreen) : null,
                 onTap: () {
                   Navigator.pop(context);
-                  state.updateTask(task.copyWith(isPaymentCollected: true));
-                  EasyLoading.showSuccess('Payment Collected');
+                  if (!task.isPaymentCollected) {
+                    state.updateTask(task.copyWith(isPaymentCollected: true));
+                    EasyLoading.showSuccess('Payment Collected');
+                  }
+                  // Show receipt dialog
+                  _showReceiptDialog(context, task);
                 },
               ),
               const SizedBox(height: 24),

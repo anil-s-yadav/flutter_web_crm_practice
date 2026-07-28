@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 // We'll mock GlobalAppState retrieval, or assume tickets are generated locally,
 // but in a real app it'd come from Provider.of<GlobalAppState>(context).
-import 'package:practice_app/providers/global_app_state.dart';
-import 'package:provider/provider.dart';
 
 class TicketDetailsScreen extends StatefulWidget {
   final String ticketId;

@@ -256,6 +256,13 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
         '/sourcing/candidates/medical',
       ),
       _PipelineStep(
+        'Urgent Replacements',
+        _stats['urgentReplacements'] as int? ?? 0,
+        AppColors.urgentAmber,
+        Icons.warning_amber,
+        '/sourcing/replacements',
+      ),
+      _PipelineStep(
         'Ready to Place',
         _stats['readyToPlace'] as int,
         AppColors.stageVerified,

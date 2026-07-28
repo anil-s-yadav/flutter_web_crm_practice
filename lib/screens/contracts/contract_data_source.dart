@@ -53,6 +53,17 @@ class ContractDataSource extends DataGridSource {
             DataGridCell<ContractModel>(columnName: 'details', value: contract),
           ];
 
+          if (viewMode == 'renewals') {
+            cells.add(
+              DataGridCell<String>(
+                columnName: 'renewed_on',
+                value: contract.renewedOn != null
+                    ? DateFormat('MMM dd, yyyy').format(contract.renewedOn!)
+                    : '-',
+              ),
+            );
+          }
+
           if (viewMode != 'renewals') {
             cells.add(
               DataGridCell<String>(
@@ -65,11 +76,16 @@ class ContractDataSource extends DataGridSource {
           }
 
           cells.add(
-            DataGridCell<String>(
-              columnName: 'expires_on',
-              value: DateFormat(
-                'MMM dd, yyyy',
-              ).format(contract.guaranteeEndDate),
+            DataGridCell<ContractModel>(
+              columnName: 'warranty',
+              value: contract,
+            ),
+          );
+
+          cells.add(
+            DataGridCell<ContractModel>(
+              columnName: 'contract_expiry',
+              value: contract,
             ),
           );
 
@@ -100,20 +116,18 @@ class ContractDataSource extends DataGridSource {
             );
           }
 
-          if (viewMode != 'active') {
-            cells.add(
-              DataGridCell<ContractStatus>(
-                columnName: 'contractStatus',
-                value: contract.contractStatus,
-              ),
-            );
-            cells.add(
-              DataGridCell<ContractModel>(
-                columnName: 'actions',
-                value: contract,
-              ),
-            );
-          }
+          cells.add(
+            DataGridCell<ContractStatus>(
+              columnName: 'contractStatus',
+              value: contract.contractStatus,
+            ),
+          );
+          cells.add(
+            DataGridCell<ContractModel>(
+              columnName: 'actions',
+              value: contract,
+            ),
+          );
 
           return DataGridRow(cells: cells);
         }).toList();
@@ -178,9 +192,15 @@ class ContractDataSource extends DataGridSource {
     final contract =
         row.getCells().firstWhere((c) => c.columnName == 'details').value
             as ContractModel;
+    final isEven = _dataGridRows.indexOf(row) % 2 == 0;
 
     return DataGridRowAdapter(
-      color: isDark ? AppColors.darkSurface : AppColors.white,
+      color:
+          isEven
+              ? (isDark ? AppColors.darkSurface : AppColors.white)
+              : (isDark
+                  ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5)
+                  : AppColors.grey100),
       cells:
           row.getCells().map<Widget>((dataGridCell) {
             if (dataGridCell.columnName == 'id') {
@@ -222,6 +242,106 @@ class ContractDataSource extends DataGridSource {
                       ),
                     ],
                   ),
+                ),
+              );
+            }
+            
+            if (dataGridCell.columnName == 'warranty') {
+              final wContract = dataGridCell.value as ContractModel;
+              final bool isActive = wContract.isGuaranteeActive;
+              
+              Color badgeColor;
+              String badgeText;
+              
+              if (wContract.replacementsUsed >= 3) {
+                badgeColor = AppColors.urgentAmber;
+                badgeText = '3/3 Replacements Used';
+              } else if (isActive) {
+                badgeColor = AppColors.successGreen;
+                badgeText = '${wContract.replacementsUsed}/3 Replacements Used';
+              } else {
+                badgeColor = AppColors.grey500;
+                badgeText = 'Expired (${wContract.replacementsUsed}/3)';
+              }
+              
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(wContract.guaranteeEndDate),
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            if (dataGridCell.columnName == 'contract_expiry') {
+              final wContract = dataGridCell.value as ContractModel;
+              final int daysLeft = wContract.daysRemainingInContract;
+              final bool isExpired = daysLeft <= 0;
+              
+              Color badgeColor = isExpired ? AppColors.criticalRed : AppColors.standardBlue;
+              String badgeText = isExpired ? 'Expired' : 'Active ($daysLeft days left)';
+              
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(wContract.contractExpiryDate),
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+                      ),
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }

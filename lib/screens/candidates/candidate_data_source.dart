@@ -150,7 +150,7 @@ class CandidateDataSource extends DataGridSource {
               ? (isDark ? AppColors.darkSurface : AppColors.white)
               : (isDark
                   ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5)
-                  : AppColors.grey50),
+                  : AppColors.grey100),
       cells:
           row.getCells().map<Widget>((DataGridCell cell) {
             if (cell.columnName == 'candidate') {
@@ -206,8 +206,8 @@ class CandidateDataSource extends DataGridSource {
                                 fontSize: 11,
                                 color:
                                     isDark
-                                        ? AppColors.grey500
-                                        : AppColors.grey600,
+                                        ? AppColors.grey400
+                                        : AppColors.grey700,
                               ),
                             ),
                           ],

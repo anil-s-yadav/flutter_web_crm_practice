@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/contracts/contract_data_source.dart';
+import 'package:practice_app/screens/contracts/replacement_data_source.dart';
+import 'package:practice_app/models/replacement_request_model.dart';
 
 class ContractListScreen extends StatefulWidget {
   final String? initialViewMode;
@@ -24,14 +26,16 @@ class ContractListScreen extends StatefulWidget {
 class _ContractListScreenState extends State<ContractListScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  bool _showFilters = false;
+  final bool _showFilters = false;
   String? _currentViewMode;
   ContractStatus? _selectedStatus;
   PaymentStatus? _selectedPaymentStatus;
   bool? _hasBalanceDue;
   String? _selectedDateRange;
   ContractDataSource? _contractDataSource;
+  ReplacementDataSource? _replacementDataSource;
   List<ContractModel> _filteredContracts = [];
+  List<ReplacementRequestModel> _filteredRequests = [];
 
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
 
@@ -70,26 +74,49 @@ class _ContractListScreenState extends State<ContractListScreen> {
 
     if (!state.isInitialized) return;
 
+    if (_currentViewMode == 'replacements') {
+      final allRequests = state.replacementRequests;
+      _filteredRequests = allRequests.where((r) {
+        if (_searchQuery.isNotEmpty) {
+          final query = _searchQuery.toLowerCase();
+          return r.clientName.toLowerCase().contains(query) ||
+              r.oldCandidateName.toLowerCase().contains(query) ||
+              r.id.toLowerCase().contains(query);
+        }
+        return true;
+      }).toList();
+
+      if (_replacementDataSource == null) {
+        _replacementDataSource = ReplacementDataSource(
+          context: context,
+          isDark: isDark,
+          requests: _filteredRequests,
+          onRowTap: (request) {
+            final routePrefix =
+                state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+            context.push('$routePrefix/contracts/replacements/${request.id}');
+          },
+        );
+      } else {
+        _replacementDataSource!.isDark = isDark;
+        _replacementDataSource!.updateData(_filteredRequests);
+      }
+      return; // Skip contract source initialization
+    }
+
     final allContracts = state.contracts;
 
     final filteredContracts =
         allContracts.where((c) {
           if (_currentViewMode != null) {
-            if (_currentViewMode == 'active' &&
-                c.contractStatus != ContractStatus.active) {
+            if ((_currentViewMode == 'active' || _currentViewMode == 'fresh' || _currentViewMode == 'fresh_contracts') && c.isRenewal) {
               return false;
             }
-            if (_currentViewMode == 'expired' && c.isGuaranteeActive) {
+            if ((_currentViewMode == 'renewals' || _currentViewMode == 'renewed') && !c.isRenewal) {
               return false;
             }
-            if (_currentViewMode == 'renewals' &&
-                (!c.isGuaranteeActive || c.daysRemainingInGuarantee > 30)) {
-              return false;
-            }
-            if (_currentViewMode == 'replacements' &&
-                !c.isReplacementUsed &&
-                c.contractStatus != ContractStatus.rePlaced) {
-              return false;
+            if (_currentViewMode == 'replacements') {
+              return false; // Handled separately
             }
           } else {
             if (_selectedStatus != null &&
@@ -139,7 +166,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
         onRowTap: (contract) {
           final routePrefix =
               state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
-          var path = '$routePrefix/clients/${contract.clientId}';
+          var path = '$routePrefix/contracts/${contract.id}';
           if (_currentViewMode != null) {
             path += '?fromContractMode=$_currentViewMode';
           }
@@ -162,8 +189,12 @@ class _ContractListScreenState extends State<ContractListScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    if (!state.isInitialized || _contractDataSource == null) {
+    if (!state.isInitialized) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_contractDataSource == null && _replacementDataSource == null) {
+      _initializeDataSource();
     }
 
     return Scaffold(
@@ -200,7 +231,9 @@ class _ContractListScreenState extends State<ContractListScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${_filteredContracts.length} Contracts found',
+                      _currentViewMode == 'replacements'
+                          ? '${_filteredRequests.length} Replacements found'
+                          : '${_filteredContracts.length} Contracts found',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -472,7 +505,9 @@ class _ContractListScreenState extends State<ContractListScreen> {
           Expanded(
             child:
                 isMobile
-                    ? _buildMobileListView(_filteredContracts, isDark, state)
+                    ? (_currentViewMode == 'replacements'
+                        ? _buildReplacementsMobileListView(_filteredRequests, isDark, state)
+                        : _buildMobileListView(_filteredContracts, isDark, state))
                     : Align(
                       alignment: Alignment.topCenter,
                       child: Container(
@@ -500,7 +535,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                       ),
                               sortIconColor: AppColors.gold,
                             ),
-                            child: SfDataGrid(
+                            child: _currentViewMode == 'replacements' ? _buildReplacementsGrid(isDark) : SfDataGrid(
                               source: _contractDataSource!,
                               allowSorting: true,
                               allowMultiColumnSorting: false,
@@ -544,6 +579,21 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                     ),
                                   ),
                                 ),
+                                if (_currentViewMode == 'renewals')
+                                  GridColumn(
+                                    columnName: 'renewed_on',
+                                    width: 120,
+                                    label: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'Renewed On',
+                                        style: _headerStyle(isDark),
+                                      ),
+                                    ),
+                                  ),
                                 if (_currentViewMode != 'renewals')
                                   GridColumn(
                                     columnName: 'date',
@@ -560,15 +610,29 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                     ),
                                   ),
                                 GridColumn(
-                                  columnName: 'expires_on',
-                                  width: 120,
+                                  columnName: 'warranty',
+                                  width: 140,
                                   label: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 10,
                                     ),
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      'Expires On',
+                                      'Warranty',
+                                      style: _headerStyle(isDark),
+                                    ),
+                                  ),
+                                ),
+                                GridColumn(
+                                  columnName: 'contract_expiry',
+                                  width: 140,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Contract Expiry',
                                       style: _headerStyle(isDark),
                                     ),
                                   ),
@@ -620,7 +684,6 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                       ),
                                     ),
                                   ),
-                                if (_currentViewMode != 'active')
                                   GridColumn(
                                     columnName: 'contractStatus',
                                     width: 130,
@@ -635,21 +698,20 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                       ),
                                     ),
                                   ),
-                                if (_currentViewMode != 'active')
-                                  GridColumn(
-                                    columnName: 'actions',
-                                    width: 90,
-                                    label: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        'Action',
-                                        style: _headerStyle(isDark),
-                                      ),
+                                GridColumn(
+                                  columnName: 'actions',
+                                  width: 90,
+                                  label: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Action',
+                                      style: _headerStyle(isDark),
                                     ),
                                   ),
+                                ),
                               ],
                             ),
                           ),
@@ -707,24 +769,136 @@ class _ContractListScreenState extends State<ContractListScreen> {
                       'Page 1 of 1',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: isDark ? AppColors.grey400 : AppColors.grey600,
                       ),
                     ),
                     const SizedBox(width: 8),
                     const IconButton(
                       icon: Icon(Icons.chevron_right, size: 20),
-                      onPressed: null, // Stubbed for mock data
+                      onPressed: null,
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(),
                     ),
                   ],
                 ),
-                const SizedBox(width: 100),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReplacementsGrid(bool isDark) {
+    if (_replacementDataSource == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return SfDataGrid(
+      source: _replacementDataSource!,
+      allowSorting: true,
+      allowMultiColumnSorting: false,
+      columnWidthMode: ColumnWidthMode.auto,
+      headerRowHeight: 48,
+      rowHeight: 56,
+      gridLinesVisibility: GridLinesVisibility.both,
+      headerGridLinesVisibility: GridLinesVisibility.both,
+      columns: [
+        GridColumn(
+          columnName: 'id',
+          visible: false,
+          label: const SizedBox.shrink(),
+        ),
+        GridColumn(
+          columnName: 'sr_no',
+          width: 90,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Request ID', style: _headerStyle(isDark)),
+          ),
+        ),
+        GridColumn(
+          columnName: 'client',
+          width: 200,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Client', style: _headerStyle(isDark)),
+          ),
+        ),
+        GridColumn(
+          columnName: 'old_candidate',
+          width: 150,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Old Candidate', style: _headerStyle(isDark)),
+          ),
+        ),
+        GridColumn(
+          columnName: 'reason',
+          width: 250,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Reason', style: _headerStyle(isDark)),
+          ),
+        ),
+        GridColumn(
+          columnName: 'request_date',
+          width: 120,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Request Date', style: _headerStyle(isDark)),
+          ),
+        ),
+        GridColumn(
+          columnName: 'status',
+          width: 120,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.centerLeft,
+            child: Text('Status', style: _headerStyle(isDark)),
+          ),
+),
+      ],
+    );
+  }
+
+  Widget _buildReplacementsMobileListView(
+    List<ReplacementRequestModel> requests,
+    bool isDark,
+    GlobalAppState state,
+  ) {
+    if (requests.isEmpty) {
+      return Center(
+        child: Text(
+          'No replacements found',
+          style: GoogleFonts.poppins(color: AppColors.grey500),
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: requests.length,
+      itemBuilder: (context, index) {
+        final r = requests[index];
+        return Card(
+          color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            title: Text(r.clientName, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            subtitle: Text('Old Candidate: ${r.oldCandidateName}'),
+            trailing: Text(r.status.displayName),
+            onTap: () {
+              final routePrefix = state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+              context.push('$routePrefix/contracts/replacements/${r.id}');
+            },
+          ),
+        );
+      },
     );
   }
 

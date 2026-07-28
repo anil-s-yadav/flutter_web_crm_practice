@@ -241,13 +241,13 @@ class _DesktopShellState extends State<DesktopShell> {
               _SidebarItem(
                 icon: Icons.assignment_outlined,
                 activeIcon: Icons.assignment,
-                label: 'Active Contracts',
+                label: 'Fresh Contracts',
                 route: '/sales/contracts/active',
               ),
               _SidebarItem(
                 icon: Icons.autorenew_outlined,
                 activeIcon: Icons.autorenew,
-                label: 'Renewals',
+                label: 'Renewed Contracts',
                 route: '/sales/contracts/renewals',
               ),
               _SidebarItem(
@@ -1220,9 +1220,11 @@ class _DesktopShellState extends State<DesktopShell> {
     if (location.endsWith('/clients/past')) return 'Inactive / Past Clients';
     if (location.endsWith('/clients')) return 'All Clients';
 
-    if (location.endsWith('/contracts/active')) return 'Active Contracts';
-    if (location.endsWith('/contracts/renewals')) return 'Renewals';
+    if (location.endsWith('/contracts/active')) return 'Fresh Contracts';
+    if (location.endsWith('/contracts/renewals')) return 'Renewed Contracts';
+    if (location.contains('/contracts/replacements/')) return 'Replacement Details';
     if (location.endsWith('/contracts/replacements')) return 'Replacements';
+    if (location.contains('/contracts/')) return 'Contract Details';
     if (location.endsWith('/contracts')) return 'Contracts';
 
     if (location.endsWith('/financials')) return 'Financials & Payments';
