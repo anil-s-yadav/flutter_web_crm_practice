@@ -13,6 +13,16 @@ import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_event.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
+import 'package:practice_app/blocs/contract/contract_bloc.dart';
+import 'package:practice_app/blocs/contract/contract_event.dart';
+import 'package:practice_app/blocs/contract/contract_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 
 class ClientProfileScreen extends StatefulWidget {
   final String clientId;
@@ -27,100 +37,143 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   int _activeTabIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    context.read<ClientBloc>().add(LoadClients());
+    context.read<ContractBloc>().add(LoadContracts());
+    context.read<CandidateBloc>().add(LoadCandidates());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
-    final isMobile = context.media.width < 800;
 
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<ClientBloc, ClientState>(
+      builder: (context, clientState) {
+        return BlocBuilder<ContractBloc, ContractState>(
+          builder: (context, contractState) {
+            return BlocBuilder<CandidateBloc, CandidateState>(
+              builder: (context, candidateState) {
+                if (clientState is ClientLoading ||
+                    contractState is ContractLoading ||
+                    candidateState is CandidateLoading) {
+                  return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                }
 
-    final client = state.getClient(widget.clientId);
-    if (client == null) {
-      return const Center(child: Text('Client not found'));
-    }
+                if (clientState is ClientError) {
+                  return Scaffold(body: Center(child: Text('Error: ${clientState.message}')));
+                }
+                if (contractState is ContractError) {
+                  return Scaffold(body: Center(child: Text('Error: ${contractState.message}')));
+                }
+                if (candidateState is CandidateError) {
+                  return Scaffold(body: Center(child: Text('Error: ${candidateState.message}')));
+                }
 
-    final contract = state.getContractForClient(client.id);
-    final candidate =
-        contract != null ? state.getCandidate(contract.candidateId) : null;
+                if (clientState is ClientLoaded &&
+                    contractState is ContractLoaded &&
+                    candidateState is CandidateLoaded) {
+                  final clientList = clientState.clients.where((c) => c.id == widget.clientId).toList();
+                  if (clientList.isEmpty) {
+                    return const Scaffold(body: Center(child: Text('Client not found')));
+                  }
+                  final client = clientList.first;
 
-    final relevantLogs =
-        state.auditLogs
-            .where(
-              (log) =>
-                  log.targetId == client.id ||
-                  (contract != null && log.targetId == contract.id),
-            )
-            .toList();
+                  final contractList = contractState.contracts.where((c) => c.clientId == client.id).toList();
+                  contractList.sort((a, b) => b.placementDate.compareTo(a.placementDate));
+                  final contract = contractList.isNotEmpty ? contractList.first : null;
 
-    final tabs = ['Details', 'Candidates & Contracts', 'Documents'];
+                  final candidateList = contract != null
+                      ? candidateState.candidates.where((c) => c.id == contract.candidateId).toList()
+                      : [];
+                  final candidate = candidateList.isNotEmpty ? candidateList.first : null;
 
-    return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(tabs.length, (index) {
-                  final isSelected = _activeTabIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        tabs[index],
-                        style: GoogleFonts.poppins(
-                          color:
-                              isSelected
-                                  ? AppColors.navyBlue
-                                  : (isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight),
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.normal,
+                  final relevantLogs =
+                      state.auditLogs
+                          .where(
+                            (log) =>
+                                log.targetId == client.id ||
+                                (contract != null && log.targetId == contract.id),
+                          )
+                          .toList();
+
+                  final tabs = ['Details', 'Candidates & Contracts', 'Documents'];
+
+                  return Scaffold(
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: List.generate(tabs.length, (index) {
+                                final isSelected = _activeTabIndex == index;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ChoiceChip(
+                                    label: Text(
+                                      tabs[index],
+                                      style: GoogleFonts.poppins(
+                                        color:
+                                            isSelected
+                                                ? AppColors.navyBlue
+                                                : (isDark
+                                                    ? AppColors.textSecondaryDark
+                                                    : AppColors.textSecondaryLight),
+                                        fontWeight:
+                                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      ),
+                                    ),
+                                    selected: isSelected,
+                                    selectedColor: AppColors.gold,
+                                    backgroundColor:
+                                        isDark
+                                            ? AppColors.darkSurfaceVariant
+                                            : AppColors.white,
+                                    side: BorderSide.none,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        _activeTabIndex = index;
+                                      });
+                                    },
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
                         ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.gold,
-                      backgroundColor:
-                          isDark
-                              ? AppColors.darkSurfaceVariant
-                              : AppColors.white,
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      onSelected: (selected) {
-                        setState(() {
-                          _activeTabIndex = index;
-                        });
-                      },
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: _buildActiveTabContent(
+                              client,
+                              contract,
+                              candidate,
+                              relevantLogs,
+                              isDark,
+                              context,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
-                }),
-              ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _buildActiveTabContent(
-                client,
-                contract,
-                candidate,
-                relevantLogs,
-                isDark,
-                context,
-              ),
-            ),
-          ),
-        ],
-      ),
+                }
+
+                return const Scaffold(body: Center(child: Text('Unknown state')));
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -148,9 +201,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       );
     } else if (_activeTabIndex == 1) {
       final state = Provider.of<GlobalAppState>(context, listen: false);
+      final contractState = context.read<ContractBloc>().state;
+      final allContracts = contractState is ContractLoaded ? contractState.contracts : <ContractModel>[];
+      
       // All contracts for this client, sorted by date descending
       final allClientContracts =
-          state.contracts.where((c) => c.clientId == client.id).toList()
+          allContracts.where((c) => c.clientId == client.id).toList()
             ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
       // Replacement requests for this client
       final clientReplacements =
@@ -1879,12 +1935,14 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final candidateState = context.watch<CandidateBloc>().state;
+    final allCandidates = candidateState is CandidateLoaded ? candidateState.candidates : <CandidateModel>[];
 
     // Find candidates ready to place matching the requested category
     var pool =
-        state.candidates
+        allCandidates
             .where(
               (c) =>
                   c.status == CandidateStatus.readyToPlace &&

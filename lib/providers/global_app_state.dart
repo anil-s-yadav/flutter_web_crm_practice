@@ -49,7 +49,7 @@ class GlobalAppState extends ChangeNotifier {
 
     // Default current user to Sales if none set
     _currentUser ??= const UserModel(
-      id: 2,
+      id: '1',
       name: 'Priya Mehta',
       email: 'priya@verifiedcandidates.in',
       role: UserRole.sales,

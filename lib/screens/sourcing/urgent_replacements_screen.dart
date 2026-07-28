@@ -8,24 +8,28 @@ import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_event.dart';
+import 'package:practice_app/blocs/replacement/replacement_state.dart';
 
-class UrgentReplacementsScreen extends StatelessWidget {
+class UrgentReplacementsScreen extends StatefulWidget {
   const UrgentReplacementsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<UrgentReplacementsScreen> createState() => _UrgentReplacementsScreenState();
+}
 
-    // Filter requests escalated to Sourcing and not yet resolved
-    final urgentRequests =
-        state.replacementRequests
-            .where(
-              (r) =>
-                  r.isEscalatedToSourcing &&
-                  r.status != ReplacementStatus.resolved,
-            )
-            .toList();
+class _UrgentReplacementsScreenState extends State<UrgentReplacementsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ReplacementBloc>().add(const LoadReplacements());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor:
@@ -41,38 +45,64 @@ class UrgentReplacementsScreen extends StatelessWidget {
           onPressed: () => context.go('/sourcing'),
         ),
       ),
-      body:
-          urgentRequests.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 64,
-                      color: AppColors.successGreen,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No urgent replacements needed!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.grey300 : AppColors.grey700,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              : ListView.separated(
-                padding: const EdgeInsets.all(24),
-                itemCount: urgentRequests.length,
-                separatorBuilder:
-                    (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  return _UrgentReplacementCard(request: urgentRequests[index]);
-                },
+      body: BlocBuilder<ReplacementBloc, ReplacementState>(
+        builder: (context, replacementState) {
+          if (replacementState is ReplacementInitial ||
+              replacementState is ReplacementLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (replacementState is ReplacementError) {
+            return Center(
+              child: Text(
+                'Error: ${replacementState.message}',
+                style: GoogleFonts.poppins(color: Colors.red),
               ),
+            );
+          } else if (replacementState is ReplacementLoaded) {
+            // Filter requests escalated to Sourcing and not yet resolved
+            final urgentRequests =
+                replacementState.replacements
+                    .where(
+                      (r) =>
+                          r.isEscalatedToSourcing &&
+                          r.status != ReplacementStatus.resolved,
+                    )
+                    .toList();
+
+            return urgentRequests.isEmpty
+                ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: AppColors.successGreen,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No urgent replacements needed!',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.grey300 : AppColors.grey700,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                : ListView.separated(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: urgentRequests.length,
+                  separatorBuilder:
+                      (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    return _UrgentReplacementCard(request: urgentRequests[index]);
+                  },
+                );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 }

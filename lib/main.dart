@@ -11,6 +11,31 @@ import 'theme/text.dart';
 import 'theme/theme.dart';
 import 'providers/global_app_state.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/repositories/auth_repository.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_event.dart';
+
+import 'package:practice_app/repositories/analytics_repository.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
+
+import 'package:practice_app/repositories/candidate_repository.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+
+import 'package:practice_app/repositories/client_repository.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+
+import 'package:practice_app/repositories/contract_repository.dart';
+import 'package:practice_app/blocs/contract/contract_bloc.dart';
+
+import 'package:practice_app/repositories/task_repository.dart';
+import 'package:practice_app/blocs/task/task_bloc.dart';
+
+import 'package:practice_app/repositories/replacement_repository.dart';
+import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+
+import 'package:practice_app/api/api_client.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
@@ -35,15 +60,85 @@ void main() async {
   FirebaseMessagingService().init();
 
   runApp(
-    MultiProvider(
+    MultiRepositoryProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
-        ChangeNotifierProvider(
-          create: (_) => GlobalAppState()..initializeData(),
+        RepositoryProvider(create: (context) => AuthRepository()),
+        RepositoryProvider(create: (context) => AnalyticsRepository()),
+        RepositoryProvider(
+          create: (context) => CandidateRepository(
+            apiClient: ApiClient(),
+          ),
+        ),
+        RepositoryProvider(
+          create: (context) => ClientRepository(
+            apiClient: ApiClient(),
+          ),
+        ),
+        RepositoryProvider(
+          create: (context) => ContractRepository(
+            apiClient: ApiClient(),
+          ),
+        ),
+        RepositoryProvider(
+          create: (context) => TaskRepository(
+            apiClient: ApiClient(),
+          ),
+        ),
+        RepositoryProvider(
+          create: (context) => ReplacementRepository(
+            apiClient: ApiClient(),
+          ),
         ),
       ],
-      child: const MyApp(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => AuthBloc(
+              authRepository: context.read<AuthRepository>(),
+            )..add(AppStarted()),
+          ),
+          BlocProvider(
+            create: (context) => DashboardBloc(
+              repository: context.read<AnalyticsRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => CandidateBloc(
+              candidateRepository: context.read<CandidateRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => ClientBloc(
+              clientRepository: context.read<ClientRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => ContractBloc(
+              contractRepository: context.read<ContractRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => TaskBloc(
+              taskRepository: context.read<TaskRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => ReplacementBloc(
+              replacementRepository: context.read<ReplacementRepository>(),
+            ),
+          ),
+        ],
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
+            ChangeNotifierProvider(
+              create: (_) => GlobalAppState()..initializeData(),
+            ),
+          ],
+          child: const MyApp(),
+        ),
+      ),
     ),
   );
 }

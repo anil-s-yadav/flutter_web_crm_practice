@@ -2,19 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/models/client_model.dart';
-import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/audit_log_model.dart';
-import 'package:practice_app/models/invoice_model.dart';
-import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 
-class AdminDashboard extends StatelessWidget {
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
+
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<DashboardBloc>().add(LoadAdminDashboard());
+  }
 
   String _formatCurrency(double value) {
     final indianFormat = NumberFormat('#,##,###', 'en_IN');
@@ -42,237 +53,103 @@ class AdminDashboard extends StatelessWidget {
     final currentMonthStart = DateTime(now.year, now.month, 1);
     final prevMonthStart = DateTime(now.year, now.month - 1, 1);
 
-    // --- Candidate Counts ---
-    final allCandidates = state.candidates;
-    final candidatesThisMonth =
-        allCandidates
-            .where((c) => c.dateAdded.isAfter(currentMonthStart))
-            .length;
-    final candidatesPrevMonth =
-        allCandidates
-            .where(
-              (c) =>
-                  c.dateAdded.isAfter(prevMonthStart) &&
-                  c.dateAdded.isBefore(currentMonthStart),
-            )
-            .length;
-    final totalCandidates = allCandidates.length;
-
-    // --- Client Counts ---
-    final allClients = state.clients;
-    final clientsThisMonth =
-        allClients
-            .where((c) => c.inquiryDate.isAfter(currentMonthStart))
-            .length;
-    final clientsPrevMonth =
-        allClients
-            .where(
-              (c) =>
-                  c.inquiryDate.isAfter(prevMonthStart) &&
-                  c.inquiryDate.isBefore(currentMonthStart),
-            )
-            .length;
-    final totalClients = allClients.length;
-
-    // --- Placement / Contract Counts ---
-    final allContracts = state.contracts;
-    final placementsThisMonth =
-        allContracts
-            .where((c) => c.placementDate.isAfter(currentMonthStart))
-            .length;
-    final placementsPrevMonth =
-        allContracts
-            .where(
-              (c) =>
-                  c.placementDate.isAfter(prevMonthStart) &&
-                  c.placementDate.isBefore(currentMonthStart),
-            )
-            .length;
-    final totalPlacements = allContracts.length;
-
-    // --- Revenue ---
-    final allInvoices = state.invoices;
-    final revenueThisMonth = allInvoices
-        .where(
-          (i) =>
-              i.status == InvoiceStatus.paid &&
-              i.date.isAfter(currentMonthStart),
-        )
-        .fold(0.0, (sum, i) => sum + i.amount);
-    final revenuePrevMonth = allInvoices
-        .where(
-          (i) =>
-              i.status == InvoiceStatus.paid &&
-              i.date.isAfter(prevMonthStart) &&
-              i.date.isBefore(currentMonthStart),
-        )
-        .fold(0.0, (sum, i) => sum + i.amount);
-    final totalRevenue = allInvoices
-        .where((i) => i.status == InvoiceStatus.paid)
-        .fold(0.0, (sum, i) => sum + i.amount);
-    final pendingCollections = allInvoices
-        .where((i) => i.status != InvoiceStatus.paid)
-        .fold(0.0, (sum, i) => sum + i.amount);
-
-    // --- Pipeline ---
-    final newlyAdded =
-        allCandidates
-            .where((c) => c.status == CandidateStatus.newlyAdded)
-            .length;
-    final verificationPending =
-        allCandidates
-            .where((c) => c.status == CandidateStatus.verificationPending)
-            .length;
-    final medicalPending =
-        allCandidates
-            .where((c) => c.status == CandidateStatus.medicalPending)
-            .length;
-    final readyToPlace =
-        allCandidates
-            .where((c) => c.status == CandidateStatus.readyToPlace)
-            .length;
-    final placed =
-        allCandidates.where((c) => c.status == CandidateStatus.Placed).length;
-    final blacklisted =
-        allCandidates
-            .where((c) => c.status == CandidateStatus.blacklisted)
-            .length;
-
-    // --- Active vs Expired contracts ---
-    final activeContracts =
-        allContracts
-            .where((c) => !c.isRenewal && c.contractStatus == ContractStatus.active)
-            .length;
-    final renewedContracts =
-        allContracts
-            .where((c) => c.isRenewal)
-            .length;
-    final pendingReplacements =
-        state.replacementRequests
-            .where((r) => r.status != ReplacementStatus.resolved)
-            .length;
-    final expiredContracts =
-        allContracts
-            .where(
-              (c) =>
-                  c.contractStatus == ContractStatus.completed ||
-                  c.contractStatus == ContractStatus.cancelled,
-            )
-            .length;
-
-    // --- Client status breakdown ---
-    final activeClients =
-        allClients.where((c) => c.status == ClientStatus.converted).length;
-    final newInquiries =
-        allClients.where((c) => c.status == ClientStatus.interested).length;
-    final followUpClients =
-        allClients.where((c) => c.status == ClientStatus.followUp).length;
-
     final monthName = DateFormat('MMMM').format(now);
     final prevMonthName = DateFormat('MMMM').format(prevMonthStart);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Period Comparison Cards ---
-          _buildSectionTitle('Business Metrics', isDark),
-          const SizedBox(height: 16),
-          _buildComparisonTable(
-            isDark: isDark,
-            monthName: monthName,
-            prevMonthName: prevMonthName,
-            rows: [
-              _ComparisonRow(
-                'Candidates Added',
-                candidatesThisMonth,
-                candidatesPrevMonth,
-                totalCandidates,
-                AppColors.stageInterviewed,
-              ),
-              _ComparisonRow(
-                'Clients Acquired',
-                clientsThisMonth,
-                clientsPrevMonth,
-                totalClients,
-                AppColors.gold,
-              ),
-              _ComparisonRow(
-                'Placements Made',
-                placementsThisMonth,
-                placementsPrevMonth,
-                totalPlacements,
-                AppColors.stageVerified,
-              ),
-              _ComparisonRow(
-                'Revenue Collected',
-                revenueThisMonth.toInt(),
-                revenuePrevMonth.toInt(),
-                totalRevenue.toInt(),
-                AppColors.successGreen,
-                isCurrency: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, dashboardState) {
+        if (dashboardState is DashboardLoading ||
+            dashboardState is DashboardInitial) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (dashboardState is DashboardError) {
+          return Center(child: Text('Error: ${dashboardState.message}'));
+        }
 
-          // --- KPI Row ---
-          if (isDesktop)
-            Row(
-              children: [
-                Expanded(
-                  child: _buildKPICard(
-                    icon: Icons.account_balance_wallet,
-                    iconColor: AppColors.gold,
-                    title: 'Total Revenue',
-                    value: _formatCurrency(totalRevenue),
-                    subtitle: 'All time',
-                    isDark: isDark,
-                    onTap: () => context.go('/admin/contracts'),
+        final data = (dashboardState as DashboardLoaded).data;
+
+        // Map BLoC data to variables
+        final candidatesThisMonth = data['pipeline']['thisMonth'] ?? 0;
+        final candidatesPrevMonth = data['pipeline']['prevMonth'] ?? 0;
+        final totalCandidates = data['pipeline']['total'] ?? 0;
+
+        final clientsThisMonth = data['clients']['thisMonth'] ?? 0;
+        final clientsPrevMonth = data['clients']['prevMonth'] ?? 0;
+        final totalClients = data['clients']['total'] ?? 0;
+
+        final placementsThisMonth = data['placements']['thisMonth'] ?? 0;
+        final placementsPrevMonth = data['placements']['prevMonth'] ?? 0;
+        final totalPlacements = data['placements']['total'] ?? 0;
+
+        final revenueThisMonth = (data['revenue']['thisMonth'] ?? 0).toDouble();
+        final revenuePrevMonth = (data['revenue']['prevMonth'] ?? 0).toDouble();
+        final totalRevenue = (data['revenue']['total'] ?? 0).toDouble();
+        final pendingCollections = (data['revenue']['pending'] ?? 0).toDouble();
+
+        final activeContracts = data['contracts']['active'] ?? 0;
+        final renewedContracts = data['contracts']['renewed'] ?? 0;
+        final expiredContracts = data['contracts']['expired'] ?? 0;
+        final pendingReplacements = data['replacements']['pending'] ?? 0;
+
+        final activeClients = data['clients']['active'] ?? 0;
+        final newInquiries = data['clients']['leads'] ?? 0;
+        final followUpClients = data['clients']['followUps'] ?? 0;
+
+        final newlyAdded = data['pipeline']['newlyAdded'] ?? 0;
+        final verificationPending =
+            data['pipeline']['verificationPending'] ?? 0;
+        final medicalPending = data['pipeline']['medicalPending'] ?? 0;
+        final readyToPlace = data['pipeline']['readyToPlace'] ?? 0;
+        final placed = data['pipeline']['placed'] ?? 0;
+        final blacklisted = data['pipeline']['blacklisted'] ?? 0;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- Period Comparison Cards ---
+              _buildSectionTitle('Business Metrics', isDark),
+              const SizedBox(height: 16),
+              _buildComparisonTable(
+                isDark: isDark,
+                monthName: monthName,
+                prevMonthName: prevMonthName,
+                rows: [
+                  _ComparisonRow(
+                    'Candidates Added',
+                    candidatesThisMonth,
+                    candidatesPrevMonth,
+                    totalCandidates,
+                    AppColors.stageInterviewed,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildKPICard(
-                    icon: Icons.money_off,
-                    iconColor: AppColors.criticalRed,
-                    title: 'Pending Collections',
-                    value: _formatCurrency(pendingCollections),
-                    subtitle: 'Unpaid invoices',
-                    isDark: isDark,
-                    onTap: () {},
+                  _ComparisonRow(
+                    'Clients Acquired',
+                    clientsThisMonth,
+                    clientsPrevMonth,
+                    totalClients,
+                    AppColors.gold,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildKPICard(
-                    icon: Icons.handshake,
-                    iconColor: AppColors.stageVerified,
-                    title: 'Fresh Contracts',
-                    value: activeContracts.toString(),
-                    subtitle: 'Currently running',
-                    isDark: isDark,
-                    onTap: () => context.go('/admin/contracts'),
+                  _ComparisonRow(
+                    'Placements Made',
+                    placementsThisMonth,
+                    placementsPrevMonth,
+                    totalPlacements,
+                    AppColors.stageVerified,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildKPICard(
-                    icon: Icons.person_add,
-                    iconColor: AppColors.warningOrange,
-                    title: 'New Inquiries',
-                    value: newInquiries.toString(),
-                    subtitle: 'Awaiting follow-up',
-                    isDark: isDark,
-                    onTap: () => context.go('/admin/clients'),
+                  _ComparisonRow(
+                    'Revenue Collected',
+                    revenueThisMonth.toInt(),
+                    revenuePrevMonth.toInt(),
+                    totalRevenue.toInt(),
+                    AppColors.successGreen,
+                    isCurrency: true,
                   ),
-                ),
-              ],
-            )
-          else
-            Column(
-              children: [
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // --- KPI Row ---
+              if (isDesktop)
                 Row(
                   children: [
                     Expanded(
@@ -298,11 +175,7 @@ class AdminDashboard extends StatelessWidget {
                         onTap: () {},
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
+                    const SizedBox(width: 16),
                     Expanded(
                       child: _buildKPICard(
                         icon: Icons.handshake,
@@ -327,232 +200,313 @@ class AdminDashboard extends StatelessWidget {
                       ),
                     ),
                   ],
+                )
+              else
+                Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildKPICard(
+                            icon: Icons.account_balance_wallet,
+                            iconColor: AppColors.gold,
+                            title: 'Total Revenue',
+                            value: _formatCurrency(totalRevenue),
+                            subtitle: 'All time',
+                            isDark: isDark,
+                            onTap: () => context.go('/admin/contracts'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildKPICard(
+                            icon: Icons.money_off,
+                            iconColor: AppColors.criticalRed,
+                            title: 'Pending Collections',
+                            value: _formatCurrency(pendingCollections),
+                            subtitle: 'Unpaid invoices',
+                            isDark: isDark,
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildKPICard(
+                            icon: Icons.handshake,
+                            iconColor: AppColors.stageVerified,
+                            title: 'Fresh Contracts',
+                            value: activeContracts.toString(),
+                            subtitle: 'Currently running',
+                            isDark: isDark,
+                            onTap: () => context.go('/admin/contracts'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildKPICard(
+                            icon: Icons.person_add,
+                            iconColor: AppColors.warningOrange,
+                            title: 'New Inquiries',
+                            value: newInquiries.toString(),
+                            subtitle: 'Awaiting follow-up',
+                            isDark: isDark,
+                            onTap: () => context.go('/admin/clients'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-          // --- Quick Actions ---
-          _buildSectionTitle('Quick Actions', isDark),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _buildQuickAction(
-                'All Candidates',
-                Icons.people_outline,
-                AppColors.stageInterviewed,
-                isDark,
-                () => context.go('/admin/candidates/ready'),
-              ),
-              _buildQuickAction(
-                'All Clients',
-                Icons.business_outlined,
-                AppColors.gold,
-                isDark,
-                () => context.go('/admin/clients'),
-              ),
-              _buildQuickAction(
-                'Contracts',
-                Icons.description_outlined,
-                AppColors.stageDocuments,
-                isDark,
-                () => context.go('/admin/contracts'),
-              ),
-              _buildQuickAction(
-                'Tickets',
-                Icons.confirmation_number_outlined,
-                AppColors.urgentAmber,
-                isDark,
-                () => context.go('/admin/tickets'),
-              ),
-              _buildQuickAction(
-                'Audit Trail',
-                Icons.history,
-                AppColors.stageMedicalCheck,
-                isDark,
-                () => context.go('/admin/audit'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // --- Pipeline + Revenue Row ---
-          if (isDesktop)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: _buildPipelineCard(
+              // --- Quick Actions ---
+              _buildSectionTitle('Quick Actions', isDark),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _buildQuickAction(
+                    'All Candidates',
+                    Icons.people_outline,
+                    AppColors.stageInterviewed,
                     isDark,
-                    newlyAdded,
-                    verificationPending,
-                    medicalPending,
-                    readyToPlace,
-                    placed,
-                    blacklisted,
-                    totalCandidates,
+                    () => context.go('/admin/candidates/ready'),
                   ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(flex: 2, child: _buildRevenueChart(isDark)),
-              ],
-            )
-          else
-            Column(
-              children: [
-                _buildPipelineCard(
-                  isDark,
-                  newlyAdded,
-                  verificationPending,
-                  medicalPending,
-                  readyToPlace,
-                  placed,
-                  blacklisted,
-                  totalCandidates,
-                ),
-                const SizedBox(height: 24),
-                _buildRevenueChart(isDark),
-              ],
-            ),
-          const SizedBox(height: 24),
+                  _buildQuickAction(
+                    'All Clients',
+                    Icons.business_outlined,
+                    AppColors.gold,
+                    isDark,
+                    () => context.go('/admin/clients'),
+                  ),
+                  _buildQuickAction(
+                    'Contracts',
+                    Icons.description_outlined,
+                    AppColors.stageDocuments,
+                    isDark,
+                    () => context.go('/admin/contracts'),
+                  ),
+                  _buildQuickAction(
+                    'Tickets',
+                    Icons.confirmation_number_outlined,
+                    AppColors.urgentAmber,
+                    isDark,
+                    () => context.go('/admin/tickets'),
+                  ),
+                  _buildQuickAction(
+                    'Audit Trail',
+                    Icons.history,
+                    AppColors.stageMedicalCheck,
+                    isDark,
+                    () => context.go('/admin/audit'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
-          // --- Client & Contract Breakdown + Recent Activity ---
-          if (isDesktop)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      _buildBreakdownCard('Client Status', isDark, [
-                        _BreakdownItem(
-                          'New Inquiries',
-                          newInquiries,
-                          AppColors.stageInterviewed,
-                        ),
-                        _BreakdownItem(
-                          'Follow Ups',
-                          followUpClients,
-                          AppColors.warningOrange,
-                        ),
-                        _BreakdownItem(
-                          'Active (Converted)',
-                          activeClients,
-                          AppColors.successGreen,
-                        ),
-                      ]),
-                      const SizedBox(height: 24),
-                      _buildBreakdownCard('Contract Status', isDark, [
-                        _BreakdownItem(
-                          'Active',
-                          activeContracts,
-                          AppColors.successGreen,
-                        ),
-                        _BreakdownItem(
-                          'Expired',
-                          expiredContracts,
-                          AppColors.criticalRed,
-                        ),
-                      ]),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 2,
-                  child: _buildRecentActivity(isDark, state.auditLogs),
-                ),
-              ],
-            )
-          else if (isTablet)
-            Column(
-              children: [
+              // --- Pipeline + Revenue Row ---
+              if (isDesktop)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _buildBreakdownCard('Client Status', isDark, [
-                        _BreakdownItem(
-                          'New Inquiries',
-                          newInquiries,
-                          AppColors.stageInterviewed,
-                        ),
-                        _BreakdownItem(
-                          'Follow Ups',
-                          followUpClients,
-                          AppColors.warningOrange,
-                        ),
-                        _BreakdownItem(
-                          'Active (Converted)',
-                          activeClients,
-                          AppColors.successGreen,
-                        ),
-                      ]),
+                      flex: 3,
+                      child: _buildPipelineCard(
+                        isDark,
+                        newlyAdded,
+                        verificationPending,
+                        medicalPending,
+                        readyToPlace,
+                        placed,
+                        blacklisted,
+                        totalCandidates,
+                      ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildBreakdownCard('Contract Status', isDark, [
-                        _BreakdownItem(
-                          'Active',
-                          activeContracts,
-                          AppColors.successGreen,
-                        ),
-                        _BreakdownItem(
-                          'Expired',
-                          expiredContracts,
-                          AppColors.criticalRed,
-                        ),
-                      ]),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 2, child: _buildRevenueChart(isDark)),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildPipelineCard(
+                      isDark,
+                      newlyAdded,
+                      verificationPending,
+                      medicalPending,
+                      readyToPlace,
+                      placed,
+                      blacklisted,
+                      totalCandidates,
                     ),
+                    const SizedBox(height: 24),
+                    _buildRevenueChart(isDark),
                   ],
                 ),
-                const SizedBox(height: 24),
-                _buildRecentActivity(isDark, state.auditLogs),
-              ],
-            )
-          else
-            Column(
-              children: [
-                _buildBreakdownCard('Client Status', isDark, [
-                  _BreakdownItem(
-                    'New Inquiries',
-                    newInquiries,
-                    AppColors.stageInterviewed,
-                  ),
-                  _BreakdownItem(
-                    'Follow Ups',
-                    followUpClients,
-                    AppColors.warningOrange,
-                  ),
-                  _BreakdownItem(
-                    'Active (Converted)',
-                    activeClients,
-                    AppColors.successGreen,
-                  ),
-                ]),
-                const SizedBox(height: 16),
-                _buildBreakdownCard('Contract Status', isDark, [
-                  _BreakdownItem(
-                    'Active',
-                    activeContracts,
-                    AppColors.successGreen,
-                  ),
-                  _BreakdownItem(
-                    'Expired',
-                    expiredContracts,
-                    AppColors.criticalRed,
-                  ),
-                ]),
-                const SizedBox(height: 24),
-                _buildRecentActivity(isDark, state.auditLogs),
-              ],
-            ),
-        ],
-      ),
+              const SizedBox(height: 24),
+
+              // --- Client & Contract Breakdown + Recent Activity ---
+              if (isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: [
+                          _buildBreakdownCard('Client Status', isDark, [
+                            _BreakdownItem(
+                              'New Inquiries',
+                              newInquiries,
+                              AppColors.stageInterviewed,
+                            ),
+                            _BreakdownItem(
+                              'Follow Ups',
+                              followUpClients,
+                              AppColors.warningOrange,
+                            ),
+                            _BreakdownItem(
+                              'Active (Converted)',
+                              activeClients,
+                              AppColors.successGreen,
+                            ),
+                          ]),
+                          const SizedBox(height: 24),
+                          _buildBreakdownCard('Contract Status', isDark, [
+                            _BreakdownItem(
+                              'Active',
+                              activeContracts,
+                              AppColors.successGreen,
+                            ),
+                            _BreakdownItem(
+                              'Expired',
+                              expiredContracts,
+                              AppColors.criticalRed,
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 2,
+                      child: _buildRecentActivity(isDark, state.auditLogs),
+                    ),
+                  ],
+                )
+              else if (isTablet)
+                Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildBreakdownCard('Client Status', isDark, [
+                            _BreakdownItem(
+                              'New Inquiries',
+                              newInquiries,
+                              AppColors.stageInterviewed,
+                            ),
+                            _BreakdownItem(
+                              'Follow Ups',
+                              followUpClients,
+                              AppColors.warningOrange,
+                            ),
+                            _BreakdownItem(
+                              'Active (Converted)',
+                              activeClients,
+                              AppColors.successGreen,
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child:
+                              _buildBreakdownCard('Contract Status', isDark, [
+                                _BreakdownItem(
+                                  'Active Contracts',
+                                  activeContracts,
+                                  AppColors.stageVerified,
+                                ),
+                                _BreakdownItem(
+                                  'Renewed Contracts',
+                                  renewedContracts,
+                                  AppColors.gold,
+                                ),
+                                _BreakdownItem(
+                                  'Expired / Ended',
+                                  expiredContracts,
+                                  AppColors.grey500,
+                                ),
+                                _BreakdownItem(
+                                  'Pending Replacements',
+                                  pendingReplacements,
+                                  AppColors.criticalRed,
+                                ),
+                              ]),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildRecentActivity(isDark, state.auditLogs),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildBreakdownCard('Client Status', isDark, [
+                      _BreakdownItem(
+                        'New Inquiries',
+                        newInquiries,
+                        AppColors.stageInterviewed,
+                      ),
+                      _BreakdownItem(
+                        'Follow Ups',
+                        followUpClients,
+                        AppColors.warningOrange,
+                      ),
+                      _BreakdownItem(
+                        'Active (Converted)',
+                        activeClients,
+                        AppColors.successGreen,
+                      ),
+                    ]),
+                    const SizedBox(height: 16),
+                    _buildBreakdownCard('Contract Status', isDark, [
+                      _BreakdownItem(
+                        'Active Contracts',
+                        activeContracts,
+                        AppColors.stageVerified,
+                      ),
+                      _BreakdownItem(
+                        'Renewed Contracts',
+                        renewedContracts,
+                        AppColors.gold,
+                      ),
+                      _BreakdownItem(
+                        'Expired / Ended',
+                        expiredContracts,
+                        AppColors.grey500,
+                      ),
+                      _BreakdownItem(
+                        'Pending Replacements',
+                        pendingReplacements,
+                        AppColors.criticalRed,
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildRecentActivity(isDark, state.auditLogs),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1088,7 +1042,10 @@ class AdminDashboard extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: isCurrent ? AppColors.gold : (isDark ? AppColors.grey300 : AppColors.navyBlue),
+                color:
+                    isCurrent
+                        ? AppColors.gold
+                        : (isDark ? AppColors.grey300 : AppColors.navyBlue),
               ),
             ),
             const SizedBox(height: 6),

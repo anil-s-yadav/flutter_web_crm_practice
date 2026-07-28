@@ -9,38 +9,72 @@ import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_event.dart';
+import 'package:practice_app/blocs/replacement/replacement_state.dart';
 
-class ReplacementDetailScreen extends StatelessWidget {
+class ReplacementDetailScreen extends StatefulWidget {
   final String requestId;
 
   const ReplacementDetailScreen({super.key, required this.requestId});
 
   @override
+  State<ReplacementDetailScreen> createState() =>
+      _ReplacementDetailScreenState();
+}
+
+class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ReplacementBloc>().add(const LoadReplacements());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
+    final state = Provider.of<GlobalAppState>(context, listen: false);
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
-
-    final request =
-        state.replacementRequests.where((r) => r.id == requestId).firstOrNull;
-
-    if (request == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Replacement Details')),
-        body: const Center(child: Text('Replacement Request not found')),
-      );
-    }
-
     final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return BlocBuilder<ReplacementBloc, ReplacementState>(
+      builder: (context, replacementState) {
+        if (replacementState is ReplacementInitial ||
+            replacementState is ReplacementLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (replacementState is ReplacementError) {
+          return Scaffold(
+            body: Center(
+              child: Text(
+                'Error: ${replacementState.message}',
+                style: GoogleFonts.poppins(color: Colors.red),
+              ),
+            ),
+          );
+        } else if (replacementState is ReplacementLoaded) {
+          final request =
+              replacementState.replacements
+                  .where((r) => r.id == widget.requestId)
+                  .firstOrNull;
+
+          if (request == null) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Replacement Details')),
+              body: const Center(child: Text('Replacement Request not found')),
+            );
+          }
+
+          return Scaffold(
+            backgroundColor:
+                isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+            body: SingleChildScrollView(
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             // Back Button
             InkWell(
               onTap: () {
@@ -102,6 +136,10 @@ class ReplacementDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -568,7 +606,6 @@ class _EscalateToSourcingSheetState extends State<_EscalateToSourcingSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(

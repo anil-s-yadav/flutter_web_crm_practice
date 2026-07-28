@@ -4,6 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/providers/global_app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/task/task_bloc.dart';
+import 'package:practice_app/blocs/task/task_event.dart';
+import 'package:practice_app/blocs/task/task_state.dart';
 import 'package:practice_app/models/executive_task_model.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,98 +25,119 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
   final List<String> _filters = ['Pending', 'Completed'];
 
   @override
+  void initState() {
+    super.initState();
+    context.read<TaskBloc>().add(const LoadTasks());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<GlobalAppState>(context);
-    final tasks = appState.tasks;
-
-    // Grouping In Progress with Pending
-    final filteredTasks =
-        tasks.where((t) {
-          if (_selectedFilter == 'Pending') {
-            return t.status != TaskStatus.completed &&
-                t.status != TaskStatus.cancelled;
-          } else {
-            return t.status == TaskStatus.completed;
-          }
-        }).toList();
-
+    final appState = Provider.of<GlobalAppState>(context, listen: false);
     final isDesktop = context.media.width >= 800;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children:
-                    _filters.map((filter) {
-                      final isSelected = _selectedFilter == filter;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ChoiceChip(
-                          label: Text(
-                            filter,
-                            style: GoogleFonts.poppins(
-                              color:
-                                  isSelected
-                                      ? AppColors.navyBlue
-                                      : (isDark
-                                          ? AppColors.textSecondaryDark
-                                          : AppColors.textSecondaryLight),
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.normal,
-                            ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: AppColors.gold,
-                          backgroundColor:
-                              isDark
-                                  ? AppColors.darkSurfaceVariant
-                                  : AppColors.white,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
+      body: BlocBuilder<TaskBloc, TaskState>(
+        builder: (context, taskState) {
+          if (taskState is TaskInitial || taskState is TaskLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (taskState is TaskError) {
+            return Center(
+              child: Text(
+                'Error: ${taskState.message}',
+                style: GoogleFonts.poppins(color: Colors.red),
               ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child:
-                  filteredTasks.isEmpty
-                      ? Center(
-                        child: Text(
-                          'No tasks found',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                          ),
+            );
+          } else if (taskState is TaskLoaded) {
+            final tasks = taskState.tasks;
+            // Grouping In Progress with Pending
+            final filteredTasks =
+                tasks.where((t) {
+                  if (_selectedFilter == 'Pending') {
+                    return t.status != TaskStatus.completed &&
+                        t.status != TaskStatus.cancelled;
+                  } else {
+                    return t.status == TaskStatus.completed;
+                  }
+                }).toList();
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children:
+                              _filters.map((filter) {
+                                final isSelected = _selectedFilter == filter;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ChoiceChip(
+                                    label: Text(
+                                      filter,
+                                      style: GoogleFonts.poppins(
+                                        color:
+                                            isSelected
+                                                ? AppColors.navyBlue
+                                                : (isDark
+                                                    ? AppColors.textSecondaryDark
+                                                    : AppColors.textSecondaryLight),
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                      ),
+                                    ),
+                                    selected: isSelected,
+                                    selectedColor: AppColors.gold,
+                                    backgroundColor:
+                                        isDark
+                                            ? AppColors.darkSurfaceVariant
+                                            : AppColors.white,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        _selectedFilter = filter;
+                                      });
+                                    },
+                                  ),
+                                );
+                              }).toList(),
                         ),
-                      )
-                      : ListView.builder(
-                        itemCount: filteredTasks.length,
-                        itemBuilder: (context, index) {
-                          return _buildTaskCard(filteredTasks[index], appState);
-                        },
                       ),
-            ),
-          ],
-        ),
-      ),
-      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child:
+                            filteredTasks.isEmpty
+                                ? Center(
+                                  child: Text(
+                                    'No tasks found',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[600],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                )
+                                : ListView.builder(
+                                  itemCount: filteredTasks.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildTaskCard(filteredTasks[index], appState);
+                                  },
+                                ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }

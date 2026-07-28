@@ -10,6 +10,9 @@ import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:provider/provider.dart';
 
 class CandidateProfileScreen extends StatelessWidget {
@@ -64,70 +67,88 @@ class CandidateProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Keep GlobalAppState for audit logs and user role for now
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
     final width = context.media.width;
     final isMobile = width < 800;
     final isTablet = width >= 800 && width <= 1100;
 
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<CandidateBloc, CandidateState>(
+      builder: (context, candidateState) {
+        if (candidateState is CandidateLoading ||
+            candidateState is CandidateInitial) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (candidateState is CandidateError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${candidateState.message}')),
+          );
+        }
 
-    final candidate = state.getCandidate(candidateId);
-    if (candidate == null) {
-      return const Center(child: Text('Candidate not found'));
-    }
+        final candidates = (candidateState as CandidateLoaded).candidates;
+        final candidateIndex = candidates.indexWhere(
+          (c) => c.id == candidateId,
+        );
+        if (candidateIndex == -1) {
+          return const Scaffold(
+            body: Center(child: Text('Candidate not found')),
+          );
+        }
+        final candidate = candidates[candidateIndex];
 
-    final relevantLogs =
-        state.auditLogs.where((l) => l.targetId == candidate.id).toList();
+        final relevantLogs =
+            state.auditLogs.where((l) => l.targetId == candidate.id).toList();
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 8 : 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // if (!isMobile) ...[
-            //   Row(
-            //     children: [
-            //       TextButton.icon(
-            //         onPressed: () => context.pop(),
-            //         icon: const Icon(Icons.arrow_back_ios, size: 18),
-            //         label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-            //         style: TextButton.styleFrom(foregroundColor: isDark ? AppColors.white : AppColors.navyBlue),
-            //       ),
-            //     ],
-            //   ),
-            //   const SizedBox(height: 16),
-            // ],
-            if (isMobile)
-              _buildMobileLayout(
-                context,
-                candidate,
-                state,
-                isDark,
-                relevantLogs,
-              )
-            else if (isTablet)
-              _buildTabletLayout(
-                context,
-                candidate,
-                state,
-                isDark,
-                relevantLogs,
-              )
-            else
-              _buildDesktopLayout(
-                context,
-                candidate,
-                state,
-                isDark,
-                relevantLogs,
-              ),
-          ],
-        ),
-      ),
+        return Scaffold(
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? 8 : 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // if (!isMobile) ...[
+                //   Row(
+                //     children: [
+                //       TextButton.icon(
+                //         onPressed: () => context.pop(),
+                //         icon: const Icon(Icons.arrow_back_ios, size: 18),
+                //         label: Text('Go Back', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                //         style: TextButton.styleFrom(foregroundColor: isDark ? AppColors.white : AppColors.navyBlue),
+                //       ),
+                //     ],
+                //   ),
+                //   const SizedBox(height: 16),
+                // ],
+                if (isMobile)
+                  _buildMobileLayout(
+                    context,
+                    candidate,
+                    state,
+                    isDark,
+                    relevantLogs,
+                  )
+                else if (isTablet)
+                  _buildTabletLayout(
+                    context,
+                    candidate,
+                    state,
+                    isDark,
+                    relevantLogs,
+                  )
+                else
+                  _buildDesktopLayout(
+                    context,
+                    candidate,
+                    state,
+                    isDark,
+                    relevantLogs,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -303,7 +324,8 @@ class CandidateProfileScreen extends StatelessWidget {
       children: [
         ElevatedButton.icon(
           onPressed: () async {
-            final text = 'Hello, here is a candidate profile from Verified Maids:\n\n'
+            final text =
+                'Hello, here is a candidate profile from Verified Maids:\n\n'
                 'View Photo: ${candidate.photoUrl}\n\n'
                 'Name: ${candidate.fullName.split(' ').first} (ID: ${candidate.id})\n'
                 'Work profile: ${candidate.category == 'Candidate' ? (candidate.preferredWorkType ?? 'Maid') : candidate.category}\n'
@@ -313,7 +335,9 @@ class CandidateProfileScreen extends StatelessWidget {
                 'Languages: ${candidate.languages.join(', ')}\n'
                 'Location: ${candidate.city}\n\n'
                 'Please let us know if you are interested in scheduling an interview.';
-            final url = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}');
+            final url = Uri.parse(
+              'https://wa.me/?text=${Uri.encodeComponent(text)}',
+            );
             if (await canLaunchUrl(url)) {
               await launchUrl(url);
             } else {
@@ -331,9 +355,7 @@ class CandidateProfileScreen extends StatelessWidget {
             backgroundColor: AppColors.gold,
             foregroundColor: AppColors.navyBlue,
             elevation: 0,
-            side: BorderSide(
-              color: AppColors.gold.withValues(alpha: 0.2),
-            ),
+            side: BorderSide(color: AppColors.gold.withValues(alpha: 0.2)),
           ),
         ),
 
@@ -980,8 +1002,6 @@ class CandidateProfileScreen extends StatelessWidget {
         _infoRow('Languages', candidate.languages.join(', '), isDark),
     ]);
   }
-
-
 
   Widget _buildVerificationStatus(CandidateModel candidate, bool isDark) {
     return _buildSection('Verification Hub', isDark, [

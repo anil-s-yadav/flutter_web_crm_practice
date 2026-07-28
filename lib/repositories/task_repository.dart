@@ -1,0 +1,52 @@
+import 'package:practice_app/models/executive_task_model.dart';
+import 'package:practice_app/api/api_client.dart';
+
+class TaskRepository {
+  final ApiClient apiClient;
+
+  TaskRepository({ApiClient? apiClient})
+      : apiClient = apiClient ?? ApiClient();
+
+  Future<List<ExecutiveTaskModel>> getTasks({String? status}) async {
+    String endpoint = '/api/tasks';
+    if (status != null && status.isNotEmpty) {
+      endpoint += '?status=$status';
+    }
+
+    final response = await ApiClient.get(endpoint);
+
+    if (response is List) {
+      return response.map((json) {
+        return ExecutiveTaskModel.fromJson(json as Map<String, dynamic>);
+      }).toList();
+    } else {
+      throw Exception('Failed to load tasks');
+    }
+  }
+
+  Future<ExecutiveTaskModel> createTask(ExecutiveTaskModel task) async {
+    final response = await ApiClient.post(
+      '/api/tasks',
+      task.toJson(),
+    );
+
+    if (response != null) {
+      return ExecutiveTaskModel.fromJson(response as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to create task');
+    }
+  }
+
+  Future<ExecutiveTaskModel> updateTask(ExecutiveTaskModel task) async {
+    final response = await ApiClient.put(
+      '/api/tasks/${task.id}',
+      task.toJson(),
+    );
+
+    if (response != null) {
+      return ExecutiveTaskModel.fromJson(response as Map<String, dynamic>);
+    } else {
+      throw Exception('Failed to update task');
+    }
+  }
+}

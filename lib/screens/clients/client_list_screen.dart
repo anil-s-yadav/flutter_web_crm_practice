@@ -10,6 +10,10 @@ import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_event.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/clients/client_data_source.dart';
 
@@ -40,6 +44,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
   void initState() {
     super.initState();
     _selectedStatus = widget.initialStatus;
+    context.read<ClientBloc>().add(LoadClients());
   }
 
   @override
@@ -67,11 +72,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   void _initializeDataSource() {
     final state = Provider.of<GlobalAppState>(context, listen: false);
+    final clientState = context.read<ClientBloc>().state;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (!state.isInitialized) return;
+    if (!state.isInitialized || clientState is! ClientLoaded) return;
 
-    final allMyClients = state.clients;
+    final allMyClients = clientState.clients;
 
     _filteredClients =
         allMyClients.where((c) {
@@ -134,18 +140,30 @@ class _ClientListScreenState extends State<ClientListScreen> {
     final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
 
-    if (!state.isInitialized || _clientDataSource == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<ClientBloc, ClientState>(
+      builder: (context, clientState) {
+        if (!state.isInitialized || clientState is ClientInitial || clientState is ClientLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    final isMobile = context.media.width < 900;
+        if (clientState is ClientError) {
+          return Center(child: Text(clientState.message));
+        }
 
-    // Create the tabs for ClientStatus
-    final tabs = [
-      'All Statuses',
-      ...ClientStatus.values.map((s) => s.displayName),
-    ];
-    final statuses = [null, ...ClientStatus.values];
+        _initializeDataSource();
+
+        if (_clientDataSource == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final isMobile = context.media.width < 900;
+
+        // Create the tabs for ClientStatus
+        final tabs = [
+          'All Statuses',
+          ...ClientStatus.values.map((s) => s.displayName),
+        ];
+        final statuses = [null, ...ClientStatus.values];
 
     return Scaffold(
       body: Column(
@@ -457,6 +475,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

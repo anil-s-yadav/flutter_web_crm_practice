@@ -11,6 +11,10 @@ import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/screens/candidates/candidate_data_source.dart';
 
 enum CandidateDirectoryType {
@@ -49,6 +53,12 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
 
   int _activeReadyTabIndex = 0;
   int _activeVerifyTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<CandidateBloc>().add(LoadCandidates());
+  }
 
   bool get _isNewStyle =>
       widget.type == CandidateDirectoryType.readyToPlace ||
@@ -203,9 +213,21 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // 1. Search Filter
-    final baseCandidates =
-        state.candidates.where((m) {
+    return BlocBuilder<CandidateBloc, CandidateState>(
+      builder: (context, candidateState) {
+        if (candidateState is CandidateLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (candidateState is CandidateError) {
+          return Center(
+            child: Text(
+              'Error: ${candidateState.message}',
+              style: GoogleFonts.poppins(color: AppColors.criticalRed),
+            ),
+          );
+        } else if (candidateState is CandidateLoaded) {
+          // 1. Search Filter
+          final baseCandidates =
+              candidateState.candidates.where((m) {
           if (_searchQuery.isNotEmpty) {
             final q = _searchQuery.toLowerCase();
             final matchesQuery =
@@ -505,6 +527,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           ),
         ),
       ],
+    );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 

@@ -25,7 +25,7 @@ extension UserRoleExtension on UserRole {
 }
 
 class UserModel {
-  final int id;
+  final String id;
   final String name;
   final String email;
   final UserRole role;
@@ -43,7 +43,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as int,
+      id: json['id'] as String,
       name: json['name'] as String,
       email: json['email'] as String,
       role: UserRoleExtension.fromString(json['role'] as String),
@@ -73,7 +73,7 @@ class UserModel {
   }
 
   UserModel copyWith({
-    int? id,
+    String? id,
     String? name,
     String? email,
     UserRole? role,

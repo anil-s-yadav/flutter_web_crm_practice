@@ -11,15 +11,52 @@ const getAdminAnalytics = async (req, res) => {
     const [leadsRes] = await pool.execute('SELECT COUNT(*) as count FROM clients WHERE status = "lead"');
     const [tasksRes] = await pool.execute('SELECT COUNT(*) as count FROM executive_tasks WHERE status != "completed"');
 
+    const total = Number(revenueRes[0].total || 0);
+    const collected = Number(revenueRes[0].collected || 0);
+
     res.json({
       revenue: {
-        total: revenueRes[0].total || 0,
-        collected: revenueRes[0].collected || 0,
+        total: total,
+        collected: collected,
+        pending: total - collected,
+        thisMonth: collected,
+        prevMonth: 0
       },
-      activeContracts: contractsRes[0].count,
-      pendingReplacements: replacementsRes[0].count,
-      activeLeads: leadsRes[0].count,
-      pendingTasks: tasksRes[0].count
+      contracts: {
+        active: contractsRes[0].count,
+        renewed: 0,
+        expired: 0
+      },
+      clients: {
+        active: leadsRes[0].count,
+        leads: leadsRes[0].count,
+        followUps: 0,
+        thisMonth: 0,
+        prevMonth: 0,
+        total: leadsRes[0].count
+      },
+      replacements: {
+        pending: replacementsRes[0].count
+      },
+      pipeline: {
+        newlyAdded: 0,
+        verificationPending: 0,
+        medicalPending: 0,
+        readyToPlace: 0,
+        placed: 0,
+        blacklisted: 0,
+        thisMonth: 0,
+        prevMonth: 0,
+        total: 0
+      },
+      tasks: {
+        pending: tasksRes[0].count
+      },
+      placements: {
+        thisMonth: 0,
+        prevMonth: 0,
+        total: contractsRes[0].count
+      }
     });
   } catch (err) {
     console.error(err);
@@ -46,9 +83,31 @@ const getSalesAnalytics = async (req, res) => {
     const [convertedRes] = await pool.execute('SELECT COUNT(*) as count FROM clients WHERE assigned_sales_id = ? AND status = "converted"', [salesId]);
 
     res.json({
-      activeContracts: contractsRes[0].activeContracts,
-      myLeads: leadsRes[0].count,
-      myConversions: convertedRes[0].count
+      clients: {
+        followUps: 0,
+        interested: leadsRes[0].count,
+        notInterested: 0,
+        converted: convertedRes[0].count,
+        totalPipeline: leadsRes[0].count + convertedRes[0].count
+      },
+      revenue: {
+        currentMonth: 0,
+        lastMonth: 0
+      },
+      contracts: {
+        currentMonthClosed: 0,
+        lastMonthClosed: 0
+      },
+      slaCountdowns: 0,
+      inquiries: {
+        currentMonth: 0,
+        lastMonth: 0
+      },
+      recent: {
+        followUpClients: [],
+        topWins: []
+      },
+      categories: []
     });
   } catch (err) {
     console.error(err);
@@ -61,14 +120,37 @@ const getSalesAnalytics = async (req, res) => {
 // @access  Private (Sourcing/Admin)
 const getSourcingAnalytics = async (req, res) => {
   try {
-    const [readyRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE status = "readyToPlace"');
-    const [pendingVerificationRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE is_police_verified = FALSE OR is_medical_cleared = FALSE');
-    const [urgentRes] = await pool.execute('SELECT COUNT(*) as count FROM replacement_requests WHERE is_escalated_to_sourcing = TRUE');
+    const sourcingId = req.user.id;
+    const [candidatesRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE added_by_id = ?', [sourcingId]);
+    const [pipelineRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE added_by_id = ? AND status IN ("verification_pending", "medical_pending", "ready_to_place")', [sourcingId]);
+    const [replacementsRes] = await pool.execute('SELECT COUNT(*) as count FROM replacement_requests WHERE status = "pending"');
 
     res.json({
-      readyToPlace: readyRes[0].count,
-      pendingVerification: pendingVerificationRes[0].count,
-      urgentReplacements: urgentRes[0].count
+      myCandidates: candidatesRes[0].count,
+      activePipeline: pipelineRes[0].count,
+      urgentReplacements: replacementsRes[0].count,
+      pipeline: {
+        newlyAdded: 0,
+        verificationPending: pipelineRes[0].count,
+        medicalPending: 0,
+        readyToPlace: 0,
+        placed: 0,
+        blacklisted: 0
+      },
+      quality: {
+        placementsThisMonth: 0,
+        replacementsThisMonth: 0,
+        successRate: 0
+      },
+      urgent: {
+        totalPending: replacementsRes[0].count,
+        highPriority: 0,
+        dueToday: 0
+      },
+      recent: {
+        urgentRequests: [],
+        newCandidates: []
+      }
     });
   } catch (err) {
     console.error(err);
@@ -82,13 +164,24 @@ const getSourcingAnalytics = async (req, res) => {
 const getExecutiveAnalytics = async (req, res) => {
   try {
     const execId = req.user.id;
-
-    const [pendingRes] = await pool.execute('SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_executive_id = ? AND status != "completed"', [execId]);
-    const [completedRes] = await pool.execute('SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_executive_id = ? AND status = "completed"', [execId]);
+    const [tasksRes] = await pool.execute('SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_to_id = ? AND status = "pending"', [execId]);
+    const [clientsRes] = await pool.execute('SELECT COUNT(*) as count FROM clients'); // simplified for now
 
     res.json({
-      pendingTasks: pendingRes[0].count,
-      completedTasks: completedRes[0].count
+      pendingTasks: tasksRes[0].count,
+      activeClients: clientsRes[0].count,
+      tasks: {
+        pending: tasksRes[0].count,
+        inProgress: 0,
+        completedToday: 0
+      },
+      clients: {
+        followUps: 0,
+        escalated: 0
+      },
+      recent: {
+        tasks: []
+      }
     });
   } catch (err) {
     console.error(err);

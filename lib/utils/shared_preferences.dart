@@ -23,6 +23,20 @@ class LocalStoragePref {
     return _storage?.getBool(LocalStorageKeys.isLoggedIn);
   }
 
+  Future<void> clearPrefBox() async => _storage?.clear();
+
+  Future<void> saveToken(String token) async {
+    await _storage?.setString(LocalStorageKeys.jwtToken, token);
+  }
+
+  String? getToken() {
+    return _storage?.getString(LocalStorageKeys.jwtToken);
+  }
+
+  Future<void> saveUser(Map<String, dynamic> userJson) async {
+    await _storage?.setString(LocalStorageKeys.userProfile, jsonEncode(userJson));
+  }
+
   Future<void> setUserModel(UserModel model) async {
     final jsonString = jsonEncode(model.toJson());
     await _storage?.setString(LocalStorageKeys.userProfile, jsonString);
@@ -39,4 +53,5 @@ class LocalStoragePref {
 class LocalStorageKeys {
   static const isLoggedIn = 'isLoggedIn';
   static const userProfile = 'user_profile';
+  static const jwtToken = 'jwt_token';
 }

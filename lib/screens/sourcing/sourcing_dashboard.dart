@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/core/mock_data_generator.dart';
-import 'package:practice_app/core/pagination.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 
 import 'package:go_router/go_router.dart';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
 
 class SourcingDashboard extends StatefulWidget {
   const SourcingDashboard({super.key});
@@ -24,10 +28,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
   @override
   void initState() {
     super.initState();
-    final result = MockDataGenerator.getCandidates(
-      const PaginationParams(pageSize: 5),
-    );
-    _recentCandidates = result.items;
+    context.read<DashboardBloc>().add(LoadSourcingDashboard());
   }
 
   @override
@@ -37,10 +38,27 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
     final isDesktop = width > 1100;
     final isTablet = width > 700;
 
-    final totalPipeline =
-        (_stats['newlyAdded'] as int) +
-        (_stats['verificationPending'] as int) +
-        (_stats['medicalPending'] as int);
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, dashboardState) {
+        if (dashboardState is DashboardLoading || dashboardState is DashboardInitial) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (dashboardState is DashboardError) {
+          return Center(child: Text('Error: ${dashboardState.message}'));
+        }
+
+        final data = (dashboardState as DashboardLoaded).data;
+
+        final pipelineData = data['pipeline'] ?? {};
+        final newlyAdded = pipelineData['newlyAdded'] ?? 0;
+        final verificationPending = pipelineData['verificationPending'] ?? 0;
+        final medicalPending = pipelineData['medicalPending'] ?? 0;
+        final readyToPlace = pipelineData['readyToPlace'] ?? 0;
+        final totalPipeline = newlyAdded + verificationPending + medicalPending + readyToPlace;
+        
+        final addedThisMonth = data['myCandidates'] ?? 0;
+        final targetThisMonth = 50; // Mock target
+        final addedLastMonth = 0;
+        final totalCandidates = data['myCandidates'] ?? 0;
 
     return Scaffold(
       // floatingActionButton: FloatingActionButton.extended(
@@ -81,8 +99,8 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                 padding: const EdgeInsets.all(20),
                 child:
                     isTablet
-                        ? Row(children: _buildPipelineSteps(isDark, true))
-                        : Column(children: _buildPipelineSteps(isDark, false)),
+                        ? Row(children: _buildPipelineSteps(isDark, true, newlyAdded, verificationPending, medicalPending, readyToPlace))
+                        : Column(children: _buildPipelineSteps(isDark, false, newlyAdded, verificationPending, medicalPending, readyToPlace)),
               ),
             ),
             const SizedBox(height: 24),
@@ -97,13 +115,10 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                   icon: Icons.person_add_alt_1,
                   iconColor: AppColors.stageMedicalCheck,
                   title: 'Added This Month',
-                  value: _indianFormat.format(_stats['addedThisMonth'] as int),
+                  value: _indianFormat.format(addedThisMonth),
                   isDark: isDark,
-                  progress:
-                      (_stats['addedThisMonth'] as int) /
-                      (_stats['targetThisMonth'] as int),
-                  progressText:
-                      '${_indianFormat.format(_stats['addedThisMonth'] as int)} / ${_indianFormat.format(_stats['targetThisMonth'] as int)} Goal',
+                  progress: addedThisMonth / targetThisMonth,
+                  progressText: '${_indianFormat.format(addedThisMonth)} / ${_indianFormat.format(targetThisMonth)} Goal',
                 );
 
                 final statGrid = GridView(
@@ -120,9 +135,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                       icon: Icons.person_add,
                       iconColor: AppColors.successGreen,
                       title: 'Added Last Month',
-                      value: _indianFormat.format(
-                        _stats['addedLastMonth'] as int,
-                      ),
+                      value: _indianFormat.format(addedLastMonth),
                       isDark: isDark,
                       compact: true,
                     ),
@@ -130,9 +143,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                       icon: Icons.check_circle_outline,
                       iconColor: AppColors.stageVerified,
                       title: 'Ready (No Medical)',
-                      value: _indianFormat.format(
-                        _stats['readyToPlaceNoMedical'] as int,
-                      ),
+                      value: _indianFormat.format(readyToPlace),
                       isDark: isDark,
                       compact: true,
                     ),
@@ -140,9 +151,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                       icon: Icons.medical_services,
                       iconColor: AppColors.successGreen,
                       title: 'Ready (Medical Verified)',
-                      value: _indianFormat.format(
-                        _stats['readyToPlaceMedical'] as int,
-                      ),
+                      value: _indianFormat.format(readyToPlace), // Simplify for now
                       isDark: isDark,
                       compact: true,
                     ),
@@ -150,9 +159,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                       icon: Icons.people_outline,
                       iconColor: AppColors.gold,
                       title: 'Total Candidates',
-                      value: _indianFormat.format(
-                        _stats['totalCandidates'] as int,
-                      ),
+                      value: _indianFormat.format(totalCandidates),
                       isDark: isDark,
                       compact: true,
                     ),
@@ -230,43 +237,38 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
         ),
       ),
     );
+      },
+    );
   }
 
-  List<Widget> _buildPipelineSteps(bool isDark, bool isHorizontal) {
+  List<Widget> _buildPipelineSteps(bool isDark, bool isHorizontal, int newlyAdded, int verificationPending, int medicalPending, int readyToPlace) {
     final steps = [
       _PipelineStep(
         'Newly Added',
-        _stats['newlyAdded'] as int,
+        newlyAdded,
         AppColors.stageInterviewed,
         Icons.person_add,
         '/sourcing/candidates/new',
       ),
       _PipelineStep(
         'Verification Pending',
-        _stats['verificationPending'] as int,
+        verificationPending,
         AppColors.stagePoliceVerification,
         Icons.fact_check,
         '/sourcing/candidates/verification',
       ),
       _PipelineStep(
         'Medical Pending',
-        _stats['medicalPending'] as int,
+        medicalPending,
         AppColors.stageMedicalCheck,
-        Icons.medical_services,
+        Icons.local_hospital,
         '/sourcing/candidates/medical',
       ),
       _PipelineStep(
-        'Urgent Replacements',
-        _stats['urgentReplacements'] as int? ?? 0,
-        AppColors.urgentAmber,
-        Icons.warning_amber,
-        '/sourcing/replacements',
-      ),
-      _PipelineStep(
         'Ready to Place',
-        _stats['readyToPlace'] as int,
+        readyToPlace,
         AppColors.stageVerified,
-        Icons.verified,
+        Icons.check_circle,
         '/sourcing/candidates/ready',
       ),
     ];

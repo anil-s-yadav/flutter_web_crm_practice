@@ -4,10 +4,14 @@ import 'package:intl/intl.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:practice_app/providers/global_app_state.dart';
-import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/utils/extensions.dart';
+
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
 
 class SalesDashboard extends StatefulWidget {
   const SalesDashboard({super.key});
@@ -18,6 +22,12 @@ class SalesDashboard extends StatefulWidget {
 
 class _SalesDashboardState extends State<SalesDashboard> {
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<DashboardBloc>().add(LoadSalesDashboard());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,356 +41,271 @@ class _SalesDashboardState extends State<SalesDashboard> {
     final isDesktop = width > 1100;
     final isTablet = width > 700;
 
-    // Filter data for Sales user
-    final myClients =
-        state.currentUser?.role == UserRole.sales
-            ? state.clients.where((c) => c.assignedEmployeeId == '2').toList()
-            : state.clients;
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, dashboardState) {
+        if (dashboardState is DashboardLoading ||
+            dashboardState is DashboardInitial) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (dashboardState is DashboardError) {
+          return Center(child: Text('Error: ${dashboardState.message}'));
+        }
 
-    final myContracts =
-        state.currentUser?.role == UserRole.sales
-            ? state.contracts
-                .where((c) => c.createdBy == 'Priya Mehta')
-                .toList()
-            : state.contracts;
+        final data = (dashboardState as DashboardLoaded).data;
 
-    // Pipeline Stats
-    final followUps =
-        myClients.where((c) => c.status == ClientStatus.followUp).length;
-    final interested =
-        myClients.where((c) => c.status == ClientStatus.interested).length;
-    final notInterested =
-        myClients.where((c) => c.status == ClientStatus.notInterested).length;
-    final converted =
-        myClients.where((c) => c.status == ClientStatus.converted).length;
-    final totalPipeline = followUps + interested + notInterested + converted;
+        final followUps = data['clients']['followUps'] ?? 0;
+        final interested = data['clients']['interested'] ?? 0;
+        final notInterested = data['clients']['notInterested'] ?? 0;
+        final converted = data['clients']['converted'] ?? 0;
+        final totalPipeline = data['clients']['totalPipeline'] ?? 0;
 
-    // Other Stats
-    final now = DateTime.now();
-    final currentMonth = now.month;
-    final currentYear = now.year;
+        final currentMonthRevenue =
+            (data['revenue']['currentMonth'] ?? 0).toDouble();
+        final lastMonthRevenue =
+            (data['revenue']['lastMonth'] ?? 0).toDouble();
+        final currentMonthClosed = data['contracts']['currentMonthClosed'] ?? 0;
+        final lastMonthClosed = data['contracts']['lastMonthClosed'] ?? 0;
+        final slaCountdowns = data['slaCountdowns'] ?? 0;
 
-    final lastMonthDate = DateTime(now.year, now.month - 1, 1);
-    final lastMonth = lastMonthDate.month;
-    final lastMonthYear = lastMonthDate.year;
+        // Simplified stats for UI
+        final currentMonthInquiries = data['inquiries']['currentMonth'] ?? 0;
+        final lastMonthInquiries = data['inquiries']['lastMonth'] ?? 0;
 
-    final slaCountdowns =
-        myContracts
-            .where(
-              (c) => c.isGuaranteeActive && c.daysRemainingInGuarantee < 30,
-            )
-            .length;
-
-    final currentMonthRevenue = myContracts
-        .where(
-          (c) =>
-              c.placementDate.month == currentMonth &&
-              c.placementDate.year == currentYear,
-        )
-        .fold<double>(0, (sum, c) => sum + c.amountPaid);
-
-    final lastMonthRevenue = myContracts
-        .where(
-          (c) =>
-              c.placementDate.month == lastMonth &&
-              c.placementDate.year == lastMonthYear,
-        )
-        .fold<double>(0, (sum, c) => sum + c.amountPaid);
-
-    final currentMonthClosed =
-        myContracts
-            .where(
-              (c) =>
-                  c.placementDate.month == currentMonth &&
-                  c.placementDate.year == currentYear,
-            )
-            .length;
-
-    final lastMonthClosed =
-        myContracts
-            .where(
-              (c) =>
-                  c.placementDate.month == lastMonth &&
-                  c.placementDate.year == lastMonthYear,
-            )
-            .length;
-
-    // Additional Stats calculations
-    final currentMonthInquiries =
-        myClients
-            .where(
-              (c) =>
-                  c.inquiryDate.month == currentMonth &&
-                  c.inquiryDate.year == currentYear,
-            )
-            .length;
-    final lastMonthInquiries =
-        myClients
-            .where(
-              (c) =>
-                  c.inquiryDate.month == lastMonth &&
-                  c.inquiryDate.year == lastMonthYear,
-            )
-            .length;
-
-    final currentConversionRate =
-        currentMonthInquiries > 0
+        final currentConversionRate = currentMonthInquiries > 0
             ? ((currentMonthClosed / currentMonthInquiries) * 100)
             : 0.0;
-    final lastConversionRate =
-        lastMonthInquiries > 0
+        final lastConversionRate = lastMonthInquiries > 0
             ? ((lastMonthClosed / lastMonthInquiries) * 100)
             : 0.0;
 
-    final currentAvgDeal =
-        currentMonthClosed > 0
+        final currentAvgDeal = currentMonthClosed > 0
             ? (currentMonthRevenue / currentMonthClosed)
             : 0.0;
-    final lastAvgDeal =
-        lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
+        final lastAvgDeal =
+            lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
 
-    final followUpClients =
-        myClients.where((c) => c.status == ClientStatus.followUp).toList()
+        final followUpClients = (data['recent']['followUpClients'] as List)
+            .cast<ClientModel>()
           ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
 
-    final recentWins = List<ContractModel>.from(myContracts)
-      ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
-    final topWins = recentWins.take(5).toList();
+        final topWins = (data['recent']['topWins'] as List).cast<ContractModel>();
 
-    // Top Categories
-    final categoryCounts = <String, int>{};
-    for (var client in myClients.where(
-      (c) => c.status == ClientStatus.converted,
-    )) {
-      categoryCounts[client.preferredCandidateCategory] =
-          (categoryCounts[client.preferredCandidateCategory] ?? 0) + 1;
-    }
-    final sortedCategories =
-        categoryCounts.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
-    final topCategories = sortedCategories.take(4).toList();
+        final topCategories = (data['categories'] as List).cast<MapEntry<String, int>>();
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 24 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Sales Pipeline Visualization
-            Text(
-              'Sales Funnel Pipeline',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        return Scaffold(
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(isDesktop ? 24 : 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sales Pipeline Visualization
+                Text(
+                  'Sales Funnel Pipeline',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
                 ),
-              ),
-              color: isDark ? AppColors.darkSurface : AppColors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child:
-                    isTablet
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                    ),
+                  ),
+                  color: isDark ? AppColors.darkSurface : AppColors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: isTablet
                         ? Row(
-                          children: _buildPipelineSteps(
-                            isDark,
-                            true,
-                            followUps,
-                            interested,
-                            converted,
-                            totalPipeline,
-                          ),
-                        )
+                            children: _buildPipelineSteps(
+                              isDark,
+                              true,
+                              followUps,
+                              interested,
+                              converted,
+                              totalPipeline,
+                            ),
+                          )
                         : Column(
-                          children: _buildPipelineSteps(
-                            isDark,
-                            false,
-                            followUps,
-                            interested,
-                            converted,
-                            totalPipeline,
+                            children: _buildPipelineSteps(
+                              isDark,
+                              false,
+                              followUps,
+                              interested,
+                              converted,
+                              totalPipeline,
+                            ),
                           ),
-                        ),
-              ),
-            ),
-            const SizedBox(height: 24),
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-            // Stat Cards
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isDesktop = constraints.maxWidth > 900;
-                final isTablet = constraints.maxWidth > 600 && !isDesktop;
+                // Stat Cards
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isDesktop = constraints.maxWidth > 900;
+                    final isTablet = constraints.maxWidth > 600 && !isDesktop;
 
-                final revenueTrend =
-                    lastMonthRevenue > 0
+                    final revenueTrend = lastMonthRevenue > 0
                         ? ((currentMonthRevenue - lastMonthRevenue) /
                                 lastMonthRevenue) *
                             100
                         : 0.0;
-                final revenueCard = _buildStatCard(
-                  icon: Icons.currency_rupee,
-                  iconColor: AppColors.gold,
-                  title: 'Monthly Revenue',
-                  value: '₹${_indianFormat.format(currentMonthRevenue)}',
-                  isDark: isDark,
-                  subtitle:
-                      'Last month: ₹${_indianFormat.format(lastMonthRevenue)}',
-                  trend: revenueTrend,
-                );
+                    final revenueCard = _buildStatCard(
+                      icon: Icons.currency_rupee,
+                      iconColor: AppColors.gold,
+                      title: 'Monthly Revenue',
+                      value: '₹${_indianFormat.format(currentMonthRevenue)}',
+                      isDark: isDark,
+                      subtitle:
+                          'Last month: ₹${_indianFormat.format(lastMonthRevenue)}',
+                      trend: revenueTrend,
+                    );
 
-                final contractsTrend =
-                    lastMonthClosed > 0
+                    final contractsTrend = lastMonthClosed > 0
                         ? ((currentMonthClosed - lastMonthClosed) /
                                 lastMonthClosed) *
                             100
                         : 0.0;
-                final contractsCard = _buildStatCard(
-                  icon: Icons.handshake_outlined,
-                  iconColor: AppColors.successGreen,
-                  title: 'Closed Contracts',
-                  value: _indianFormat.format(currentMonthClosed),
-                  isDark: isDark,
-                  subtitle:
-                      'Last month: ${_indianFormat.format(lastMonthClosed)}',
-                  trend: contractsTrend,
-                );
+                    final contractsCard = _buildStatCard(
+                      icon: Icons.handshake_outlined,
+                      iconColor: AppColors.successGreen,
+                      title: 'Closed Contracts',
+                      value: _indianFormat.format(currentMonthClosed),
+                      isDark: isDark,
+                      subtitle:
+                          'Last month: ${_indianFormat.format(lastMonthClosed)}',
+                      trend: contractsTrend,
+                    );
 
-                final slaCard = _buildStatCard(
-                  icon: Icons.timer_outlined,
-                  iconColor: AppColors.urgentAmber,
-                  title: 'Expiring Contracts',
-                  value: _indianFormat.format(slaCountdowns),
-                  isDark: isDark,
-                  subtitle: '< 1 month left',
-                );
+                    final slaCard = _buildStatCard(
+                      icon: Icons.timer_outlined,
+                      iconColor: AppColors.urgentAmber,
+                      title: 'Expiring Contracts',
+                      value: _indianFormat.format(slaCountdowns),
+                      isDark: isDark,
+                      subtitle: '< 1 month left',
+                    );
 
-                final conversionTrend =
-                    lastConversionRate > 0
+                    final conversionTrend = lastConversionRate > 0
                         ? ((currentConversionRate - lastConversionRate) /
                                 lastConversionRate) *
                             100
                         : 0.0;
-                final conversionCard = _buildStatCard(
-                  icon: Icons.trending_up,
-                  iconColor: AppColors.infoBlue,
-                  title: 'Conversion Rate',
-                  value: '${currentConversionRate.toStringAsFixed(1)}%',
-                  isDark: isDark,
-                  subtitle:
-                      'Last month: ${lastConversionRate.toStringAsFixed(1)}%',
-                  trend: conversionTrend,
-                );
+                    final conversionCard = _buildStatCard(
+                      icon: Icons.trending_up,
+                      iconColor: AppColors.infoBlue,
+                      title: 'Conversion Rate',
+                      value: '${currentConversionRate.toStringAsFixed(1)}%',
+                      isDark: isDark,
+                      subtitle:
+                          'Last month: ${lastConversionRate.toStringAsFixed(1)}%',
+                      trend: conversionTrend,
+                    );
 
-                final avgDealTrend =
-                    lastAvgDeal > 0
+                    final avgDealTrend = lastAvgDeal > 0
                         ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) * 100
                         : 0.0;
-                final avgDealCard = _buildStatCard(
-                  icon: Icons.monetization_on_outlined,
-                  iconColor: AppColors.successGreen,
-                  title: 'Avg Deal Value',
-                  value: '₹${_indianFormat.format(currentAvgDeal)}',
-                  isDark: isDark,
-                  subtitle: 'Last month: ₹${_indianFormat.format(lastAvgDeal)}',
-                  trend: avgDealTrend,
-                );
+                    final avgDealCard = _buildStatCard(
+                      icon: Icons.monetization_on_outlined,
+                      iconColor: AppColors.successGreen,
+                      title: 'Avg Deal Value',
+                      value: '₹${_indianFormat.format(currentAvgDeal)}',
+                      isDark: isDark,
+                      subtitle:
+                          'Last month: ₹${_indianFormat.format(lastAvgDeal)}',
+                      trend: avgDealTrend,
+                    );
 
-                if (isDesktop) {
-                  return Row(
-                    children: [
-                      Expanded(child: revenueCard),
-                      const SizedBox(width: 16),
-                      Expanded(child: contractsCard),
-                      const SizedBox(width: 16),
-                      Expanded(child: conversionCard),
-                      const SizedBox(width: 16),
-                      Expanded(child: avgDealCard),
-                    ],
-                  );
-                } else if (isTablet) {
-                  return Column(
-                    children: [
-                      Row(
+                    if (isDesktop) {
+                      return Row(
                         children: [
                           Expanded(child: revenueCard),
                           const SizedBox(width: 16),
                           Expanded(child: contractsCard),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
+                          const SizedBox(width: 16),
                           Expanded(child: conversionCard),
                           const SizedBox(width: 16),
                           Expanded(child: avgDealCard),
                         ],
+                      );
+                    } else if (isTablet) {
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: revenueCard),
+                              const SizedBox(width: 16),
+                              Expanded(child: contractsCard),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(child: conversionCard),
+                              const SizedBox(width: 16),
+                              Expanded(child: avgDealCard),
+                            ],
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Column(
+                        children: [
+                          revenueCard,
+                          const SizedBox(height: 16),
+                          contractsCard,
+                          const SizedBox(height: 16),
+                          conversionCard,
+                          const SizedBox(height: 16),
+                          avgDealCard,
+                        ],
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Two Column Layout
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: _buildFollowUpList(context, followUpClients, isDark),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          children: [
+                            _buildRecentWins(context, topWins, isDark),
+                            const SizedBox(height: 24),
+                            _buildTopCategories(context, topCategories, isDark),
+                          ],
+                        ),
                       ),
                     ],
-                  );
-                } else {
-                  return Column(
+                  )
+                else
+                  Column(
                     children: [
-                      revenueCard,
-                      const SizedBox(height: 16),
-                      contractsCard,
-                      const SizedBox(height: 16),
-                      conversionCard,
-                      const SizedBox(height: 16),
-                      avgDealCard,
+                      _buildFollowUpList(context, followUpClients, isDark),
+                      const SizedBox(height: 24),
+                      _buildRecentWins(context, topWins, isDark),
+                      const SizedBox(height: 24),
+                      _buildTopCategories(context, topCategories, isDark),
                     ],
-                  );
-                }
-              },
+                  ),
+              ],
             ),
-            const SizedBox(height: 32),
-
-            // Two Column Layout
-            if (isDesktop)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: _buildFollowUpList(context, followUpClients, isDark),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      children: [
-                        _buildRecentWins(context, topWins, isDark),
-                        const SizedBox(height: 24),
-                        _buildTopCategories(context, topCategories, isDark),
-                        const SizedBox(height: 24),
-                        _buildUpcomingRenewals(context, myContracts, isDark),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            else
-              Column(
-                children: [
-                  _buildFollowUpList(context, followUpClients, isDark),
-                  const SizedBox(height: 24),
-                  _buildRecentWins(context, topWins, isDark),
-                  const SizedBox(height: 24),
-                  _buildTopCategories(context, topCategories, isDark),
-                  const SizedBox(height: 24),
-                  _buildUpcomingRenewals(context, myContracts, isDark),
-                ],
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

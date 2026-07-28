@@ -1,23 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:provider/provider.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ExecutiveDashboard extends StatelessWidget {
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
+import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
+
+class ExecutiveDashboard extends StatefulWidget {
   const ExecutiveDashboard({super.key});
 
   @override
+  State<ExecutiveDashboard> createState() => _ExecutiveDashboardState();
+}
+
+class _ExecutiveDashboardState extends State<ExecutiveDashboard> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<DashboardBloc>().add(LoadExecutiveDashboard());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, dashboardState) {
+        if (dashboardState is DashboardLoading || dashboardState is DashboardInitial) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (dashboardState is DashboardError) {
+          return Center(child: Text('Error: ${dashboardState.message}'));
+        }
 
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final stats = MockDataGenerator.getExecutiveStats();
+        final data = (dashboardState as DashboardLoaded).data;
+        
+        final pendingTasks = data['pendingTasks'] ?? 0;
+        final inProgressTasks = data['tasks']?['inProgress'] ?? 0;
+        final completedToday = data['tasks']?['completedToday'] ?? 0;
+        final followUps = data['clients']?['followUps'] ?? 0;
+        final escalated = data['clients']?['escalated'] ?? 0;
+        final activeClients = data['activeClients'] ?? 0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -57,46 +78,46 @@ class ExecutiveDashboard extends StatelessWidget {
                 childAspectRatio: aspect,
                 children: [
               _MetricCard(
-                title: "Today's Status",
-                value: "${stats['todaysPendingDrops']} Pending",
-                subtitle: "Out of ${stats['todaysAssignedDrops']} assigned",
+                title: "Pending Tasks",
+                value: "$pendingTasks",
+                subtitle: "Tasks to do",
                 icon: Icons.assignment_late,
                 color: AppColors.urgentAmber,
               ),
               _MetricCard(
-                title: 'This Week',
-                value: '${stats['dropsThisWeek']}',
-                subtitle: 'Drops completed',
+                title: 'In Progress',
+                value: '$inProgressTasks',
+                subtitle: 'Currently working',
                 icon: Icons.view_week,
-                color: AppColors.gold,
+                color: AppColors.infoBlue,
               ),
               _MetricCard(
-                title: 'Last Week',
-                value: '${stats['dropsLastWeek']}',
-                subtitle: 'Drops completed',
+                title: 'Completed Today',
+                value: '$completedToday',
+                subtitle: 'Finished tasks',
                 icon: Icons.history,
-                color: AppColors.grey500,
-              ),
-              _MetricCard(
-                title: 'This Month',
-                value: '${stats['dropsThisMonth']}',
-                subtitle: 'Drops completed',
-                icon: Icons.calendar_today,
-                color: AppColors.gold,
-              ),
-              _MetricCard(
-                title: 'Last Month',
-                value: '${stats['dropsLastMonth']}',
-                subtitle: 'Drops completed',
-                icon: Icons.date_range,
-                color: AppColors.grey500,
-              ),
-              _MetricCard(
-                title: 'Total Drops',
-                value: '${stats['totalDrops']}',
-                subtitle: 'Overall drops',
-                icon: Icons.done_all,
                 color: AppColors.successGreen,
+              ),
+              _MetricCard(
+                title: 'Client Follow-ups',
+                value: '$followUps',
+                subtitle: 'Needs attention',
+                icon: Icons.calendar_today,
+                color: AppColors.warningOrange,
+              ),
+              _MetricCard(
+                title: 'Escalated Issues',
+                value: '$escalated',
+                subtitle: 'High priority',
+                icon: Icons.date_range,
+                color: AppColors.criticalRed,
+              ),
+              _MetricCard(
+                title: 'Active Clients',
+                value: '$activeClients',
+                subtitle: 'Total managing',
+                icon: Icons.done_all,
+                color: AppColors.gold,
               ),
             ],
           ),
@@ -104,6 +125,8 @@ class ExecutiveDashboard extends StatelessWidget {
       ),
     );
     },
+    );
+      },
     );
   }
 }

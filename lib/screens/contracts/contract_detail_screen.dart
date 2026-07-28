@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,12 +10,34 @@ import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
+import 'package:practice_app/blocs/contract/contract_bloc.dart';
+import 'package:practice_app/blocs/contract/contract_state.dart';
+import 'package:practice_app/blocs/contract/contract_event.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
+import 'package:practice_app/blocs/client/client_event.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:provider/provider.dart';
 
-class ContractDetailScreen extends StatelessWidget {
+class ContractDetailScreen extends StatefulWidget {
   final String contractId;
 
   const ContractDetailScreen({super.key, required this.contractId});
+
+  @override
+  State<ContractDetailScreen> createState() => _ContractDetailScreenState();
+}
+
+class _ContractDetailScreenState extends State<ContractDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ContractBloc>().add(LoadContracts());
+    context.read<ClientBloc>().add(LoadClients());
+    context.read<CandidateBloc>().add(LoadCandidates());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,98 +45,151 @@ class ContractDetailScreen extends StatelessWidget {
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
 
-    final contract =
-        state.contracts.where((c) => c.id == contractId).firstOrNull;
+    return BlocBuilder<ContractBloc, ContractState>(
+      builder: (context, contractState) {
+        if (contractState is ContractLoading) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Contract Details')),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        } else if (contractState is ContractError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Contract Details')),
+            body: Center(child: Text(contractState.message)),
+          );
+        } else if (contractState is ContractLoaded) {
+          final contract =
+              contractState.contracts
+                  .where((c) => c.id == widget.contractId)
+                  .firstOrNull;
 
-    if (contract == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Contract Details')),
-        body: const Center(child: Text('Contract not found')),
-      );
-    }
+          if (contract == null) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Contract Details')),
+              body: const Center(child: Text('Contract not found')),
+            );
+          }
 
-    final currencyFormat = NumberFormat.currency(
-      symbol: '₹',
-      decimalDigits: 0,
-      locale: 'en_IN',
-    );
-    final dateFormat = DateFormat('dd MMM yyyy');
+          final clientContracts =
+              contractState.contracts
+                  .where((c) => c.clientId == contract.clientId)
+                  .toList()
+                ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
 
-    final clientContracts =
-        state.contracts.where((c) => c.clientId == contract.clientId).toList()
-          ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
+          return BlocBuilder<ClientBloc, ClientState>(
+            builder: (context, clientState) {
+              return BlocBuilder<CandidateBloc, CandidateState>(
+                builder: (context, candidateState) {
+                  // Candidate and Client can be loaded here if needed for deeper details.
+                  // For now, ContractModel contains clientName and candidateName.
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Back Button
-            InkWell(
-              onTap: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  context.go('/sales/contracts/active');
-                }
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.arrow_back,
-                      size: 18,
-                      color: isDark ? AppColors.white : AppColors.navyBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Back to Contracts',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                  final currencyFormat = NumberFormat.currency(
+                    symbol: '₹',
+                    decimalDigits: 0,
+                    locale: 'en_IN',
+                  );
+                  final dateFormat = DateFormat('dd MMM yyyy');
+
+                  return Scaffold(
+                    backgroundColor:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.surfaceLight,
+                    body: SingleChildScrollView(
+                      padding: EdgeInsets.all(isMobile ? 16 : 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Back Button
+                          InkWell(
+                            onTap: () {
+                              if (Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              } else {
+                                context.go('/sales/contracts/active');
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 4,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_back,
+                                    size: 18,
+                                    color:
+                                        isDark
+                                            ? AppColors.white
+                                            : AppColors.navyBlue,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Back to Contracts',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          isDark
+                                              ? AppColors.white
+                                              : AppColors.navyBlue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Header Card
+                          _buildHeaderCard(contract, isDark),
+                          const SizedBox(height: 20),
+
+                          // Info Grid
+                          _buildInfoGrid(
+                            contract,
+                            currencyFormat,
+                            dateFormat,
+                            isDark,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Loyalty Card (if isRenewal and has history)
+                          if (contract.isRenewal &&
+                              clientContracts.length > 1) ...[
+                            _buildLoyaltyCard(clientContracts, isDark),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // Contract History Section
+                          _buildSectionCard(
+                            title: 'Contract History',
+                            icon: Icons.history,
+                            isDark: isDark,
+                            child: _buildContractHistory(
+                              clientContracts,
+                              dateFormat,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Action Buttons
+                          _buildActionButtons(context, contract, state, isDark),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Header Card
-            _buildHeaderCard(contract, isDark),
-            const SizedBox(height: 20),
-
-            // Info Grid
-            _buildInfoGrid(contract, currencyFormat, dateFormat, isDark),
-            const SizedBox(height: 20),
-
-            // Loyalty Card (if isRenewal and has history)
-            if (contract.isRenewal && clientContracts.length > 1) ...[
-              _buildLoyaltyCard(clientContracts, isDark),
-              const SizedBox(height: 20),
-            ],
-
-            // Contract History Section
-            _buildSectionCard(
-              title: 'Contract History',
-              icon: Icons.history,
-              isDark: isDark,
-              child: _buildContractHistory(clientContracts, dateFormat, isDark),
-            ),
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            _buildActionButtons(context, contract, state, isDark),
-          ],
-        ),
-      ),
+                  );
+                },
+              );
+            },
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 

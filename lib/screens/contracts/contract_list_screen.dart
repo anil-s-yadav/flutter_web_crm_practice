@@ -11,6 +11,10 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/contracts/contract_data_source.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/contract/contract_bloc.dart';
+import 'package:practice_app/blocs/contract/contract_event.dart';
+import 'package:practice_app/blocs/contract/contract_state.dart';
 import 'package:practice_app/screens/contracts/replacement_data_source.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
 
@@ -43,6 +47,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
   void initState() {
     super.initState();
     _currentViewMode = widget.initialViewMode;
+    context.read<ContractBloc>().add(LoadContracts());
   }
 
   @override
@@ -104,7 +109,10 @@ class _ContractListScreenState extends State<ContractListScreen> {
       return; // Skip contract source initialization
     }
 
-    final allContracts = state.contracts;
+    final contractState = context.read<ContractBloc>().state;
+    if (contractState is! ContractLoaded) return;
+    
+    final allContracts = contractState.contracts;
 
     final filteredContracts =
         allContracts.where((c) {
@@ -189,15 +197,23 @@ class _ContractListScreenState extends State<ContractListScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<ContractBloc, ContractState>(
+      builder: (context, contractState) {
+        if (!state.isInitialized || contractState is ContractInitial || contractState is ContractLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (_contractDataSource == null && _replacementDataSource == null) {
-      _initializeDataSource();
-    }
+        if (contractState is ContractError) {
+          return Center(child: Text(contractState.message));
+        }
 
-    return Scaffold(
+        _initializeDataSource();
+        
+        if (_contractDataSource == null && _replacementDataSource == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -786,6 +802,8 @@ class _ContractListScreenState extends State<ContractListScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 
