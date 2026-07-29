@@ -535,7 +535,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       return;
                     }
 
-                    final newNotif = NotificationModel(
+                                        final newNotif = NotificationModel(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
                       title: titleController.text,
                       message: messageController.text,

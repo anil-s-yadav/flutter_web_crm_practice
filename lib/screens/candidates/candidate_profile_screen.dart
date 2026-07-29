@@ -317,6 +317,7 @@ class CandidateProfileScreen extends StatelessWidget {
             if (await canLaunchUrl(url)) {
               await launchUrl(url);
             } else {
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Could not open WhatsApp.')),
               );

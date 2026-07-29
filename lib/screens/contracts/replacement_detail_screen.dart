@@ -510,6 +510,7 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
   ) async {
     final selectedCandidate = await CandidatePickerDialog.show(context);
     if (selectedCandidate != null) {
+      if (!context.mounted) return;
       context.read<ReplacementBloc>().add(
         AssignReplacementStaff(
           requestId: request.id,

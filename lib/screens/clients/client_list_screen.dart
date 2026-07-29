@@ -803,7 +803,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
     }
 
     final dateFormat = DateFormat('dd MMM yyyy');
-
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: clients.length,
@@ -877,7 +876,6 @@ class _MobileClientCardState extends State<_MobileClientCard> {
     final isDark = widget.isDark;
     final statusColor = widget.statusColor;
     final dateFormat = DateFormat('dd MMM yyyy');
-
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(

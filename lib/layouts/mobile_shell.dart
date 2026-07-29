@@ -115,7 +115,7 @@ class _MobileShellState extends State<MobileShell> {
             icon: const Icon(Icons.logout, size: 22),
             onPressed: () async {
               await UserManager().clearUser();
-              if (mounted) {
+              if (context.mounted) {
                 context.go('/login');
               }
             },

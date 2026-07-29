@@ -50,7 +50,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final isDesktop = width > 1100;
     final isTablet = width > 700 && width <= 1100;
     final now = DateTime.now();
-    final currentMonthStart = DateTime(now.year, now.month, 1);
+
     final prevMonthStart = DateTime(now.year, now.month - 1, 1);
 
     final monthName = DateFormat('MMMM').format(now);

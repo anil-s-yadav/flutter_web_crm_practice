@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:practice_app/blocs/auth/auth_bloc.dart';
+
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
@@ -77,7 +77,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final state = context.read<AuthBloc>().state;
+
 
       // Determine what changed for the audit log
       List<String> changes = [];

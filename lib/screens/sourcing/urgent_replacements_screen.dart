@@ -303,6 +303,7 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
   Future<void> _pickCandidate() async {
     final result = await CandidatePickerDialog.show(context);
     if (result != null) {
+      if (!mounted) return;
       final candidateState = context.read<CandidateBloc>().state;
       if (candidateState is CandidateLoaded) {
         final candidate = candidateState.candidates.firstWhere(

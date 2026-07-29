@@ -187,6 +187,7 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
                     Navigator.pop(context);
                     EasyLoading.show(status: 'Uploading...');
                     await Future.delayed(const Duration(seconds: 1));
+                    if (!context.mounted) return;
                     context.read<TaskBloc>().add(
                       UpdateTask(task.copyWith(isContractUploaded: true)),
                     );
@@ -648,6 +649,7 @@ class ExecutiveTaskDetailScreen extends StatelessWidget {
                                   await Future.delayed(
                                     const Duration(seconds: 1),
                                   );
+                                  if (!context.mounted) return;
                                   context.read<TaskBloc>().add(
                                     UpdateTask(
                                       task.copyWith(isContractUploaded: true),

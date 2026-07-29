@@ -28,7 +28,7 @@ class _AddEditCrmUserScreenState extends State<AddEditCrmUserScreen> {
   UserRole _selectedRole = UserRole.sales;
   final CrmUserStatus _selectedStatus = CrmUserStatus.active;
   bool _isEdit = false;
-  CrmUserModel? _existingUser;
+
 
   @override
   void initState() {

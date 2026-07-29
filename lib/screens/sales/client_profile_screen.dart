@@ -48,7 +48,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AuthBloc>().state;
+
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
@@ -238,7 +238,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ],
       );
     } else if (_activeTabIndex == 1) {
-      final state = context.read<AuthBloc>().state;
+
       final contractState = context.read<ContractBloc>().state;
       final allContracts =
           contractState is ContractLoaded
@@ -1014,10 +1014,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 20),
                         onPressed: () {
-                          final state = context.read<AuthBloc>().state;
+
+                          final authState = context.read<AuthBloc>().state;
                           final routePrefix =
-                              ((state is AuthAuthenticated)
-                                              ? (state).user
+                              ((authState is AuthAuthenticated)
+                                              ? (authState).user
                                               : null)
                                           ?.role ==
                                       UserRole.admin

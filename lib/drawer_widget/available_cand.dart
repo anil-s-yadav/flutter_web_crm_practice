@@ -49,7 +49,7 @@ class _AvailableCandidatesState extends State<AvailableCandidates> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = context.media.width;
-    final isWeb = screenWidth > 600;
+
     ColorScheme myColors = context.themeRef.colorScheme;
     return Scaffold(
       body: Container(
@@ -180,7 +180,7 @@ class CandidateDataSource extends DataGridSource {
   void buildDataGridRows() {
     _dataGridRows =
         _candidates.asMap().entries.map((entry) {
-          final int index = entry.key;
+
           final Candidate c = entry.value;
           return DataGridRow(
             cells: [

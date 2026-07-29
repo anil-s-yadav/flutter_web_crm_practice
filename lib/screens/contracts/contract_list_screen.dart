@@ -41,7 +41,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
   List<ContractModel> _filteredContracts = [];
   List<ReplacementRequestModel> _filteredRequests = [];
 
-  final _indianFormat = NumberFormat('#,##,###', 'en_IN');
+
 
   @override
   void initState() {

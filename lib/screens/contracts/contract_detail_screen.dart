@@ -46,7 +46,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AuthBloc>().state;
+
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
 
@@ -183,7 +183,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                           const SizedBox(height: 24),
 
                           // Action Buttons
-                          _buildActionButtons(context, contract, state, isDark),
+                          _buildActionButtons(context, contract, context.read<AuthBloc>().state, isDark),
                         ],
                       ),
                     ),
@@ -569,6 +569,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
 
     if (confirm == true) {
+      if (!context.mounted) return;
       context.read<ContractBloc>().add(RenewContract(contractId: contract.id));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -586,6 +587,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
   ) async {
     final selectedCandidate = await CandidatePickerDialog.show(context);
     if (selectedCandidate != null) {
+      if (!context.mounted) return;
       context.read<ContractBloc>().add(
         RenewContract(
           contractId: contract.id,
@@ -663,6 +665,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
       );
 
       // Update Contract to mark replacement requested
+      if (!context.mounted) return;
       context.read<ContractBloc>().add(
         UpdateContract(
           contract.copyWith(
@@ -986,7 +989,7 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
 
   void _dispatch() {
     _formKey.currentState!.save();
-    final state = context.read<AuthBloc>().state;
+
 
     final taskTypeEnum = TaskTypeExtension.fromString(_selectedTaskType);
 

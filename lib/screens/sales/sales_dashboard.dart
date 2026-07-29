@@ -59,7 +59,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
         final lastMonthRevenue = (data['revenue']?['lastMonth'] ?? 0).toDouble();
         final currentMonthClosed = data['contracts']?['currentMonthClosed'] ?? 0;
         final lastMonthClosed = data['contracts']?['lastMonthClosed'] ?? 0;
-        final slaCountdowns = data['slaCountdowns'] ?? 0;
+
 
         // Simplified stats for UI
         final currentMonthInquiries = data['inquiries']?['currentMonth'] ?? 0;

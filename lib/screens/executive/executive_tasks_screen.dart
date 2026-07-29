@@ -9,7 +9,7 @@ import 'package:practice_app/blocs/task/task_bloc.dart';
 import 'package:practice_app/blocs/task/task_event.dart';
 import 'package:practice_app/blocs/task/task_state.dart';
 import 'package:practice_app/models/executive_task_model.dart';
-import 'package:practice_app/utils/extensions.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
@@ -32,7 +32,7 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = context.media.width >= 800;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

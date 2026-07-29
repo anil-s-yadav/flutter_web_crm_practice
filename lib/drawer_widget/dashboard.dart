@@ -14,7 +14,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = context.media.width;
-    final isWeb = screenWidth > 600;
+
     ColorScheme myColors = context.themeRef.colorScheme;
 
     return Container(

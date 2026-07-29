@@ -44,7 +44,7 @@ class CandidateDataSource extends DataGridSource {
   void _buildDataGridRows() {
     _dataGridRows =
         _candidates.asMap().entries.map<DataGridRow>((entry) {
-          final int index = entry.key;
+
           final CandidateModel candidate = entry.value;
           return DataGridRow(
             cells: [

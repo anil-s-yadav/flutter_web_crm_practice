@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/screens/shared/notification_panel.dart';
-import 'package:practice_app/blocs/auth/auth_bloc.dart';
+
 import 'package:provider/provider.dart';
 
 class ExecutiveShell extends StatefulWidget {
