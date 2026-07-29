@@ -896,51 +896,64 @@ class _DesktopShellState extends State<DesktopShell> {
           ),
         ),
       ),
-      child:
-          expanded
-              ? Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.gold : AppColors.navyBlue,
+      child: expanded
+          ? Row(
+              children: [
+                Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        context.go(_getProfileRoute());
+                        if (context.media.width < 800) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: AppColors.gold.withValues(alpha: 0.2),
+                            child: Text(
+                              user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? AppColors.gold : AppColors.navyBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  user.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        isDark ? AppColors.white : AppColors.navyBlue,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  user.role.name.toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w400,
+                                    color:
+                                        isDark
+                                            ? AppColors.gold.withValues(alpha: 0.7)
+                                            : AppColors.navyBlue.withValues(alpha: 0.7),
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          user.name,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color:
-                                isDark ? AppColors.white : AppColors.navyBlue,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          user.role.name.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w400,
-                            color:
-                                isDark
-                                    ? AppColors.gold.withValues(alpha: 0.7)
-                                    : AppColors.navyBlue.withValues(alpha: 0.7),
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   IconButton(
@@ -1112,6 +1125,70 @@ class _DesktopShellState extends State<DesktopShell> {
               );
             },
           ),
+          const SizedBox(width: 8),
+
+          // User Profile Menu Button
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'profile') {
+                context.go(_getProfileRoute());
+              } else if (value == 'logout') {
+                _handleLogout();
+              }
+            },
+            offset: const Offset(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            color: isDark ? AppColors.cardDark : AppColors.white,
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 20, color: AppColors.gold),
+                    const SizedBox(width: 12),
+                    Text(
+                      'My Profile & Settings',
+                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    const Icon(Icons.logout, size: 20, color: AppColors.errorRed),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Logout',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.errorRed,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: AppColors.gold.withValues(alpha: 0.2),
+              child: Text(
+                UserManager().currentUser?.name.isNotEmpty == true
+                    ? UserManager().currentUser!.name[0].toUpperCase()
+                    : 'U',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.gold : AppColors.navyBlue,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1131,7 +1208,22 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
+  String _getProfileRoute() {
+    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    switch (role) {
+      case UserRole.admin:
+        return '/admin/profile';
+      case UserRole.sales:
+        return '/sales/profile';
+      case UserRole.sourcing:
+        return '/sourcing/profile';
+      case UserRole.executive:
+        return '/executive/profile';
+    }
+  }
+
   String _getPageTitle(String location) {
+    if (location.endsWith('/profile')) return 'My Profile & Settings';
     // Sourcing / Admin specific routes
     if (location.endsWith('/learning')) return 'Learning Center';
     if (location.endsWith('/add_candidate')) return 'Add Candidate';

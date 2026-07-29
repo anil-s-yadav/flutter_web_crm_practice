@@ -12,6 +12,7 @@ import 'package:practice_app/screens/sales/sales_dashboard.dart';
 import 'package:practice_app/screens/sales/add_client_screen.dart';
 import 'package:practice_app/screens/sourcing/sourcing_dashboard.dart';
 import 'package:practice_app/screens/shared/learning_screen.dart';
+import 'package:practice_app/screens/shared/user_profile_screen.dart';
 import 'package:practice_app/screens/executive/executive_dashboard.dart';
 import 'package:practice_app/screens/executive/executive_tasks_screen.dart';
 import 'package:practice_app/screens/executive/executive_task_detail_screen.dart';
@@ -207,6 +208,10 @@ class AppRouter {
               builder: (context, state) => const AdminSettingsScreen(),
             ),
             GoRoute(
+              path: '/admin/profile',
+              builder: (context, state) => const UserProfileScreen(),
+            ),
+            GoRoute(
               path: '/admin/learning',
               builder: (context, state) => const LearningScreen(),
             ),
@@ -378,6 +383,10 @@ class AppRouter {
               path: '/sales/financials',
               builder: (context, state) => const FinancialsScreen(),
             ),
+            GoRoute(
+              path: '/sales/profile',
+              builder: (context, state) => const UserProfileScreen(),
+            ),
           ],
         ),
         // Sourcing shell
@@ -466,6 +475,10 @@ class AppRouter {
                   (context, state) => TicketDetailsScreen(
                     ticketId: state.pathParameters['id']!,
                   ),
+            ),
+            GoRoute(
+              path: '/sourcing/profile',
+              builder: (context, state) => const UserProfileScreen(),
             ),
           ],
         ),
