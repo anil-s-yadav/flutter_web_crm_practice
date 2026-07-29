@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/task/task_bloc.dart';
 import 'package:practice_app/blocs/task/task_event.dart';
@@ -32,7 +32,6 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<GlobalAppState>(context, listen: false);
     final isDesktop = context.media.width >= 800;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -126,7 +125,7 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
                                 : ListView.builder(
                                   itemCount: filteredTasks.length,
                                   itemBuilder: (context, index) {
-                                    return _buildTaskCard(filteredTasks[index], appState);
+                                    return _buildTaskCard(filteredTasks[index]);
                                   },
                                 ),
                       ),
@@ -149,7 +148,7 @@ class _ExecutiveTasksScreenState extends State<ExecutiveTasksScreen> {
     }
   }
 
-  Widget _buildTaskCard(ExecutiveTaskModel task, GlobalAppState state) {
+  Widget _buildTaskCard(ExecutiveTaskModel task) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(

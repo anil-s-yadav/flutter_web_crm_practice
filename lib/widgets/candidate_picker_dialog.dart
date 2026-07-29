@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 
 class CandidatePickerDialog extends StatefulWidget {
   const CandidatePickerDialog({super.key});
@@ -25,6 +27,12 @@ class _CandidatePickerDialogState extends State<CandidatePickerDialog> {
   String _searchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+    context.read<CandidateBloc>().add(const LoadCandidates());
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -32,22 +40,28 @@ class _CandidatePickerDialogState extends State<CandidatePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
 
-    var availableCandidates = state.candidates
-        .where((c) => c.status == CandidateStatus.readyToPlace)
-        .toList();
+    return BlocBuilder<CandidateBloc, CandidateState>(
+      builder: (context, candidateState) {
+        List<CandidateModel> candidatesList = [];
+        if (candidateState is CandidateLoaded) {
+          candidatesList = candidateState.candidates;
+        }
 
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      availableCandidates = availableCandidates.where((c) {
-        return c.fullName.toLowerCase().contains(query) ||
-            c.id.toLowerCase().contains(query) ||
-            c.phone.contains(query) ||
-            (c.altPhone != null && c.altPhone!.contains(query));
-      }).toList();
-    }
+        var availableCandidates = candidatesList
+            .where((c) => c.status == CandidateStatus.readyToPlace)
+            .toList();
+
+        if (_searchQuery.isNotEmpty) {
+          final query = _searchQuery.toLowerCase();
+          availableCandidates = availableCandidates.where((c) {
+            return c.fullName.toLowerCase().contains(query) ||
+                c.id.toLowerCase().contains(query) ||
+                c.phone.contains(query) ||
+                (c.altPhone != null && c.altPhone!.contains(query));
+          }).toList();
+        }
 
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -151,6 +165,8 @@ class _CandidatePickerDialogState extends State<CandidatePickerDialog> {
           ),
         ),
       ],
+    );
+      },
     );
   }
 

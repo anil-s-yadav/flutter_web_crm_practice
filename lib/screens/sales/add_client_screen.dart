@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/models/client_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_event.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +26,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
   // Step 1: Personal Info
   String _fullName = '';
   String _phone = '';
+  String _altPhone = '';
   String _email = '';
   String _locality = '';
   String _city = 'Mumbai';
@@ -56,15 +59,14 @@ class _AddClientScreenState extends State<AddClientScreen> {
   ];
 
   void _addClient() {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
-
-    // Generate an ID based on current count
-    final newId = 'CLI${2000 + state.clients.length + 1}';
+    // Generate an ID based on current timestamp to be somewhat unique
+    final newId = 'CLI${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
     final client = ClientModel(
       id: newId,
       fullName: _fullName,
       phone: _phone,
+      altPhone: _altPhone.isEmpty ? null : _altPhone,
       email: _email.isEmpty ? '$_phone@placeholder.com' : _email,
       address: _address,
       city: _city,
@@ -80,13 +82,13 @@ class _AddClientScreenState extends State<AddClientScreen> {
       requiredSkills: const ['Standard Duty'], // default hidden skill
       budgetRange: '₹${_budgetBase.toInt()} - ₹${_budgetEnd.toInt()}',
       status: ClientStatus.followUp,
-      assignedEmployeeId: state.currentUser?.id.toString(),
+      assignedEmployeeId: 'temp_user',
       source: 'Direct Entry',
       inquiryDate: DateTime.now(),
       remarks: _remarks.isNotEmpty ? _remarks : null,
     );
 
-    state.addClient(client);
+    context.read<ClientBloc>().add(CreateClient(client));
     _showSuccessDialog();
   }
 
@@ -276,6 +278,21 @@ class _AddClientScreenState extends State<AddClientScreen> {
                                     ? 'Enter exactly 10 digits'
                                     : null,
                         onSaved: (v) => _phone = v!,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'Alternate Phone (Optional)',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        isDark: isDark,
+                        validator: (v) {
+                           if (v != null && v.isNotEmpty && v.length != 10) {
+                              return 'Enter exactly 10 digits';
+                           }
+                           return null;
+                        },
+                        onSaved: (v) => _altPhone = v ?? '',
                       ),
                       const SizedBox(height: 16),
                       _buildTextField(

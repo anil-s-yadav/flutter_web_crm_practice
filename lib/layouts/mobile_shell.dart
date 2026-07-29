@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/utils/extensions.dart';
+import 'package:practice_app/widgets/global_search_dialog.dart';
 
 class MobileShell extends StatefulWidget {
   final Widget child;
@@ -104,7 +105,7 @@ class _MobileShellState extends State<MobileShell> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search, size: 22),
-            onPressed: () {},
+            onPressed: () => GlobalSearchDialog.show(context),
           ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined, size: 22),

@@ -7,13 +7,14 @@ const jwt = require('jsonwebtoken');
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const identifier = req.body.email; // Can be email or phone
+    const password = req.body.password;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Please provide email/mobile and password' });
     }
 
-    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await pool.execute('SELECT * FROM users WHERE email = ? OR phone = ?', [identifier, identifier]);
     if (users.length === 0) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -67,7 +68,7 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, name, email, role, phone, active, profile_image_url, created_at FROM users WHERE id = ?',
+      'SELECT id, name, email, role, phone, alternate_phone, active, profile_image_url, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 

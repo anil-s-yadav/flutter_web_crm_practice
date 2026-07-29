@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 
 class AdminAuditTrailScreen extends StatefulWidget {
   const AdminAuditTrailScreen({super.key});
@@ -27,18 +27,29 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
   bool _showFilters = false;
 
   @override
+  void initState() {
+    super.initState();
+    context.read<AuditLogBloc>().add(const LoadAuditLogs());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
     final DateFormat formatter = DateFormat('dd MMM yyyy, HH:mm');
     final DateFormat dateOnlyFormat = DateFormat('dd MMM yyyy');
 
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return BlocBuilder<AuditLogBloc, AuditLogState>(
+      builder: (context, state) {
+        if (state is AuditLogLoading || state is AuditLogInitial) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is AuditLogError) {
+          return Center(child: Text('Error: ${state.message}'));
+        }
 
-    final filteredLogs =
-        state.auditLogs.where((l) {
+        final auditLogs = (state as AuditLogLoaded).auditLogs;
+
+        final filteredLogs =
+            auditLogs.where((l) {
           // Search filter
           if (_searchQuery.isNotEmpty) {
             final q = _searchQuery.toLowerCase();
@@ -439,6 +450,8 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

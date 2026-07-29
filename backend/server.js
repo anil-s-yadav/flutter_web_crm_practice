@@ -31,6 +31,9 @@ app.use('/api/contracts', require('./routes/contractRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/replacements', require('./routes/replacementRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/audit-logs', require('./routes/auditLogRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
+app.use('/api/tickets', require('./routes/ticketRoutes'));
 // ---------------------------------
 
 // Error Handling Middleware

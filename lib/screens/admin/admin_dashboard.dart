@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:practice_app/models/audit_log_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/models/audit_log_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
+import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -25,6 +24,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void initState() {
     super.initState();
     context.read<DashboardBloc>().add(LoadAdminDashboard());
+    context.read<AuditLogBloc>().add(const LoadAuditLogs());
   }
 
   String _formatCurrency(double value) {
@@ -43,12 +43,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final width = context.media.width;
     final isDesktop = width > 1100;
     final isTablet = width > 700 && width <= 1100;
-    final state = Provider.of<GlobalAppState>(context);
-
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final now = DateTime.now();
     final currentMonthStart = DateTime(now.year, now.month, 1);
     final prevMonthStart = DateTime(now.year, now.month - 1, 1);
@@ -395,7 +389,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     const SizedBox(width: 24),
                     Expanded(
                       flex: 2,
-                      child: _buildRecentActivity(isDark, state.auditLogs),
+                      child: BlocBuilder<AuditLogBloc, AuditLogState>(
+                        builder: (context, auditState) {
+                          if (auditState is AuditLogLoaded) {
+                            return _buildRecentActivity(isDark, auditState.auditLogs);
+                          }
+                          return const Center(child: CircularProgressIndicator());
+                        },
+                      ),
                     ),
                   ],
                 )
@@ -453,7 +454,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    _buildRecentActivity(isDark, state.auditLogs),
+                    BlocBuilder<AuditLogBloc, AuditLogState>(
+                      builder: (context, auditState) {
+                        if (auditState is AuditLogLoaded) {
+                          return _buildRecentActivity(isDark, auditState.auditLogs);
+                        }
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
                   ],
                 )
               else
@@ -500,7 +508,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     ]),
                     const SizedBox(height: 24),
-                    _buildRecentActivity(isDark, state.auditLogs),
+                    BlocBuilder<AuditLogBloc, AuditLogState>(
+                      builder: (context, auditState) {
+                        if (auditState is AuditLogLoaded) {
+                          return _buildRecentActivity(isDark, auditState.auditLogs);
+                        }
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
                   ],
                 ),
             ],

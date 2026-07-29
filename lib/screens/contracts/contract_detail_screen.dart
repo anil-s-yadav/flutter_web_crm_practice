@@ -6,7 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/executive_task_model.dart';
 import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
@@ -19,7 +20,11 @@ import 'package:practice_app/blocs/client/client_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
-import 'package:provider/provider.dart';
+import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_event.dart';
+import 'package:practice_app/models/replacement_request_model.dart';
+import 'package:practice_app/blocs/task/task_bloc.dart';
+import 'package:practice_app/blocs/task/task_event.dart';
 
 class ContractDetailScreen extends StatefulWidget {
   final String contractId;
@@ -41,7 +46,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
+    final state = context.read<AuthBloc>().state;
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
 
@@ -510,8 +515,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
         ),
         ElevatedButton.icon(
-          onPressed:
-              () => _showDispatchExecutiveSheet(context, contract, state),
+          onPressed: () => _showDispatchExecutiveSheet(context, contract),
           icon: const Icon(Icons.delivery_dining),
           label: Text(
             'Dispatch Executive',
@@ -565,8 +569,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
 
     if (confirm == true) {
-      // ignore: undefined_method
-      state.renewContract(contract.id);
+      context.read<ContractBloc>().add(RenewContract(contractId: contract.id));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Contract renewed successfully')),
@@ -583,11 +586,12 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
   ) async {
     final selectedCandidate = await CandidatePickerDialog.show(context);
     if (selectedCandidate != null) {
-      // ignore: undefined_method
-      state.renewContract(
-        contract.id,
-        newCandidateId: selectedCandidate['id'],
-        newCandidateName: selectedCandidate['name'],
+      context.read<ContractBloc>().add(
+        RenewContract(
+          contractId: contract.id,
+          newCandidateId: selectedCandidate['id'],
+          newCandidateName: selectedCandidate['name'],
+        ),
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -642,8 +646,33 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
 
     if (reason != null && reason.isNotEmpty) {
-      // ignore: undefined_method
-      state.requestReplacement(contract.id, reason);
+      final now = DateTime.now();
+      final request = ReplacementRequestModel(
+        id: 'RPL${now.millisecondsSinceEpoch.toString().substring(5)}',
+        contractId: contract.id,
+        clientId: contract.clientId,
+        clientName: contract.clientName,
+        oldCandidateId: contract.candidateId,
+        oldCandidateName: contract.candidateName,
+        reason: reason,
+        requestDate: now,
+        status: ReplacementStatus.pending,
+        createdBy:
+            ((state is AuthAuthenticated) ? (state).user : null)?.name ??
+            'System',
+      );
+
+      // Update Contract to mark replacement requested
+      context.read<ContractBloc>().add(
+        UpdateContract(
+          contract.copyWith(
+            replacementsUsed: contract.replacementsUsed + 1,
+            contractStatus: ContractStatus.rePlaced,
+          ),
+        ),
+      );
+
+      context.read<ReplacementBloc>().add(CreateReplacement(request));
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
@@ -809,7 +838,6 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
   void _showDispatchExecutiveSheet(
     BuildContext context,
     ContractModel contract,
-    GlobalAppState state,
   ) {
     showDialog(
       context: context,
@@ -836,10 +864,8 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final executives =
-        state.crmUsers.where((u) => u.role == UserRole.executive).toList();
+    final executives = <UserModel>[];
 
     if (_selectedExecutive.isEmpty && executives.isNotEmpty) {
       _selectedExecutive = executives.first.id;
@@ -960,7 +986,7 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
 
   void _dispatch() {
     _formKey.currentState!.save();
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final state = context.read<AuthBloc>().state;
 
     final taskTypeEnum = TaskTypeExtension.fromString(_selectedTaskType);
 
@@ -980,7 +1006,7 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
       scheduledDate: DateTime.now().add(const Duration(hours: 1)),
     );
 
-    state.addTask(newTask);
+    context.read<TaskBloc>().add(CreateTask(newTask));
 
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

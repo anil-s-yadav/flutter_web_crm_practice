@@ -1,22 +1,55 @@
 const pool = require('../config/db');
+const { logAction } = require('../services/auditService');
+const { isPhoneGloballyUnique } = require('../utils/phoneValidator');
 
 // @route   GET /api/clients
 // @desc    Get all clients (leads and converted)
 // @access  Private
 const getClients = async (req, res) => {
   try {
-    const { status } = req.query;
-    let query = 'SELECT * FROM clients';
+    const { status, search, q, city, page, limit } = req.query;
+
+    let whereClause = ' WHERE 1=1';
     const params = [];
 
     if (status) {
-      query += ' WHERE status = ?';
+      whereClause += ' AND status = ?';
       params.push(status);
     }
+    if (city) {
+      whereClause += ' AND city = ?';
+      params.push(city);
+    }
+    const searchTerm = search || q;
+    if (searchTerm) {
+      whereClause += ' AND (name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR email LIKE ? OR id LIKE ?)';
+      const s = `%${searchTerm.trim()}%`;
+      params.push(s, s, s, s, s);
+    }
 
-    query += ' ORDER BY created_at DESC';
+    if (page || limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 20;
+      const offset = (pageNum - 1) * limitNum;
 
-    const [clients] = await pool.execute(query, params);
+      const countSql = `SELECT COUNT(*) as total FROM clients${whereClause}`;
+      const [[{ total }]] = await pool.execute(countSql, params);
+
+      const dataSql = `SELECT * FROM clients${whereClause} ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+      const [clients] = await pool.execute(dataSql, params);
+
+      return res.json({
+        data: clients,
+        pagination: {
+          total: Number(total),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
+
+    const [clients] = await pool.execute(`SELECT * FROM clients${whereClause} ORDER BY created_at DESC`, params);
     res.json(clients);
   } catch (err) {
     console.error(err);
@@ -29,10 +62,15 @@ const getClients = async (req, res) => {
 // @access  Private (Sales/Admin)
 const createClient = async (req, res) => {
   try {
-    const { name, company_name, email, phone, address } = req.body;
+    const { name, company_name, email, phone, alternate_phone, address } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({ message: 'Name and phone are required' });
+    }
+
+    const isUnique = await isPhoneGloballyUnique(phone);
+    if (!isUnique) {
+      return res.status(409).json({ message: 'Phone number is already registered in the system.' });
     }
 
     const clientId = `CL_${Date.now().toString().slice(-6)}`;
@@ -40,12 +78,13 @@ const createClient = async (req, res) => {
 
     await pool.execute(
       `INSERT INTO clients 
-      (id, name, company_name, email, phone, address, assigned_sales_id) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [clientId, name, company_name || null, email || null, phone, address || null, assignedSalesId]
+      (id, name, company_name, email, phone, alternate_phone, address, assigned_sales_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [clientId, name, company_name || null, email || null, phone, alternate_phone || null, address || null, assignedSalesId]
     );
 
     res.status(201).json({ message: 'Client created successfully', clientId });
+    await logAction('client', clientId, 'create', `Created client ${name}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -58,7 +97,7 @@ const createClient = async (req, res) => {
 const updateClient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, company_name, email, phone, address, status, loyalty_points } = req.body;
+    const { name, company_name, email, phone, alternate_phone, address, status, loyalty_points } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM clients WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -70,7 +109,15 @@ const updateClient = async (req, res) => {
     const newCompany = company_name !== undefined ? company_name : client.company_name;
     const newEmail = email !== undefined ? email : client.email;
     const newPhone = phone || client.phone;
+    const newAlternatePhone = alternate_phone !== undefined ? alternate_phone : client.alternate_phone;
     const newAddress = address !== undefined ? address : client.address;
+
+    if (newPhone && newPhone !== client.phone) {
+      const isUnique = await isPhoneGloballyUnique(newPhone, id);
+      if (!isUnique) {
+        return res.status(409).json({ message: 'Phone number is already registered in the system.' });
+      }
+    }
     const newStatus = status || client.status;
     const newLoyalty = loyalty_points !== undefined ? loyalty_points : client.loyalty_points;
 
@@ -80,11 +127,12 @@ const updateClient = async (req, res) => {
     }
 
     await pool.execute(
-      'UPDATE clients SET name=?, company_name=?, email=?, phone=?, address=?, status=?, loyalty_points=?, profile_image_url=? WHERE id=?',
-      [newName, newCompany, newEmail, newPhone, newAddress, newStatus, newLoyalty, profileImageUrl, id]
+      'UPDATE clients SET name=?, company_name=?, email=?, phone=?, alternate_phone=?, address=?, status=?, loyalty_points=?, profile_image_url=? WHERE id=?',
+      [newName, newCompany, newEmail, newPhone, newAlternatePhone, newAddress, newStatus, newLoyalty, profileImageUrl, id]
     );
 
     res.json({ message: 'Client updated successfully' });
+    await logAction('client', id, 'update', `Updated details for ${newName}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

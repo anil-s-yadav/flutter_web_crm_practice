@@ -5,13 +5,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/crm_user_model.dart';
 import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/admin/team_data_source.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/user/user_bloc.dart';
+import 'package:practice_app/blocs/user/user_event.dart';
+import 'package:practice_app/blocs/user/user_state.dart';
 
 class TeamListScreen extends StatefulWidget {
   final UserRole? filterRole;
@@ -32,6 +34,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
   TeamDataSource? _teamDataSource;
 
   @override
+  void initState() {
+    super.initState();
+    context.read<UserBloc>().add(const LoadUsers());
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _initializeDataSource();
@@ -47,12 +55,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   void _initializeDataSource() {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (!state.isInitialized) return;
-
-    var users = state.crmUsers.toList();
+    final userState = context.read<UserBloc>().state;
+    var users = userState is UserLoaded ? userState.users : <CrmUserModel>[];
     if (widget.filterRole != null) {
       users = users.where((u) => u.role == widget.filterRole).toList();
     }
@@ -75,9 +81,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
       _teamDataSource = TeamDataSource(
         context: context,
         isDark: isDark,
-        state: state,
         teamMembers: users,
-        onViewDetails: (user) => _showUserDetailDialog(user, isDark, state),
+        onViewDetails: (user) => _showUserDetailDialog(user, isDark),
       );
     } else {
       _teamDataSource!.isDark = isDark;
@@ -87,10 +92,19 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.themeRef.brightness == Brightness.dark;
-    final state = Provider.of<GlobalAppState>(context);
+    return BlocBuilder<UserBloc, UserState>(
+      builder: (context, userState) {
+        if (userState is UserLoading || userState is UserInitial) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (userState is UserError) {
+          return Center(child: Text(userState.message));
+        }
 
-    if (!state.isInitialized || _teamDataSource == null) {
+        _initializeDataSource();
+        final isDark = context.themeRef.brightness == Brightness.dark;
+
+    if (_teamDataSource == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -271,11 +285,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
                         ? _buildMobileList(
                           pagedUsers,
                           isDark,
-                          state,
                           dateFormat,
                           timeAgoFormat,
                         )
-                        : _buildDataGrid(isDark, state),
+                        : _buildDataGrid(isDark),
               ),
             ),
           ),
@@ -342,6 +355,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 
@@ -477,7 +492,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   //   );
   // }
 
-  Widget _buildDataGrid(bool isDark, GlobalAppState state) {
+  Widget _buildDataGrid(bool isDark) {
     if (_teamDataSource!.rows.isEmpty) {
       return Center(
         child: Column(
@@ -595,7 +610,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   Widget _buildMobileList(
     List<CrmUserModel> users,
     bool isDark,
-    GlobalAppState state,
+
     DateFormat dateFormat,
     DateFormat timeAgoFormat,
   ) {
@@ -663,7 +678,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
           statusColor: statusColor,
           isDark: isDark,
           dateFormat: dateFormat,
-          onViewDetails: () => _showUserDetailDialog(user, isDark, state),
+          onViewDetails: () => _showUserDetailDialog(user, isDark),
           onEdit: () => context.push('/admin/team/${user.id}/edit'),
         );
       },
@@ -693,11 +708,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  void _showUserDetailDialog(
-    CrmUserModel user,
-    bool isDark,
-    GlobalAppState state,
-  ) {
+  void _showUserDetailDialog(CrmUserModel user, bool isDark) {
     final dateFormat = DateFormat('dd MMM yyyy');
     final timeFormat = DateFormat('dd MMM yyyy, hh:mm a');
     final passwordController = TextEditingController();
@@ -800,6 +811,73 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
+                    'Admin Actions',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final newStatus = user.status != CrmUserStatus.active;
+                            context.read<UserBloc>().add(UpdateCrmUser(
+                              id: user.id,
+                              userData: {'active': newStatus},
+                            ));
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${user.name} is now ${newStatus ? 'Active' : 'Inactive'}',
+                                ),
+                                backgroundColor: AppColors.gold,
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            user.status == CrmUserStatus.active
+                                ? Icons.block
+                                : Icons.check_circle_outline,
+                            size: 18,
+                          ),
+                          label: Text(
+                            user.status == CrmUserStatus.active
+                                ? 'Mark Inactive'
+                                : 'Mark Active',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: user.status == CrmUserStatus.active
+                                ? AppColors.criticalRed
+                                : AppColors.successGreen,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            context.push('/admin/team/${user.id}/edit');
+                          },
+                          icon: const Icon(Icons.edit, size: 18),
+                          label: const Text('Edit Profile'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.navyBlue,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
                     'Reset Password',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
@@ -838,10 +916,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       ElevatedButton(
                         onPressed: () {
                           if (passwordController.text.trim().isNotEmpty) {
-                            state.resetCrmUserPassword(
-                              user.id,
-                              passwordController.text.trim(),
-                            );
+                            context.read<UserBloc>().add(UpdateCrmUser(
+                              id: user.id,
+                              userData: {'password': passwordController.text.trim()},
+                            ));
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

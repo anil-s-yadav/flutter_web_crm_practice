@@ -30,6 +30,7 @@ class UserModel {
   final String email;
   final UserRole role;
   final String? phone;
+  final String? alternatePhone;
   final String? avatarUrl;
 
   const UserModel({
@@ -38,6 +39,7 @@ class UserModel {
     required this.email,
     required this.role,
     this.phone,
+    this.alternatePhone,
     this.avatarUrl
   });
 
@@ -48,7 +50,8 @@ class UserModel {
       email: json['email'] as String,
       role: UserRoleExtension.fromString(json['role'] as String),
       phone: json['phone'] as String?,
-      avatarUrl: json['avatarUrl'] as String?
+      alternatePhone: json['alternate_phone'] as String?,
+      avatarUrl: json['profile_image_url'] as String? ?? json['avatarUrl'] as String?
     );
   }
 
@@ -64,6 +67,7 @@ class UserModel {
       'email': email,
       'role': role.name,
       'phone': phone,
+      'alternate_phone': alternatePhone,
       'avatarUrl': avatarUrl
     };
   }
@@ -78,6 +82,7 @@ class UserModel {
     String? email,
     UserRole? role,
     String? phone,
+    String? alternatePhone,
     String? avatarUrl
   }) {
     return UserModel(
@@ -86,6 +91,7 @@ class UserModel {
       email: email ?? this.email,
       role: role ?? this.role,
       phone: phone ?? this.phone,
+      alternatePhone: alternatePhone ?? this.alternatePhone,
       avatarUrl: avatarUrl ?? this.avatarUrl
     );
   }

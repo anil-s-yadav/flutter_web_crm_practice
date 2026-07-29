@@ -6,16 +6,29 @@ class CandidateRepository {
 
   CandidateRepository({ApiClient? apiClient}) : apiClient = apiClient ?? ApiClient();
 
-  Future<List<CandidateModel>> getCandidates({String? status}) async {
-    String endpoint = '/api/candidates';
-    if (status != null && status.isNotEmpty) {
-      endpoint += '?status=$status';
-    }
+  Future<List<CandidateModel>> getCandidates({
+    String? status,
+    int? page,
+    int? limit,
+  }) async {
+    final queryParams = <String>[];
+    if (status != null && status.isNotEmpty) queryParams.add('status=$status');
+    if (page != null) queryParams.add('page=$page');
+    if (limit != null) queryParams.add('limit=$limit');
+
+    final endpoint = queryParams.isEmpty
+        ? '/api/candidates'
+        : '/api/candidates?${queryParams.join('&')}';
 
     final response = await ApiClient.get(endpoint);
 
     if (response is List) {
       return response.map((json) {
+        return CandidateModel.fromJson(json as Map<String, dynamic>);
+      }).toList();
+    } else if (response is Map<String, dynamic> && response.containsKey('data')) {
+      final list = response['data'] as List;
+      return list.map((json) {
         return CandidateModel.fromJson(json as Map<String, dynamic>);
       }).toList();
     } else {

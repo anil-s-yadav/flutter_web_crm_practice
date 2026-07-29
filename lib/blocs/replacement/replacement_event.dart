@@ -34,3 +34,18 @@ class UpdateReplacement extends ReplacementEvent {
   @override
   List<Object> get props => [replacement];
 }
+
+class AssignReplacementStaff extends ReplacementEvent {
+  final String requestId;
+  final String newCandidateId;
+  final String newCandidateName;
+
+  const AssignReplacementStaff({
+    required this.requestId,
+    required this.newCandidateId,
+    required this.newCandidateName,
+  });
+
+  @override
+  List<Object> get props => [requestId, newCandidateId, newCandidateName];
+}

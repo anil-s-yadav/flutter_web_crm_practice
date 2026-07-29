@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:provider/provider.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -31,11 +29,6 @@ class _SalesDashboardState extends State<SalesDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
-    if (!state.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final isDark = context.themeRef.brightness == Brightness.dark;
     final width = context.media.width;
     final isDesktop = width > 1100;
@@ -60,8 +53,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
 
         final currentMonthRevenue =
             (data['revenue']['currentMonth'] ?? 0).toDouble();
-        final lastMonthRevenue =
-            (data['revenue']['lastMonth'] ?? 0).toDouble();
+        final lastMonthRevenue = (data['revenue']['lastMonth'] ?? 0).toDouble();
         final currentMonthClosed = data['contracts']['currentMonthClosed'] ?? 0;
         final lastMonthClosed = data['contracts']['lastMonthClosed'] ?? 0;
         final slaCountdowns = data['slaCountdowns'] ?? 0;
@@ -70,26 +62,31 @@ class _SalesDashboardState extends State<SalesDashboard> {
         final currentMonthInquiries = data['inquiries']['currentMonth'] ?? 0;
         final lastMonthInquiries = data['inquiries']['lastMonth'] ?? 0;
 
-        final currentConversionRate = currentMonthInquiries > 0
-            ? ((currentMonthClosed / currentMonthInquiries) * 100)
-            : 0.0;
-        final lastConversionRate = lastMonthInquiries > 0
-            ? ((lastMonthClosed / lastMonthInquiries) * 100)
-            : 0.0;
+        final currentConversionRate =
+            currentMonthInquiries > 0
+                ? ((currentMonthClosed / currentMonthInquiries) * 100)
+                : 0.0;
+        final lastConversionRate =
+            lastMonthInquiries > 0
+                ? ((lastMonthClosed / lastMonthInquiries) * 100)
+                : 0.0;
 
-        final currentAvgDeal = currentMonthClosed > 0
-            ? (currentMonthRevenue / currentMonthClosed)
-            : 0.0;
+        final currentAvgDeal =
+            currentMonthClosed > 0
+                ? (currentMonthRevenue / currentMonthClosed)
+                : 0.0;
         final lastAvgDeal =
             lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
 
-        final followUpClients = (data['recent']['followUpClients'] as List)
-            .cast<ClientModel>()
-          ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
+        final followUpClients =
+            (data['recent']['followUpClients'] as List).cast<ClientModel>()
+              ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
 
-        final topWins = (data['recent']['topWins'] as List).cast<ContractModel>();
+        final topWins =
+            (data['recent']['topWins'] as List).cast<ContractModel>();
 
-        final topCategories = (data['categories'] as List).cast<MapEntry<String, int>>();
+        final topCategories =
+            (data['categories'] as List).cast<MapEntry<String, int>>();
 
         return Scaffold(
           body: SingleChildScrollView(
@@ -118,27 +115,28 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   color: isDark ? AppColors.darkSurface : AppColors.white,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: isTablet
-                        ? Row(
-                            children: _buildPipelineSteps(
-                              isDark,
-                              true,
-                              followUps,
-                              interested,
-                              converted,
-                              totalPipeline,
+                    child:
+                        isTablet
+                            ? Row(
+                              children: _buildPipelineSteps(
+                                isDark,
+                                true,
+                                followUps,
+                                interested,
+                                converted,
+                                totalPipeline,
+                              ),
+                            )
+                            : Column(
+                              children: _buildPipelineSteps(
+                                isDark,
+                                false,
+                                followUps,
+                                interested,
+                                converted,
+                                totalPipeline,
+                              ),
                             ),
-                          )
-                        : Column(
-                            children: _buildPipelineSteps(
-                              isDark,
-                              false,
-                              followUps,
-                              interested,
-                              converted,
-                              totalPipeline,
-                            ),
-                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -149,11 +147,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                     final isDesktop = constraints.maxWidth > 900;
                     final isTablet = constraints.maxWidth > 600 && !isDesktop;
 
-                    final revenueTrend = lastMonthRevenue > 0
-                        ? ((currentMonthRevenue - lastMonthRevenue) /
-                                lastMonthRevenue) *
-                            100
-                        : 0.0;
+                    final revenueTrend =
+                        lastMonthRevenue > 0
+                            ? ((currentMonthRevenue - lastMonthRevenue) /
+                                    lastMonthRevenue) *
+                                100
+                            : 0.0;
                     final revenueCard = _buildStatCard(
                       icon: Icons.currency_rupee,
                       iconColor: AppColors.gold,
@@ -165,11 +164,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       trend: revenueTrend,
                     );
 
-                    final contractsTrend = lastMonthClosed > 0
-                        ? ((currentMonthClosed - lastMonthClosed) /
-                                lastMonthClosed) *
-                            100
-                        : 0.0;
+                    final contractsTrend =
+                        lastMonthClosed > 0
+                            ? ((currentMonthClosed - lastMonthClosed) /
+                                    lastMonthClosed) *
+                                100
+                            : 0.0;
                     final contractsCard = _buildStatCard(
                       icon: Icons.handshake_outlined,
                       iconColor: AppColors.successGreen,
@@ -190,11 +190,12 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       subtitle: '< 1 month left',
                     );
 
-                    final conversionTrend = lastConversionRate > 0
-                        ? ((currentConversionRate - lastConversionRate) /
-                                lastConversionRate) *
-                            100
-                        : 0.0;
+                    final conversionTrend =
+                        lastConversionRate > 0
+                            ? ((currentConversionRate - lastConversionRate) /
+                                    lastConversionRate) *
+                                100
+                            : 0.0;
                     final conversionCard = _buildStatCard(
                       icon: Icons.trending_up,
                       iconColor: AppColors.infoBlue,
@@ -206,9 +207,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       trend: conversionTrend,
                     );
 
-                    final avgDealTrend = lastAvgDeal > 0
-                        ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) * 100
-                        : 0.0;
+                    final avgDealTrend =
+                        lastAvgDeal > 0
+                            ? ((currentAvgDeal - lastAvgDeal) / lastAvgDeal) *
+                                100
+                            : 0.0;
                     final avgDealCard = _buildStatCard(
                       icon: Icons.monetization_on_outlined,
                       iconColor: AppColors.successGreen,
@@ -276,7 +279,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
                     children: [
                       Expanded(
                         flex: 1,
-                        child: _buildFollowUpList(context, followUpClients, isDark),
+                        child: _buildFollowUpList(
+                          context,
+                          followUpClients,
+                          isDark,
+                        ),
                       ),
                       const SizedBox(width: 24),
                       Expanded(

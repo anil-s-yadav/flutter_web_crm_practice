@@ -1,11 +1,58 @@
 const pool = require('../config/db');
+const { logAction } = require('../services/auditService');
 
 // @route   GET /api/contracts
 // @desc    Get all contracts
 // @access  Private
 const getContracts = async (req, res) => {
   try {
-    const [contracts] = await pool.execute('SELECT * FROM contracts ORDER BY created_at DESC');
+    const { status, client_id, candidate_id, search, q, page, limit } = req.query;
+
+    let whereClause = ' WHERE 1=1';
+    const params = [];
+
+    if (status) {
+      whereClause += ' AND status = ?';
+      params.push(status);
+    }
+    if (client_id) {
+      whereClause += ' AND client_id = ?';
+      params.push(client_id);
+    }
+    if (candidate_id) {
+      whereClause += ' AND candidate_id = ?';
+      params.push(candidate_id);
+    }
+    const searchTerm = search || q;
+    if (searchTerm) {
+      whereClause += ' AND (id LIKE ? OR client_id LIKE ? OR candidate_id LIKE ?)';
+      const s = `%${searchTerm.trim()}%`;
+      params.push(s, s, s);
+    }
+
+    if (page || limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 20;
+      const offset = (pageNum - 1) * limitNum;
+
+      const countSql = `SELECT COUNT(*) as total FROM contracts${whereClause}`;
+      const [[{ total }]] = await pool.execute(countSql, params);
+
+      const dataSql = `SELECT * FROM contracts${whereClause} ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+      const [contracts] = await pool.execute(dataSql, params);
+
+      return res.json({
+        data: contracts,
+        pagination: {
+          total: Number(total),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
+
+    const [contracts] = await pool.execute(`SELECT * FROM contracts${whereClause} ORDER BY created_at DESC`, params);
     res.json(contracts);
   } catch (err) {
     console.error(err);
@@ -56,6 +103,7 @@ const createContract = async (req, res) => {
       connection.release();
 
       res.status(201).json({ message: 'Contract created successfully', contractId });
+      await logAction('contract', contractId, 'create', `Created contract for candidate ${candidate_id}`, createdBy);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();
@@ -83,6 +131,7 @@ const recordPayment = async (req, res) => {
     );
 
     res.json({ message: 'Payment recorded successfully' });
+    await logAction('contract', id, 'paymentLogged', `Logged payment of ${amount}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

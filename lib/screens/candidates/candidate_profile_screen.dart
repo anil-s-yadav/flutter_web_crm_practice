@@ -6,14 +6,21 @@ import 'package:intl/intl.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/models/audit_log_model.dart';
+import 'package:practice_app/models/client_model.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_state.dart';
+import 'package:practice_app/blocs/contract/contract_bloc.dart';
+import 'package:practice_app/blocs/contract/contract_state.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
-import 'package:provider/provider.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
 
 class CandidateProfileScreen extends StatelessWidget {
   final String candidateId;
@@ -67,9 +74,7 @@ class CandidateProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Keep GlobalAppState for audit logs and user role for now
-    final state = Provider.of<GlobalAppState>(context);
-    final isDark = context.themeRef.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final width = context.media.width;
     final isMobile = width < 800;
     final isTablet = width >= 800 && width <= 1100;
@@ -98,8 +103,7 @@ class CandidateProfileScreen extends StatelessWidget {
         }
         final candidate = candidates[candidateIndex];
 
-        final relevantLogs =
-            state.auditLogs.where((l) => l.targetId == candidate.id).toList();
+        final relevantLogs = <AuditLogModel>[];
 
         return Scaffold(
           body: SingleChildScrollView(
@@ -121,29 +125,11 @@ class CandidateProfileScreen extends StatelessWidget {
                 //   const SizedBox(height: 16),
                 // ],
                 if (isMobile)
-                  _buildMobileLayout(
-                    context,
-                    candidate,
-                    state,
-                    isDark,
-                    relevantLogs,
-                  )
+                  _buildMobileLayout(context, candidate, isDark, relevantLogs)
                 else if (isTablet)
-                  _buildTabletLayout(
-                    context,
-                    candidate,
-                    state,
-                    isDark,
-                    relevantLogs,
-                  )
+                  _buildTabletLayout(context, candidate, isDark, relevantLogs)
                 else
-                  _buildDesktopLayout(
-                    context,
-                    candidate,
-                    state,
-                    isDark,
-                    relevantLogs,
-                  ),
+                  _buildDesktopLayout(context, candidate, isDark, relevantLogs),
               ],
             ),
           ),
@@ -155,7 +141,7 @@ class CandidateProfileScreen extends StatelessWidget {
   Widget _buildMobileLayout(
     BuildContext context,
     CandidateModel candidate,
-    GlobalAppState state,
+
     bool isDark,
     List<dynamic> relevantLogs,
   ) {
@@ -163,7 +149,7 @@ class CandidateProfileScreen extends StatelessWidget {
       children: [
         _buildProfileHeader(context, candidate, isDark),
         const SizedBox(height: 16),
-        _buildTopActions(context, state, candidate),
+        _buildTopActions(context, candidate),
         const SizedBox(height: 24),
         if (candidate.status == CandidateStatus.Placed)
           _buildplacedDashboard(context, candidate, isDark)
@@ -183,9 +169,7 @@ class CandidateProfileScreen extends StatelessWidget {
           _buildRemarks(candidate, isDark),
         ],
         const SizedBox(height: 24),
-        if (state.currentUser?.role == UserRole.sourcing ||
-            state.currentUser?.role == UserRole.admin)
-          _buildActionBar(context, candidate, isDark),
+        _buildActionBar(context, candidate, isDark),
         const SizedBox(height: 32),
         AuditLogWidget(
           logs: relevantLogs.cast(),
@@ -198,7 +182,7 @@ class CandidateProfileScreen extends StatelessWidget {
   Widget _buildTabletLayout(
     BuildContext context,
     CandidateModel candidate,
-    GlobalAppState state,
+
     bool isDark,
     List<dynamic> relevantLogs,
   ) {
@@ -207,7 +191,7 @@ class CandidateProfileScreen extends StatelessWidget {
       children: [
         _buildProfileHeader(context, candidate, isDark),
         const SizedBox(height: 16),
-        _buildTopActions(context, state, candidate),
+        _buildTopActions(context, candidate),
         const SizedBox(height: 24),
         if (candidate.status == CandidateStatus.Placed)
           _buildplacedDashboard(context, candidate, isDark)
@@ -232,8 +216,7 @@ class CandidateProfileScreen extends StatelessWidget {
           _buildRemarks(candidate, isDark),
         ],
         const SizedBox(height: 24),
-        if (state.currentUser?.role == UserRole.sourcing ||
-            state.currentUser?.role == UserRole.admin) ...[
+        if (true) ...[
           _buildActionBar(context, candidate, isDark),
           const SizedBox(height: 16),
         ],
@@ -249,7 +232,7 @@ class CandidateProfileScreen extends StatelessWidget {
   Widget _buildDesktopLayout(
     BuildContext context,
     CandidateModel candidate,
-    GlobalAppState state,
+
     bool isDark,
     List<dynamic> relevantLogs,
   ) {
@@ -263,14 +246,11 @@ class CandidateProfileScreen extends StatelessWidget {
             children: [
               _buildProfileHeader(context, candidate, isDark),
               const SizedBox(height: 16),
-              _buildTopActions(context, state, candidate),
+              _buildTopActions(context, candidate),
               const SizedBox(height: 16),
               _buildPersonalDetails(candidate, isDark),
               const SizedBox(height: 24),
-              if (state.currentUser?.role == UserRole.sourcing ||
-                  state.currentUser?.role == UserRole.admin) ...[
-                _buildActionBar(context, candidate, isDark),
-              ],
+              if (true) ...[_buildActionBar(context, candidate, isDark)],
             ],
           ),
         ),
@@ -313,11 +293,7 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopActions(
-    BuildContext context,
-    GlobalAppState state,
-    CandidateModel candidate,
-  ) {
+  Widget _buildTopActions(BuildContext context, CandidateModel candidate) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -359,29 +335,22 @@ class CandidateProfileScreen extends StatelessWidget {
           ),
         ),
 
-        if (state.currentUser?.role != UserRole.sales)
-          ElevatedButton.icon(
-            onPressed: () {
-              final routePrefix =
-                  state.currentUser?.role == UserRole.admin
-                      ? '/admin'
-                      : '/sourcing';
-              context.push('$routePrefix/candidates/${candidate.id}/edit');
-            },
-            icon: const Icon(Icons.edit, size: 16),
-            label: Text(
-              'Edit Profile',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.white,
-              foregroundColor: AppColors.navyBlue,
-              elevation: 0,
-              side: BorderSide(
-                color: AppColors.navyBlue.withValues(alpha: 0.2),
-              ),
-            ),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.push('/sourcing/candidates/${candidate.id}/edit');
+          },
+          icon: const Icon(Icons.edit, size: 16),
+          label: Text(
+            'Edit Profile',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.white,
+            foregroundColor: AppColors.navyBlue,
+            elevation: 0,
+            side: BorderSide(color: AppColors.navyBlue.withValues(alpha: 0.2)),
+          ),
+        ),
         if (candidate.status != CandidateStatus.Placed &&
             candidate.status != CandidateStatus.blacklisted &&
             candidate.status != CandidateStatus.readyToPlace)
@@ -423,17 +392,16 @@ class CandidateProfileScreen extends StatelessWidget {
             ),
             onSelected: (action) => action(),
             itemBuilder: (context) {
-              final appState = Provider.of<GlobalAppState>(
-                context,
-                listen: false,
-              );
               return [
                 if (candidate.status == CandidateStatus.newlyAdded)
                   PopupMenuItem(
                     value:
-                        () => appState.advanceCandidatePipeline(
-                          candidate.id,
-                          CandidateStatus.verificationPending,
+                        () => context.read<CandidateBloc>().add(
+                          UpdateCandidate(
+                            candidate.copyWith(
+                              status: CandidateStatus.verificationPending,
+                            ),
+                          ),
                         ),
                     child: const Text('Promote to Police Verification'),
                   ),
@@ -441,27 +409,29 @@ class CandidateProfileScreen extends StatelessWidget {
                     CandidateStatus.verificationPending) ...[
                   PopupMenuItem(
                     value:
-                        () => appState.updateCandidate(
-                          candidate.copyWith(
-                            status: CandidateStatus.medicalPending,
-                            isPoliceVerified: true,
-                            isAadhaarVerified: true,
+                        () => context.read<CandidateBloc>().add(
+                          UpdateCandidate(
+                            candidate.copyWith(
+                              status: CandidateStatus.medicalPending,
+                              isPoliceVerified: true,
+                              isAadhaarVerified: true,
+                            ),
                           ),
-                          'Police & Aadhaar Verified. Moved to Medical Pending.',
                         ),
                     child: const Text('Promote to Medical Test'),
                   ),
                   PopupMenuItem(
                     value:
-                        () => appState.updateCandidate(
-                          candidate.copyWith(
-                            status: CandidateStatus.readyToPlace,
-                            isPoliceVerified: true,
-                            isAadhaarVerified: true,
-                            isMedicalCleared: false,
-                            availableFrom: DateTime.now(),
+                        () => context.read<CandidateBloc>().add(
+                          UpdateCandidate(
+                            candidate.copyWith(
+                              status: CandidateStatus.readyToPlace,
+                              isPoliceVerified: true,
+                              isAadhaarVerified: true,
+                              isMedicalCleared: false,
+                              availableFrom: DateTime.now(),
+                            ),
                           ),
-                          'Police & Aadhaar Verified. Medical bypassed. Moved to Ready to Place.',
                         ),
                     child: const Text(
                       'Promote to Ready to Hire (Skip Medical)',
@@ -471,13 +441,14 @@ class CandidateProfileScreen extends StatelessWidget {
                 if (candidate.status == CandidateStatus.medicalPending)
                   PopupMenuItem(
                     value:
-                        () => appState.updateCandidate(
-                          candidate.copyWith(
-                            status: CandidateStatus.readyToPlace,
-                            isMedicalCleared: true,
-                            availableFrom: DateTime.now(),
+                        () => context.read<CandidateBloc>().add(
+                          UpdateCandidate(
+                            candidate.copyWith(
+                              status: CandidateStatus.readyToPlace,
+                              isMedicalCleared: true,
+                              availableFrom: DateTime.now(),
+                            ),
                           ),
-                          'Medical Test Cleared. Moved to Ready to Place.',
                         ),
                     child: const Text('Promote to Ready to Hire'),
                   ),
@@ -485,12 +456,10 @@ class CandidateProfileScreen extends StatelessWidget {
             },
           ),
         if (candidate.status != CandidateStatus.blacklisted &&
-            candidate.status != CandidateStatus.Placed &&
-            (state.currentUser?.role == UserRole.sourcing ||
-                state.currentUser?.role == UserRole.admin))
+            candidate.status != CandidateStatus.Placed)
           ElevatedButton.icon(
             onPressed: () {
-              _showBlacklistDialog(context, candidate.id);
+              _showBlacklistDialog(context, candidate);
             },
             icon: const Icon(Icons.block, size: 16),
             label: Text(
@@ -515,20 +484,32 @@ class CandidateProfileScreen extends StatelessWidget {
     CandidateModel candidate,
     bool isDark,
   ) {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final contractState = context.read<ContractBloc>().state;
+    final allContracts =
+        contractState is ContractLoaded
+            ? contractState.contracts
+            : <ContractModel>[];
     ContractModel? contract;
     try {
-      contract = state.contracts.firstWhere(
+      contract = allContracts.firstWhere(
         (c) => c.id == candidate.currentPlacementId,
       );
     } catch (_) {}
 
-    final client = contract != null ? state.getClient(contract.clientId) : null;
+    ClientModel? client;
+    if (contract != null) {
+      final clientState = context.read<ClientBloc>().state;
+      final allClients =
+          clientState is ClientLoaded ? clientState.clients : <ClientModel>[];
+      try {
+        client = allClients.firstWhere((c) => c.id == contract!.clientId);
+      } catch (_) {}
+    }
 
     if (contract == null || client == null) return const SizedBox.shrink();
 
     final clientContracts =
-        state.contracts.where((c) => c.clientId == client.id).toList()
+        allContracts.where((c) => c.clientId == client!.id).toList()
           ..sort((a, b) => a.placementDate.compareTo(b.placementDate));
 
     final contractIndex = clientContracts.indexWhere(
@@ -1062,7 +1043,7 @@ class CandidateProfileScreen extends StatelessWidget {
     CandidateModel candidate,
     bool isDark,
   ) {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final state = context.read<AuthBloc>().state;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1082,7 +1063,8 @@ class CandidateProfileScreen extends StatelessWidget {
         alignment: WrapAlignment.center,
         children: [
           if (candidate.status == CandidateStatus.newlyAdded) ...[
-            if (state.currentUser?.role != UserRole.sales)
+            if (((state is AuthAuthenticated) ? (state).user : null)?.role !=
+                UserRole.sales)
               _actionButton(
                 'Edit Profile',
                 Icons.edit,
@@ -1090,7 +1072,9 @@ class CandidateProfileScreen extends StatelessWidget {
                 isDark,
                 () {
                   final routePrefix =
-                      state.currentUser?.role == UserRole.admin
+                      ((state is AuthAuthenticated) ? (state).user : null)
+                                  ?.role ==
+                              UserRole.admin
                           ? '/admin'
                           : '/sourcing';
                   context.push('$routePrefix/candidates/${candidate.id}/edit');
@@ -1102,12 +1086,12 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.stagePoliceVerification,
               isDark,
               () {
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).advanceCandidatePipeline(
-                  candidate.id,
-                  CandidateStatus.verificationPending,
+                context.read<CandidateBloc>().add(
+                  UpdateCandidate(
+                    candidate.copyWith(
+                      status: CandidateStatus.verificationPending,
+                    ),
+                  ),
                 );
               },
             ),
@@ -1120,16 +1104,14 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.stageMedicalCheck,
               isDark,
               () {
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).updateCandidate(
-                  candidate.copyWith(
-                    status: CandidateStatus.medicalPending,
-                    isPoliceVerified: true,
-                    isAadhaarVerified: true,
+                context.read<CandidateBloc>().add(
+                  UpdateCandidate(
+                    candidate.copyWith(
+                      status: CandidateStatus.medicalPending,
+                      isPoliceVerified: true,
+                      isAadhaarVerified: true,
+                    ),
                   ),
-                  'Police & Aadhaar Verified. Moved to Medical Pending.',
                 );
               },
             ),
@@ -1139,18 +1121,16 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.statusVerified,
               isDark,
               () {
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).updateCandidate(
-                  candidate.copyWith(
-                    status: CandidateStatus.readyToPlace,
-                    isPoliceVerified: true,
-                    isAadhaarVerified: true,
-                    isMedicalCleared: false, // Explicitly bypassed
-                    availableFrom: DateTime.now(),
+                context.read<CandidateBloc>().add(
+                  UpdateCandidate(
+                    candidate.copyWith(
+                      status: CandidateStatus.readyToPlace,
+                      isPoliceVerified: true,
+                      isAadhaarVerified: true,
+                      isMedicalCleared: false, // Explicitly bypassed
+                      availableFrom: DateTime.now(),
+                    ),
                   ),
-                  'Police & Aadhaar Verified. Medical bypassed. Moved to Ready to Place.',
                 );
               },
             ),
@@ -1163,16 +1143,14 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.statusVerified,
               isDark,
               () {
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).updateCandidate(
-                  candidate.copyWith(
-                    status: CandidateStatus.readyToPlace,
-                    isMedicalCleared: true,
-                    availableFrom: DateTime.now(),
+                context.read<CandidateBloc>().add(
+                  UpdateCandidate(
+                    candidate.copyWith(
+                      status: CandidateStatus.readyToPlace,
+                      isMedicalCleared: true,
+                      availableFrom: DateTime.now(),
+                    ),
                   ),
-                  'Medical Test Cleared. Moved to Ready to Place.',
                 );
               },
             ),
@@ -1185,7 +1163,7 @@ class CandidateProfileScreen extends StatelessWidget {
               AppColors.statusBlacklisted,
               isDark,
               () {
-                _showBlacklistDialog(context, candidate.id);
+                _showBlacklistDialog(context, candidate);
               },
             ),
         ],
@@ -1193,7 +1171,7 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showBlacklistDialog(BuildContext context, String candidateId) {
+  void _showBlacklistDialog(BuildContext context, CandidateModel candidate) {
     final noteController = TextEditingController();
     showDialog(
       context: context,
@@ -1247,10 +1225,14 @@ class CandidateProfileScreen extends StatelessWidget {
                   );
                   return;
                 }
-                Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                ).blacklistCandidate(candidateId, noteController.text.trim());
+                context.read<CandidateBloc>().add(
+                  UpdateCandidate(
+                    candidate.copyWith(
+                      status: CandidateStatus.blacklisted,
+                      remarks: noteController.text.trim(),
+                    ),
+                  ),
+                );
                 Navigator.pop(ctx);
               },
               style: ElevatedButton.styleFrom(

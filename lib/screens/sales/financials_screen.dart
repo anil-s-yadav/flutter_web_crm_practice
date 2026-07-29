@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/models/invoice_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 class FinancialsScreen extends StatefulWidget {
@@ -18,8 +16,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.themeRef.brightness == Brightness.dark;
-    final state = Provider.of<GlobalAppState>(context);
-    final invoices = state.invoices;
+    final List<InvoiceModel> invoices = []; // Empty for now, API not built
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     // Calculate metrics
@@ -69,7 +66,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                 ],
               ),
             const SizedBox(height: 24),
-            _buildTransactionsList(isDark, invoices, state),
+            _buildTransactionsList(isDark, invoices),
           ],
         ),
       ),
@@ -302,7 +299,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     );
   }
 
-  Widget _buildTransactionsList(bool isDark, List<InvoiceModel> invoices, GlobalAppState state) {
+  Widget _buildTransactionsList(bool isDark, List<InvoiceModel> invoices) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final dateFormat = DateFormat('dd MMM yyyy');
 
@@ -387,10 +384,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                               color: AppColors.successGreen,
                               tooltip: 'Mark as Paid',
                               onPressed: () {
-                                state.updateInvoiceStatus(inv.id, InvoiceStatus.paid);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Invoice ${inv.id} marked as Paid.')),
-                                );
+                                // state.updateInvoiceStatus(inv.id, InvoiceStatus.paid);
                               },
                             ),
                         ],

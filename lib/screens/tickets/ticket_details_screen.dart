@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-// We'll mock GlobalAppState retrieval, or assume tickets are generated locally,
-// but in a real app it'd come from Provider.of<GlobalAppState>(context).
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/repositories/ticket_repository.dart';
+import 'package:practice_app/blocs/ticket/ticket_bloc.dart';
+import 'package:practice_app/blocs/ticket/ticket_event.dart';
 
 class TicketDetailsScreen extends StatefulWidget {
   final String ticketId;
@@ -19,6 +21,19 @@ class TicketDetailsScreen extends StatefulWidget {
 class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   final _resolutionController = TextEditingController();
   final DateFormat _dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
+  late Future<TicketModel> _ticketFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticketFuture = context.read<TicketRepository>().getTicketById(widget.ticketId);
+  }
+
+  void _refreshTicket() {
+    setState(() {
+      _ticketFuture = context.read<TicketRepository>().getTicketById(widget.ticketId);
+    });
+  }
 
   @override
   void dispose() {
@@ -31,28 +46,34 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
 
-    TicketModel? ticket = TicketModel(
-      id: widget.ticketId,
-      title: 'Mock Ticket for ${widget.ticketId}',
-      description:
-          'This is a detailed description of the mock ticket. The client reported an issue and we need to resolve it as quickly as possible. Please ensure all steps are followed.',
-      priority: TicketPriority.urgent,
-      status: TicketStatus.inProgress,
-      clientId: 'C001',
-      clientName: 'Sharma Family',
-      assignedTo: 'Support Agent',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      slaDeadline: DateTime.now().add(const Duration(days: 1)),
-      candidateId: 'M001',
-      candidateName: 'Sunita Devi',
-    );
-
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
+      backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceLight,
+      body: FutureBuilder<TicketModel>(
+        future: _ticketFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error loading ticket: ${snapshot.error}',
+                style: GoogleFonts.poppins(color: AppColors.errorRed),
+              ),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text('Ticket not found'));
+          }
+
+          final ticket = snapshot.data!;
+          if (_resolutionController.text.isEmpty && ticket.resolution != null) {
+            _resolutionController.text = ticket.resolution!;
+          }
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? 16 : 24),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Row
@@ -220,6 +241,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton.icon(
                                 onPressed: () {
+                                  context.read<TicketBloc>().add(UpdateTicket(
+                                    id: ticket.id,
+                                    resolution: _resolutionController.text,
+                                  ));
+                                  _refreshTicket();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -322,7 +348,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                                   )
                                   .toList(),
                           onChanged: (val) {
-                            if (val != null) {
+                            if (val != null && val != ticket.status) {
+                              context.read<TicketBloc>().add(UpdateTicket(
+                                id: ticket.id,
+                                status: val,
+                              ));
+                              _refreshTicket();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -382,8 +413,10 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 
   Widget _buildPriorityBadge(TicketPriority priority) {

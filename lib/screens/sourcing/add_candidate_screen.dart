@@ -3,7 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +25,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
   // Personal Info
   String _name = '';
   String _phone = '';
+  String _altPhone = '';
   int _age = 25;
   String _city = 'Mumbai';
   String _address = '';
@@ -45,7 +50,8 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final authState = context.read<AuthBloc>().state;
+    final currentUser = authState is AuthAuthenticated ? authState.user : null;
 
     // Generate an ID
     final newId =
@@ -56,31 +62,32 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       fullName: _name,
       age: _age,
       phone: _phone,
+      altPhone: _altPhone.isEmpty ? null : _altPhone,
       address: _address,
       city: _city,
       state: 'Maharashtra',
-      languages: _languages.isEmpty ? ['Hindi'] : _languages,
+      languages: _languages,
       religion: _religion,
       category: _category,
-      education: _education,
+      education: 'Not Specified',
       experienceYears: _experienceYears,
-      expectedSalary:
-          '₹${_expectedSalary.toInt()} - ₹${(_expectedSalary * 1.2).toInt()}',
-      workingHoursPerDay: _category == 'Driver' ? 12 : 10,
+      expectedSalary: _expectedSalary.round().toString(),
+      workingHoursPerDay: 10,
+      preferredWorkType: '24 Hours',
       status: CandidateStatus.newlyAdded,
       isMedicalCleared: false,
       isPoliceVerified: _hasPoliceClearance,
       isAadhaarVerified: _hasAadhaar,
       aadhaarDocUrl: _hasAadhaar ? 'simulated_aadhaar_url.pdf' : null,
       photoUrl: _hasPhoto ? 'simulated_photo_url.jpg' : '',
-      addedBy: state.currentUser?.name ?? 'System',
+      addedBy: currentUser?.name ?? 'System',
       dateAdded: DateTime.now(),
-      sourcedById: state.currentUser?.id.toString(),
-      sourcedByName: state.currentUser?.name,
-      sourcedByPhone: state.currentUser?.phone,
+      sourcedById: currentUser?.id,
+      sourcedByName: currentUser?.name,
+      sourcedByPhone: currentUser?.phone,
     );
 
-    state.addCandidate(candidate);
+    context.read<CandidateBloc>().add(CreateCandidate(candidate));
     _showSuccessDialog();
   }
 
@@ -199,24 +206,6 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Text(
-                      //   'Add New Candidate',
-                      //   style: GoogleFonts.poppins(
-                      //     fontSize: 24,
-                      //     fontWeight: FontWeight.bold,
-                      //     color: isDark ? AppColors.white : AppColors.navyBlue,
-                      //   ),
-                      // ),
-                      // const SizedBox(height: 8),
-                      // Text(
-                      //   'Enter the candidate details to add them to the sourcing pool.',
-                      //   style: GoogleFonts.poppins(
-                      //     fontSize: 14,
-                      //     color: isDark ? AppColors.grey400 : AppColors.grey600,
-                      //   ),
-                      // ),
-                      // const SizedBox(height: 32),
-
                       // --- Personal Info Section ---
                       _buildSectionTitle(
                         'Personal Information',
@@ -240,6 +229,18 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                           validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                           onSaved: (v) => _phone = v ?? '',
                         ),
+                        ]),
+                      const SizedBox(height: 24),
+                      _buildResponsiveFields(context, [
+                        _buildTextField(
+                          label: 'Alternate Phone',
+                          isDark: isDark,
+                          initialValue: _altPhone,
+                          keyboardType: TextInputType.phone,
+                          onSaved: (v) => _altPhone = v ?? '',
+                        ),
+                        // Placeholder for symmetry if needed, or leave empty
+                        const SizedBox.shrink(),
                       ]),
                       const SizedBox(height: 24),
                       _buildResponsiveFields(context, [

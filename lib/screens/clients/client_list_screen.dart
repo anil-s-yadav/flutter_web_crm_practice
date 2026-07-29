@@ -4,16 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/client_model.dart';
-import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
-import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
+import 'package:practice_app/widgets/empty_state_widget.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
 import 'package:practice_app/blocs/client/client_event.dart';
 import 'package:practice_app/blocs/client/client_state.dart';
+import 'package:practice_app/theme/app_colors.dart';
+import 'package:practice_app/utils/extensions.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:practice_app/screens/clients/client_data_source.dart';
 
@@ -71,11 +69,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   void _initializeDataSource() {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
     final clientState = context.read<ClientBloc>().state;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (!state.isInitialized || clientState is! ClientLoaded) return;
+    if (clientState is! ClientLoaded) return;
 
     final allMyClients = clientState.clients;
 
@@ -107,6 +104,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
             final query = _searchQuery.toLowerCase();
             return c.fullName.toLowerCase().contains(query) ||
                 c.phone.contains(query) ||
+                (c.altPhone != null && c.altPhone!.contains(query)) ||
+                c.email.toLowerCase().contains(query) ||
                 c.city.toLowerCase().contains(query) ||
                 c.id.toLowerCase().contains(query);
           }
@@ -120,7 +119,8 @@ class _ClientListScreenState extends State<ClientListScreen> {
         clients: _filteredClients,
         onRowTap: (client) {
           final routePrefix =
-              state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+              '/admin'; // Assuming admin or we can pass role down, but for now hardcode or get from authbloc
+
           var path = '$routePrefix/clients/${client.id}';
           if (widget.initialStatus != null) {
             path += '?from=${widget.initialStatus!.name}';
@@ -137,12 +137,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
       builder: (context, clientState) {
-        if (!state.isInitialized || clientState is ClientInitial || clientState is ClientLoading) {
+        if (clientState is ClientInitial || clientState is ClientLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -165,317 +164,339 @@ class _ClientListScreenState extends State<ClientListScreen> {
         ];
         final statuses = [null, ...ClientStatus.values];
 
-    return Scaffold(
-      body: Column(
-        children: [
-          // 1. Horizontal ChoiceChip Tabs
-          if (widget.initialStatus == null)
-            Container(
-              color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(tabs.length, (index) {
-                          final isSelected = _selectedStatus == statuses[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ChoiceChip(
-                              label: Text(
-                                tabs[index],
-                                style: GoogleFonts.poppins(
-                                  color:
-                                      isSelected
-                                          ? AppColors.navyBlue
-                                          : (isDark
-                                              ? AppColors.textSecondaryDark
-                                              : AppColors.textSecondaryLight),
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
-                                ),
-                              ),
-                              selected: isSelected,
-                              selectedColor: AppColors.gold,
-                              backgroundColor:
-                                  isDark
-                                      ? AppColors.darkSurfaceVariant
-                                      : AppColors.white,
-                              side: BorderSide.none,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedStatus = statuses[index];
-                                });
-                                _initializeDataSource();
-                              },
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
+        return Scaffold(
+          body: Column(
+            children: [
+              // 1. Horizontal ChoiceChip Tabs
+              if (widget.initialStatus == null)
+                Container(
+                  color:
+                      isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                      color: isDark ? AppColors.white : AppColors.navyBlue,
-                    ),
-                    tooltip: 'Toggle Filters',
-                    onPressed: () {
-                      setState(() {
-                        _showFilters = !_showFilters;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-          // 2. Toolbar
-          _buildToolbar(isDark, _filteredClients.length, isMobile),
-
-          // 3. Grid / Mobile List
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 10),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child:
-                    isMobile
-                        ? _buildMobileList(isDark, state)
-                        : Align(
-                          alignment: Alignment.topCenter,
-                          child: SfDataGridTheme(
-                            data: SfDataGridThemeData(
-                              headerColor:
-                                  isDark
-                                      ? AppColors.darkSurface
-                                      : AppColors.grey50,
-                              gridLineColor:
-                                  isDark
-                                      ? AppColors.dividerDark
-                                      : AppColors.grey200,
-                              gridLineStrokeWidth: 1,
-                              rowHoverColor:
-                                  isDark
-                                      ? AppColors.navyBlue.withValues(
-                                        alpha: 0.1,
-                                      )
-                                      : AppColors.navyBlue.withValues(
-                                        alpha: 0.04,
-                                      ),
-                              sortIconColor: AppColors.gold,
-                            ),
-                            child: SfDataGrid(
-                              source: _clientDataSource!,
-                              allowSorting: true,
-                              allowMultiColumnSorting: false,
-                              columnWidthMode: ColumnWidthMode.auto,
-                              headerRowHeight: 48,
-                              rowHeight: 56,
-                              gridLinesVisibility: GridLinesVisibility.both,
-                              headerGridLinesVisibility:
-                                  GridLinesVisibility.both,
-                              columns: [
-                                GridColumn(
-                                  columnName: 'id',
-                                  visible: false,
-                                  label: const SizedBox.shrink(),
-                                ),
-                                GridColumn(
-                                  columnName: 'sr_no',
-                                  width: 100,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Sr No',
-                                      style: _headerStyle(isDark),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: List.generate(tabs.length, (index) {
+                              final isSelected =
+                                  _selectedStatus == statuses[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ChoiceChip(
+                                  label: Text(
+                                    tabs[index],
+                                    style: GoogleFonts.poppins(
+                                      color:
+                                          isSelected
+                                              ? AppColors.navyBlue
+                                              : (isDark
+                                                  ? AppColors.textSecondaryDark
+                                                  : AppColors
+                                                      .textSecondaryLight),
+                                      fontWeight:
+                                          isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
                                     ),
                                   ),
-                                ),
-                                GridColumn(
-                                  columnName: 'date',
-                                  width: 130,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Date',
-                                      style: _headerStyle(isDark),
-                                    ),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.gold,
+                                  backgroundColor:
+                                      isDark
+                                          ? AppColors.darkSurfaceVariant
+                                          : AppColors.white,
+                                  side: BorderSide.none,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedStatus = statuses[index];
+                                    });
+                                    _initializeDataSource();
+                                  },
                                 ),
-                                GridColumn(
-                                  columnName: 'client',
-                                  maximumWidth: 300,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Client',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'phone',
-                                  width: 140,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Mobile',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'requirement',
-                                  width: 150,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Looking For',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'budget',
-                                  minimumWidth: 160,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Budget',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                if (widget.initialStatus == null)
-                                  GridColumn(
-                                    columnName: 'status',
-                                    minimumWidth: 160,
-                                    label: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Status',
-                                        style: _headerStyle(isDark),
-                                      ),
-                                    ),
-                                  ),
-                                GridColumn(
-                                  columnName: 'notes',
-                                  width: 200,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Notes',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            }),
                           ),
                         ),
-              ),
-            ),
-          ),
-
-          // 4. Pagination
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _showFilters
+                              ? Icons.filter_list_off
+                              : Icons.filter_list,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
+                        tooltip: 'Toggle Filters',
+                        onPressed: () {
+                          setState(() {
+                            _showFilters = !_showFilters;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
+
+              // 2. Toolbar
+              _buildToolbar(isDark, _filteredClients.length, isMobile),
+
+              // 3. Grid / Mobile List
+              if (_filteredClients.isEmpty)
+                const Expanded(
+                  child: EmptyStateWidget(
+                    title: 'No Clients Found',
+                    subtitle: 'Try adjusting your filters or search query.',
+                    icon: Icons.group_off,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.successGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_indianFormat.format(_filteredClients.length)} Clients found',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.successGreen,
+                )
+              else
+                Expanded(
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child:
+                          isMobile
+                              ? _buildMobileList(isDark)
+                              : Align(
+                                alignment: Alignment.topCenter,
+                                child: SfDataGridTheme(
+                                  data: SfDataGridThemeData(
+                                    headerColor:
+                                        isDark
+                                            ? AppColors.darkSurface
+                                            : AppColors.grey50,
+                                    gridLineColor:
+                                        isDark
+                                            ? AppColors.dividerDark
+                                            : AppColors.grey200,
+                                    gridLineStrokeWidth: 1,
+                                    rowHoverColor:
+                                        isDark
+                                            ? AppColors.navyBlue.withValues(
+                                              alpha: 0.1,
+                                            )
+                                            : AppColors.navyBlue.withValues(
+                                              alpha: 0.04,
+                                            ),
+                                    sortIconColor: AppColors.gold,
+                                  ),
+                                  child: SfDataGrid(
+                                    source: _clientDataSource!,
+                                    allowSorting: true,
+                                    allowMultiColumnSorting: false,
+                                    columnWidthMode: ColumnWidthMode.auto,
+                                    headerRowHeight: 48,
+                                    rowHeight: 56,
+                                    gridLinesVisibility:
+                                        GridLinesVisibility.both,
+                                    headerGridLinesVisibility:
+                                        GridLinesVisibility.both,
+                                    columns: [
+                                      GridColumn(
+                                        columnName: 'id',
+                                        visible: false,
+                                        label: const SizedBox.shrink(),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'sr_no',
+                                        width: 100,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Sr No',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'date',
+                                        width: 130,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Date',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'client',
+                                        maximumWidth: 300,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Client',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'phone',
+                                        width: 140,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Mobile',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'requirement',
+                                        width: 150,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Looking For',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'budget',
+                                        minimumWidth: 160,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Budget',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      if (widget.initialStatus == null)
+                                        GridColumn(
+                                          columnName: 'status',
+                                          minimumWidth: 160,
+                                          label: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              'Status',
+                                              style: _headerStyle(isDark),
+                                            ),
+                                          ),
+                                        ),
+                                      GridColumn(
+                                        columnName: 'notes',
+                                        width: 200,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Notes',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                     ),
                   ),
                 ),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+              // 4. Pagination
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const IconButton(
-                      icon: Icon(Icons.chevron_left, size: 20),
-                      onPressed: null, // Stubbed for mock data
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Page 1 of 1',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.successGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${_indianFormat.format(_filteredClients.length)} Clients found',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.successGreen,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const IconButton(
-                      icon: Icon(Icons.chevron_right, size: 20),
-                      onPressed: null, // Stubbed for mock data
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(),
+
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const IconButton(
+                          icon: Icon(Icons.chevron_left, size: 20),
+                          onPressed: null, // Stubbed for mock data
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Page 1 of 1',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const IconButton(
+                          icon: Icon(Icons.chevron_right, size: 20),
+                          onPressed: null, // Stubbed for mock data
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                        ),
+                      ],
                     ),
+                    // const SizedBox(width: 100), // Balance the flex space
                   ],
                 ),
-                // const SizedBox(width: 100), // Balance the flex space
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -501,10 +522,12 @@ class _ClientListScreenState extends State<ClientListScreen> {
   }
 
   List<Widget> _buildFilters(bool isDark) {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
-    final cities = state.clients.map((c) => c.city).toSet().toList()..sort();
+    final clientState = context.read<ClientBloc>().state;
+    final clients =
+        clientState is ClientLoaded ? clientState.clients : <ClientModel>[];
+    final cities = clients.map((c) => c.city).toSet().toList()..sort();
     final categories =
-        state.clients.map((c) => c.preferredCandidateCategory).toSet().toList()
+        clients.map((c) => c.preferredCandidateCategory).toSet().toList()
           ..sort();
 
     return [
@@ -757,28 +780,13 @@ class _ClientListScreenState extends State<ClientListScreen> {
     );
   }
 
-  Widget _buildMobileList(bool isDark, GlobalAppState state) {
+  Widget _buildMobileList(bool isDark) {
     final clients = _filteredClients;
     if (clients.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.business_center_outlined,
-              size: 48,
-              color: isDark ? AppColors.grey700 : AppColors.grey300,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No clients found.',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: isDark ? AppColors.grey400 : AppColors.grey600,
-              ),
-            ),
-          ],
-        ),
+      return const EmptyStateWidget(
+        title: 'No clients found',
+        subtitle: 'No clients match your criteria.',
+        icon: Icons.business_center_outlined,
       );
     }
 
@@ -809,8 +817,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
             break;
         }
 
-        final routePrefix =
-            state.currentUser?.role == UserRole.admin ? '/admin' : '/sales';
+        final routePrefix = '/admin'; // Hardcoded for now
 
         return _MobileClientCard(
           client: client,

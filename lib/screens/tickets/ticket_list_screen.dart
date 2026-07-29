@@ -11,6 +11,10 @@ import 'package:practice_app/models/ticket_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/screens/tickets/ticket_data_source.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/ticket/ticket_bloc.dart';
+import 'package:practice_app/blocs/ticket/ticket_event.dart';
+import 'package:practice_app/blocs/ticket/ticket_state.dart';
 
 class TicketListScreen extends StatefulWidget {
   const TicketListScreen({super.key});
@@ -24,7 +28,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
   final _debouncer = Debouncer(milliseconds: 400);
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
 
-  List<TicketModel> _allTickets = [];
+  final List<TicketModel> _allTickets = [];
   List<TicketModel> _filteredTickets = [];
   TicketDataSource? _ticketDataSource;
   String _searchQuery = '';
@@ -39,361 +43,366 @@ class _TicketListScreenState extends State<TicketListScreen> {
     _loadData();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _initializeDataSource();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _debouncer.dispose();
-    super.dispose();
-  }
-
   void _loadData() {
-    // Generate some mock tickets
-    final result = MockDataGenerator.getTickets(
-      const PaginationParams(page: 1, pageSize: 1000),
+    context.read<TicketBloc>().add(
+      LoadTickets(
+        query: _searchQuery,
+        status: _selectedStatus,
+        priority: _selectedPriority,
+        page: 1,
+        limit: 100,
+      ),
     );
-    _allTickets = result.items;
   }
 
-  void _initializeDataSource() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    var filteredTickets = _allTickets;
+  void _onSearchChanged(String val) {
+    setState(() => _searchQuery = val);
+    _debouncer.run(() {
+      _loadData();
+    });
+  }
 
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      filteredTickets =
-          filteredTickets.where((t) {
-            return t.id.toLowerCase().contains(q) ||
-                t.title.toLowerCase().contains(q) ||
-                t.clientName.toLowerCase().contains(q) ||
-                t.assignedTo.toLowerCase().contains(q);
-          }).toList();
-    }
-
-    if (_selectedStatus != null) {
-      filteredTickets =
-          filteredTickets.where((t) => t.status == _selectedStatus).toList();
-    }
-
-    if (_selectedPriority != null) {
-      filteredTickets =
-          filteredTickets
-              .where((t) => t.priority == _selectedPriority)
-              .toList();
-    }
-
-    if (_ticketDataSource == null) {
-      _ticketDataSource = TicketDataSource(
-        context: context,
-        isDark: isDark,
-        tickets: filteredTickets,
-        onRowTap: (ticket) {
-          final basePath = GoRouterState.of(context).matchedLocation;
-          context.push('$basePath/${ticket.id}');
-        },
-      );
-    } else {
-      _ticketDataSource!.isDark = isDark;
-      _ticketDataSource!.updateData(filteredTickets);
-    }
-
-    _filteredTickets = filteredTickets;
+  void _onFilterChanged() {
+    _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.themeRef.brightness == Brightness.dark;
-
-    if (_ticketDataSource == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final isMobile = context.media.width < 800;
 
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Mobile Toolbar
-          if (isMobile) _buildMobileToolbar(isDark, _filteredTickets.length),
-
-          if (!isMobile || _showFilters)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              margin: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                  ),
-                ),
-                borderRadius: BorderRadius.circular(10),
+      body: BlocBuilder<TicketBloc, TicketState>(
+        builder: (context, state) {
+          if (state.status == TicketStatusState.loading &&
+              state.tickets.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.status == TicketStatusState.error) {
+            return Center(
+              child: Text(
+                state.errorMessage ?? 'Failed to load tickets',
+                style: GoogleFonts.poppins(color: AppColors.errorRed),
               ),
-              child:
-                  isMobile
-                      ? Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: _buildFilterWidgets(isDark, context),
-                      )
-                      : Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.successGreen.withValues(
-                                alpha: 0.1,
+            );
+          }
+
+          _filteredTickets = state.tickets;
+          if (_ticketDataSource == null) {
+            _ticketDataSource = TicketDataSource(
+              context: context,
+              isDark: isDark,
+              tickets: _filteredTickets,
+              onRowTap: (ticket) {
+                final basePath = GoRouterState.of(context).matchedLocation;
+                context.push('$basePath/${ticket.id}');
+              },
+            );
+          } else {
+            _ticketDataSource!.isDark = isDark;
+            _ticketDataSource!.updateData(_filteredTickets);
+          }
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Mobile Toolbar
+              if (isMobile)
+                _buildMobileToolbar(isDark, _filteredTickets.length),
+
+              if (!isMobile || _showFilters)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 5,
+                  ),
+                  margin: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
+                    border: Border(
+                      bottom: BorderSide(
+                        color:
+                            isDark ? AppColors.dividerDark : AppColors.grey200,
+                      ),
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child:
+                      isMobile
+                          ? Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: _buildFilterWidgets(isDark, context),
+                          )
+                          : Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successGreen.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${_indianFormat.format(_filteredTickets.length)} Tickets found',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.successGreen,
+                                  ),
+                                ),
                               ),
+                              const Spacer(),
+                              ..._buildFilterWidgetsDesktop(isDark, context),
+                            ],
+                          ),
+                ),
+
+              // DataGrid
+              Expanded(
+                child:
+                    MediaQuery.of(context).size.width < 800
+                        ? _buildMobileListView(_filteredTickets, isDark)
+                        : Align(
+                          alignment: Alignment.topCenter,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${_indianFormat.format(_filteredTickets.length)} Tickets found',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.successGreen,
+                              child: SfDataGridTheme(
+                                data: SfDataGridThemeData(
+                                  headerColor:
+                                      isDark
+                                          ? AppColors.darkSurface
+                                          : AppColors.grey50,
+                                  gridLineColor:
+                                      isDark
+                                          ? AppColors.dividerDark
+                                          : AppColors.grey200,
+                                  gridLineStrokeWidth: 1,
+                                  rowHoverColor:
+                                      isDark
+                                          ? AppColors.navyBlue.withValues(
+                                            alpha: 0.1,
+                                          )
+                                          : AppColors.navyBlue.withValues(
+                                            alpha: 0.04,
+                                          ),
+                                  sortIconColor: AppColors.gold,
+                                ),
+                                child: SfDataGrid(
+                                  source: _ticketDataSource!,
+
+                                  allowSorting: true,
+                                  allowMultiColumnSorting: false,
+                                  columnWidthMode: ColumnWidthMode.auto,
+                                  headerRowHeight: 48,
+                                  rowHeight: 56,
+                                  gridLinesVisibility: GridLinesVisibility.both,
+                                  headerGridLinesVisibility:
+                                      GridLinesVisibility.both,
+                                  columns: [
+                                    GridColumn(
+                                      columnName: 'id',
+                                      visible: false,
+                                      label: const SizedBox.shrink(),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'sr_no',
+                                      width: 100,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Ticket ID',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'date',
+                                      width: 130,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Created At',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'details',
+                                      maximumWidth: 300,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Details',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'priority',
+                                      width: 120,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Priority',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'status',
+                                      width: 120,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Status',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'assigned',
+                                      width: 140,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Assigned To',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                    GridColumn(
+                                      columnName: 'actions',
+                                      width: 100,
+                                      label: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          'Action',
+                                          style: _headerStyle(isDark),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const Spacer(),
-                          ..._buildFilterWidgetsDesktop(isDark, context),
+                        ),
+              ),
+
+              // Pagination
+              if (!isMobile)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
+                    border: Border(
+                      top: BorderSide(
+                        color:
+                            isDark ? AppColors.dividerDark : AppColors.grey200,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              isDark
+                                  ? AppColors.white.withValues(alpha: 0.1)
+                                  : AppColors.criticalRed.withValues(
+                                    alpha: 0.08,
+                                  ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${_indianFormat.format(_ticketDataSource!.rows.length)} Tickets',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isDark
+                                    ? AppColors.white
+                                    : AppColors.criticalRed,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const IconButton(
+                            icon: Icon(Icons.chevron_left, size: 20),
+                            onPressed: null, // Stubbed for mock data
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Page 1 of 1',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const IconButton(
+                            icon: Icon(Icons.chevron_right, size: 20),
+                            onPressed: null, // Stubbed for mock data
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(),
+                          ),
                         ],
                       ),
-            ),
-
-          // DataGrid
-          Expanded(
-            child:
-                MediaQuery.of(context).size.width < 800
-                    ? _buildMobileListView(_filteredTickets, isDark)
-                    : Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SfDataGridTheme(
-                            data: SfDataGridThemeData(
-                              headerColor:
-                                  isDark
-                                      ? AppColors.darkSurface
-                                      : AppColors.grey50,
-                              gridLineColor:
-                                  isDark
-                                      ? AppColors.dividerDark
-                                      : AppColors.grey200,
-                              gridLineStrokeWidth: 1,
-                              rowHoverColor:
-                                  isDark
-                                      ? AppColors.navyBlue.withValues(
-                                        alpha: 0.1,
-                                      )
-                                      : AppColors.navyBlue.withValues(
-                                        alpha: 0.04,
-                                      ),
-                              sortIconColor: AppColors.gold,
-                            ),
-                            child: SfDataGrid(
-                              source: _ticketDataSource!,
-
-                              allowSorting: true,
-                              allowMultiColumnSorting: false,
-                              columnWidthMode: ColumnWidthMode.auto,
-                              headerRowHeight: 48,
-                              rowHeight: 56,
-                              gridLinesVisibility: GridLinesVisibility.both,
-                              headerGridLinesVisibility:
-                                  GridLinesVisibility.both,
-                              columns: [
-                                GridColumn(
-                                  columnName: 'id',
-                                  visible: false,
-                                  label: const SizedBox.shrink(),
-                                ),
-                                GridColumn(
-                                  columnName: 'sr_no',
-                                  width: 100,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Ticket ID',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'date',
-                                  width: 130,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Created At',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'details',
-                                  maximumWidth: 300,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Details',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'priority',
-                                  width: 120,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Priority',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'status',
-                                  width: 120,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Status',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'assigned',
-                                  width: 140,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Assigned To',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                                GridColumn(
-                                  columnName: 'actions',
-                                  width: 100,
-                                  label: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'Action',
-                                      style: _headerStyle(isDark),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-          ),
-
-          // Pagination
-          if (!isMobile)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isDark
-                              ? AppColors.white.withValues(alpha: 0.1)
-                              : AppColors.criticalRed.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${_indianFormat.format(_ticketDataSource!.rows.length)} Tickets',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.white : AppColors.criticalRed,
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const IconButton(
-                        icon: Icon(Icons.chevron_left, size: 20),
-                        onPressed: null, // Stubbed for mock data
-                        padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Page 1 of 1',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const IconButton(
-                        icon: Icon(Icons.chevron_right, size: 20),
-                        onPressed: null, // Stubbed for mock data
-                        padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(),
-                      ),
+                      const SizedBox(width: 100), // Balance space
                     ],
                   ),
-                  const SizedBox(width: 100), // Balance space
-                ],
-              ),
-            ),
-        ],
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -425,7 +434,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
       height: 38,
       child: TextField(
         controller: _searchController,
-        onChanged: (val) => setState(() => _searchQuery = val),
+        onChanged: _onSearchChanged,
         decoration: InputDecoration(
           hintText: 'Search by title, client...',
           hintStyle: GoogleFonts.poppins(
@@ -488,7 +497,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
         ],
         onChanged: (val) {
           setState(() => _selectedPriority = val);
-          _initializeDataSource();
+          _onFilterChanged();
         },
       ),
     );
@@ -533,7 +542,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
         ],
         onChanged: (val) {
           setState(() => _selectedStatus = val);
-          _initializeDataSource();
+          _onFilterChanged();
         },
       ),
     );
@@ -784,7 +793,19 @@ class _TicketListScreenState extends State<TicketListScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Logic to create ticket (mock)
+                    final newTicket = TicketModel(
+                      id: '', // Backend will generate
+                      title: titleController.text,
+                      description: descController.text,
+                      priority: selectedPriority,
+                      status: TicketStatus.open,
+                      clientId: '', // Could be looked up
+                      clientName: clientController.text,
+                      assignedTo: assignedController.text,
+                      createdAt: DateTime.now(),
+                    );
+                    context.read<TicketBloc>().add(CreateTicket(newTicket));
+
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

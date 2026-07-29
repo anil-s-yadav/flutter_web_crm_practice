@@ -5,7 +5,7 @@ abstract class ContractEvent extends Equatable {
   const ContractEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class LoadContracts extends ContractEvent {
@@ -33,4 +33,19 @@ class UpdateContract extends ContractEvent {
 
   @override
   List<Object> get props => [contract];
+}
+
+class RenewContract extends ContractEvent {
+  final String contractId;
+  final String? newCandidateId;
+  final String? newCandidateName;
+
+  const RenewContract({
+    required this.contractId,
+    this.newCandidateId,
+    this.newCandidateName,
+  });
+
+  @override
+  List<Object?> get props => [contractId, newCandidateId, newCandidateName];
 }

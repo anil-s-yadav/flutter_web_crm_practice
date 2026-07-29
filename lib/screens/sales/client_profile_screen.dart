@@ -8,11 +8,11 @@ import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/models/user_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
 import 'package:practice_app/blocs/client/client_event.dart';
@@ -23,6 +23,8 @@ import 'package:practice_app/blocs/contract/contract_state.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
+import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+import 'package:practice_app/blocs/replacement/replacement_state.dart';
 
 class ClientProfileScreen extends StatefulWidget {
   final String clientId;
@@ -46,7 +48,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
+    final state = context.read<AuthBloc>().state;
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
@@ -58,56 +60,86 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 if (clientState is ClientLoading ||
                     contractState is ContractLoading ||
                     candidateState is CandidateLoading) {
-                  return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
                 }
 
                 if (clientState is ClientError) {
-                  return Scaffold(body: Center(child: Text('Error: ${clientState.message}')));
+                  return Scaffold(
+                    body: Center(child: Text('Error: ${clientState.message}')),
+                  );
                 }
                 if (contractState is ContractError) {
-                  return Scaffold(body: Center(child: Text('Error: ${contractState.message}')));
+                  return Scaffold(
+                    body: Center(
+                      child: Text('Error: ${contractState.message}'),
+                    ),
+                  );
                 }
                 if (candidateState is CandidateError) {
-                  return Scaffold(body: Center(child: Text('Error: ${candidateState.message}')));
+                  return Scaffold(
+                    body: Center(
+                      child: Text('Error: ${candidateState.message}'),
+                    ),
+                  );
                 }
 
                 if (clientState is ClientLoaded &&
                     contractState is ContractLoaded &&
                     candidateState is CandidateLoaded) {
-                  final clientList = clientState.clients.where((c) => c.id == widget.clientId).toList();
+                  final clientList =
+                      clientState.clients
+                          .where((c) => c.id == widget.clientId)
+                          .toList();
                   if (clientList.isEmpty) {
-                    return const Scaffold(body: Center(child: Text('Client not found')));
+                    return const Scaffold(
+                      body: Center(child: Text('Client not found')),
+                    );
                   }
                   final client = clientList.first;
 
-                  final contractList = contractState.contracts.where((c) => c.clientId == client.id).toList();
-                  contractList.sort((a, b) => b.placementDate.compareTo(a.placementDate));
-                  final contract = contractList.isNotEmpty ? contractList.first : null;
-
-                  final candidateList = contract != null
-                      ? candidateState.candidates.where((c) => c.id == contract.candidateId).toList()
-                      : [];
-                  final candidate = candidateList.isNotEmpty ? candidateList.first : null;
-
-                  final relevantLogs =
-                      state.auditLogs
-                          .where(
-                            (log) =>
-                                log.targetId == client.id ||
-                                (contract != null && log.targetId == contract.id),
-                          )
+                  final contractList =
+                      contractState.contracts
+                          .where((c) => c.clientId == client.id)
                           .toList();
+                  contractList.sort(
+                    (a, b) => b.placementDate.compareTo(a.placementDate),
+                  );
+                  final contract =
+                      contractList.isNotEmpty ? contractList.first : null;
 
-                  final tabs = ['Details', 'Candidates & Contracts', 'Documents'];
+                  final candidateList =
+                      contract != null
+                          ? candidateState.candidates
+                              .where((c) => c.id == contract.candidateId)
+                              .toList()
+                          : [];
+                  final candidate =
+                      candidateList.isNotEmpty ? candidateList.first : null;
+
+                  final relevantLogs = <AuditLogModel>[];
+
+                  final tabs = [
+                    'Details',
+                    'Candidates & Contracts',
+                    'Documents',
+                  ];
 
                   return Scaffold(
                     body: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          color: isDark ? AppColors.darkSurface : AppColors.surfaceLight,
+                          color:
+                              isDark
+                                  ? AppColors.darkSurface
+                                  : AppColors.surfaceLight,
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
@@ -123,10 +155,14 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                                             isSelected
                                                 ? AppColors.navyBlue
                                                 : (isDark
-                                                    ? AppColors.textSecondaryDark
-                                                    : AppColors.textSecondaryLight),
+                                                    ? AppColors
+                                                        .textSecondaryDark
+                                                    : AppColors
+                                                        .textSecondaryLight),
                                         fontWeight:
-                                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                                            isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
                                       ),
                                     ),
                                     selected: isSelected,
@@ -168,7 +204,9 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   );
                 }
 
-                return const Scaffold(body: Center(child: Text('Unknown state')));
+                return const Scaffold(
+                  body: Center(child: Text('Unknown state')),
+                );
               },
             );
           },
@@ -200,20 +238,25 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ],
       );
     } else if (_activeTabIndex == 1) {
-      final state = Provider.of<GlobalAppState>(context, listen: false);
+      final state = context.read<AuthBloc>().state;
       final contractState = context.read<ContractBloc>().state;
-      final allContracts = contractState is ContractLoaded ? contractState.contracts : <ContractModel>[];
-      
+      final allContracts =
+          contractState is ContractLoaded
+              ? contractState.contracts
+              : <ContractModel>[];
+
       // All contracts for this client, sorted by date descending
       final allClientContracts =
           allContracts.where((c) => c.clientId == client.id).toList()
             ..sort((a, b) => b.placementDate.compareTo(a.placementDate));
-      // Replacement requests for this client
+      final replacementState = context.read<ReplacementBloc>().state;
       final clientReplacements =
-          state.replacementRequests
-              .where((r) => r.clientId == client.id)
-              .toList()
-            ..sort((a, b) => b.requestDate.compareTo(a.requestDate));
+          replacementState is ReplacementLoaded
+              ? (replacementState.replacements
+                  .where((r) => r.clientId == client.id)
+                  .toList()
+                ..sort((a, b) => b.requestDate.compareTo(a.requestDate)))
+              : <ReplacementRequestModel>[];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,10 +592,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   return;
                 }
 
-                final state = Provider.of<GlobalAppState>(
-                  context,
-                  listen: false,
-                );
                 final timestamp = DateFormat(
                   'dd MMM yyyy, HH:mm',
                 ).format(DateTime.now());
@@ -562,8 +601,10 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                         ? '[$timestamp] Status changed to ${nextStatus.displayName}: $note'
                         : '${client.remarks}\n\n[$timestamp] Status changed to ${nextStatus.displayName}: $note';
 
-                state.updateClient(
-                  client.copyWith(status: nextStatus, remarks: newRemarks),
+                context.read<ClientBloc>().add(
+                  UpdateClient(
+                    client.copyWith(status: nextStatus, remarks: newRemarks),
+                  ),
                 );
 
                 Navigator.of(dialogContext).pop();
@@ -972,12 +1013,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 20),
                         onPressed: () {
-                          final state = Provider.of<GlobalAppState>(
-                            context,
-                            listen: false,
-                          );
+                          final state = context.read<AuthBloc>().state;
                           final routePrefix =
-                              state.currentUser?.role == UserRole.admin
+                              ((state is AuthAuthenticated)
+                                              ? (state).user
+                                              : null)
+                                          ?.role ==
+                                      UserRole.admin
                                   ? '/admin'
                                   : '/sales';
                           context.push(
@@ -1938,7 +1980,10 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final candidateState = context.watch<CandidateBloc>().state;
-    final allCandidates = candidateState is CandidateLoaded ? candidateState.candidates : <CandidateModel>[];
+    final allCandidates =
+        candidateState is CandidateLoaded
+            ? candidateState.candidates
+            : <CandidateModel>[];
 
     // Find candidates ready to place matching the requested category
     var pool =
@@ -2188,8 +2233,27 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
                 height: 28,
                 child: ElevatedButton(
                   onPressed: () {
-                    final state = Provider.of<GlobalAppState>(context, listen: false);
-                    state.createContract(widget.client, candidate);
+                    final newContract = ContractModel(
+                      id: 'PENDING',
+                      clientId: widget.client.id,
+                      clientName: widget.client.fullName,
+                      candidateId: candidate.id,
+                      candidateName: candidate.fullName,
+                      placementDate: DateTime.now(),
+                      guaranteeEndDate: DateTime.now().add(
+                        const Duration(days: 90),
+                      ),
+                      contractStatus: ContractStatus.pending,
+                      serviceFee: 15000,
+                      amountPaid: 0,
+                      balanceAmount: 15000,
+                      paymentStatus: PaymentStatus.pending,
+                      replacementsUsed: 0,
+                      createdBy: 'System',
+                    );
+                    context.read<ContractBloc>().add(
+                      CreateContract(newContract),
+                    );
 
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(

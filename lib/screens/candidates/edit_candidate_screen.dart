@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_event.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 
 class EditCandidateScreen extends StatefulWidget {
   final String candidateId;
@@ -38,11 +41,17 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = Provider.of<GlobalAppState>(context, listen: false);
-      final found = state.getCandidate(widget.candidateId);
+      final candidateState = context.read<CandidateBloc>().state;
+      CandidateModel? found;
+      if (candidateState is CandidateLoaded) {
+        found =
+            candidateState.candidates
+                .where((c) => c.id == widget.candidateId)
+                .firstOrNull;
+      }
       if (found != null) {
         setState(() {
-          _candidate = found;
+          _candidate = found!;
           _name = _candidate.fullName;
           _phone = _candidate.phone;
           _age = _candidate.age;
@@ -57,7 +66,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           _isLoading = false;
         });
       } else {
-        context.pop();
+        setState(() {
+          _isLoading = false;
+        });
       }
     });
   }
@@ -66,7 +77,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final state = Provider.of<GlobalAppState>(context, listen: false);
+      final state = context.read<AuthBloc>().state;
 
       // Determine what changed for the audit log
       List<String> changes = [];
@@ -109,8 +120,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
         expectedSalary: _expectedSalary,
       );
 
-      final summary = 'Updated: ${changes.join(', ')}';
-      state.updateCandidate(updatedCandidate, summary);
+      context.read<CandidateBloc>().add(UpdateCandidate(updatedCandidate));
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully.')),

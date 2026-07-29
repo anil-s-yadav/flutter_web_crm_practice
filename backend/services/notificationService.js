@@ -11,7 +11,7 @@ try {
   if (require('fs').existsSync(serviceAccountPath)) {
     const serviceAccount = require(serviceAccountPath);
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.cert(serviceAccount)
     });
     isInitialized = true;
     console.log('Firebase Admin initialized successfully.');
@@ -52,7 +52,8 @@ const sendPushToUser = async (userId, title, body) => {
       token
     };
 
-    const response = await admin.messaging().send(message);
+    const { getMessaging } = require('firebase-admin/messaging');
+    const response = await getMessaging().send(message);
     console.log('Successfully sent message:', response);
   } catch (err) {
     console.error('Error sending push notification:', err);

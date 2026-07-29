@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/screens/shared/notification_panel.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
 import 'package:provider/provider.dart';
 
 class ExecutiveShell extends StatefulWidget {
@@ -71,7 +71,7 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentLocation = GoRouterState.of(context).uri.toString();
-    final appState = Provider.of<GlobalAppState>(context);
+    final appState = context.read<AuthBloc>().state;
 
     return Scaffold(
       endDrawer: const NotificationPanel(),
@@ -106,10 +106,11 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
           ),
           Builder(
             builder: (context) {
+              const unreadNotificationCount = 0;
               return Badge(
-                isLabelVisible: appState.unreadNotificationCount > 0,
+                isLabelVisible: unreadNotificationCount > 0,
                 label: Text(
-                  appState.unreadNotificationCount.toString(),
+                  unreadNotificationCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,

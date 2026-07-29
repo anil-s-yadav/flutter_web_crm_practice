@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:practice_app/theme/app_colors.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/models/notification_model.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -11,9 +9,10 @@ class NotificationPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context);
-    final notifications = state.notifications;
+    final notifications = <NotificationModel>[];
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unreadNotificationCount =
+        notifications.where((n) => !n.isRead).length;
 
     return Container(
       width: 400,
@@ -42,9 +41,9 @@ class NotificationPanel extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (state.unreadNotificationCount > 0)
+                  if (unreadNotificationCount > 0)
                     TextButton(
-                      onPressed: () => state.markAllNotificationsRead(),
+                      onPressed: () {},
                       child: Text(
                         'Mark all as read',
                         style: GoogleFonts.poppins(
@@ -86,7 +85,7 @@ class NotificationPanel extends StatelessWidget {
                           final notif = notifications[index];
                           return _NotificationItem(
                             notification: notif,
-                            onTap: () => state.markNotificationRead(notif.id),
+                            onTap: () {},
                           );
                         },
                       ),

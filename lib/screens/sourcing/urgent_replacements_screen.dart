@@ -3,21 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
 import 'package:practice_app/blocs/replacement/replacement_event.dart';
 import 'package:practice_app/blocs/replacement/replacement_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 
 class UrgentReplacementsScreen extends StatefulWidget {
   const UrgentReplacementsScreen({super.key});
 
   @override
-  State<UrgentReplacementsScreen> createState() => _UrgentReplacementsScreenState();
+  State<UrgentReplacementsScreen> createState() =>
+      _UrgentReplacementsScreenState();
 }
 
 class _UrgentReplacementsScreenState extends State<UrgentReplacementsScreen> {
@@ -96,7 +97,9 @@ class _UrgentReplacementsScreenState extends State<UrgentReplacementsScreen> {
                   separatorBuilder:
                       (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
-                    return _UrgentReplacementCard(request: urgentRequests[index]);
+                    return _UrgentReplacementCard(
+                      request: urgentRequests[index],
+                    );
                   },
                 );
           }
@@ -300,24 +303,53 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
   Future<void> _pickCandidate() async {
     final result = await CandidatePickerDialog.show(context);
     if (result != null) {
-      final state = Provider.of<GlobalAppState>(context, listen: false);
-      final candidate = state.candidates.firstWhere(
-        (c) => c.id == result['id'],
-      );
-      if (!_selectedCandidates.any((c) => c.id == candidate.id)) {
-        setState(() {
-          _selectedCandidates.add(candidate);
-        });
+      final candidateState = context.read<CandidateBloc>().state;
+      if (candidateState is CandidateLoaded) {
+        final candidate = candidateState.candidates.firstWhere(
+          (c) => c.id == result['id'],
+          orElse:
+              () => CandidateModel(
+                id: result['id']!,
+                fullName: result['name']!,
+                age: 25,
+                phone: '',
+                address: '',
+                city: '',
+                state: '',
+                languages: const [],
+                religion: '',
+                category: '',
+                education: '',
+                experienceYears: 0,
+                expectedSalary: '0',
+                workingHoursPerDay: 8,
+                status: CandidateStatus.readyToPlace,
+                isMedicalCleared: true,
+                isPoliceVerified: true,
+                isAadhaarVerified: true,
+                addedBy: 'System',
+                dateAdded: DateTime.now(),
+              ),
+        );
+        if (!_selectedCandidates.any((c) => c.id == candidate.id)) {
+          setState(() {
+            _selectedCandidates.add(candidate);
+          });
+        }
       }
     }
   }
 
   void _submitFulfillment() {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
-    state.fulfillUrgentReplacement(
-      widget.request.id,
-      _selectedCandidates.map((c) => c.id).toList(),
-    );
+    if (_selectedCandidates.isNotEmpty) {
+      context.read<ReplacementBloc>().add(
+        AssignReplacementStaff(
+          requestId: widget.request.id,
+          newCandidateId: _selectedCandidates.first.id,
+          newCandidateName: _selectedCandidates.first.fullName,
+        ),
+      );
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Request fulfilled and sent back to Sales!'),

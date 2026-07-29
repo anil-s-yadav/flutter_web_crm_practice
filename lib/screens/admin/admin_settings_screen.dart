@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
-import 'package:practice_app/providers/global_app_state.dart';
 import 'package:practice_app/models/notification_model.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
@@ -545,10 +543,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       type: selectedType,
                     );
 
-                    Provider.of<GlobalAppState>(
-                      context,
-                      listen: false,
-                    ).addNotification(newNotif);
+                    // TODO: Implement notification dispatch using appropriate bloc/service
                     Navigator.pop(context);
 
                     ScaffoldMessenger.of(context).showSnackBar(

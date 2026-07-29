@@ -9,7 +9,6 @@ import 'auth/user_manager.dart';
 import 'routing/app_router.dart';
 import 'theme/text.dart';
 import 'theme/theme.dart';
-import 'providers/global_app_state.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/repositories/auth_repository.dart';
@@ -33,6 +32,15 @@ import 'package:practice_app/blocs/task/task_bloc.dart';
 
 import 'package:practice_app/repositories/replacement_repository.dart';
 import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
+import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
+import 'package:practice_app/repositories/audit_log_repository.dart';
+
+import 'package:practice_app/repositories/user_repository.dart';
+import 'package:practice_app/blocs/user/user_bloc.dart';
+import 'package:practice_app/blocs/user/user_event.dart';
+
+import 'package:practice_app/repositories/ticket_repository.dart';
+import 'package:practice_app/blocs/ticket/ticket_bloc.dart';
 
 import 'package:practice_app/api/api_client.dart';
 
@@ -43,12 +51,10 @@ import 'services/firebase_messaging_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Setup Background Messaging Handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -65,76 +71,93 @@ void main() async {
         RepositoryProvider(create: (context) => AuthRepository()),
         RepositoryProvider(create: (context) => AnalyticsRepository()),
         RepositoryProvider(
-          create: (context) => CandidateRepository(
-            apiClient: ApiClient(),
-          ),
+          create: (context) => CandidateRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
-          create: (context) => ClientRepository(
-            apiClient: ApiClient(),
-          ),
+          create: (context) => ClientRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
-          create: (context) => ContractRepository(
-            apiClient: ApiClient(),
-          ),
+          create: (context) => ContractRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
-          create: (context) => TaskRepository(
-            apiClient: ApiClient(),
-          ),
+          create: (context) => TaskRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
-          create: (context) => ReplacementRepository(
-            apiClient: ApiClient(),
-          ),
+          create: (context) => ReplacementRepository(apiClient: ApiClient()),
+        ),
+        RepositoryProvider(
+          create: (context) => UserRepository(apiClient: ApiClient()),
+        ),
+        RepositoryProvider(
+          create: (context) => TicketRepository(apiClient: ApiClient()),
         ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => AuthBloc(
-              authRepository: context.read<AuthRepository>(),
-            )..add(AppStarted()),
+            create:
+                (context) =>
+                    UserBloc(userRepository: context.read<UserRepository>())
+                      ..add(const LoadUsers()),
           ),
           BlocProvider(
-            create: (context) => DashboardBloc(
-              repository: context.read<AnalyticsRepository>(),
-            ),
+            create:
+                (context) =>
+                    AuthBloc(authRepository: context.read<AuthRepository>())
+                      ..add(AppStarted()),
           ),
           BlocProvider(
-            create: (context) => CandidateBloc(
-              candidateRepository: context.read<CandidateRepository>(),
-            ),
+            create:
+                (context) => DashboardBloc(
+                  repository: context.read<AnalyticsRepository>(),
+                ),
           ),
           BlocProvider(
-            create: (context) => ClientBloc(
-              clientRepository: context.read<ClientRepository>(),
-            ),
+            create:
+                (context) => CandidateBloc(
+                  candidateRepository: context.read<CandidateRepository>(),
+                ),
           ),
           BlocProvider(
-            create: (context) => ContractBloc(
-              contractRepository: context.read<ContractRepository>(),
-            ),
+            create:
+                (context) => ClientBloc(
+                  clientRepository: context.read<ClientRepository>(),
+                ),
           ),
           BlocProvider(
-            create: (context) => TaskBloc(
-              taskRepository: context.read<TaskRepository>(),
-            ),
+            create:
+                (context) => ContractBloc(
+                  contractRepository: context.read<ContractRepository>(),
+                ),
           ),
           BlocProvider(
-            create: (context) => ReplacementBloc(
-              replacementRepository: context.read<ReplacementRepository>(),
-            ),
+            create:
+                (context) =>
+                    TaskBloc(taskRepository: context.read<TaskRepository>()),
+          ),
+          BlocProvider(
+            create:
+                (context) => ReplacementBloc(
+                  replacementRepository: context.read<ReplacementRepository>(),
+                ),
+          ),
+          BlocProvider(
+            create:
+                (context) =>
+                    AuditLogBloc(auditLogRepository: AuditLogRepository())
+                      ..add(const LoadAuditLogs()),
+          ),
+          BlocProvider(
+            create:
+                (context) => TicketBloc(
+                  ticketRepository: context.read<TicketRepository>(),
+                ),
           ),
         ],
         child: MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
             ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
-            ChangeNotifierProvider(
-              create: (_) => GlobalAppState()..initializeData(),
-            ),
           ],
           child: const MyApp(),
         ),

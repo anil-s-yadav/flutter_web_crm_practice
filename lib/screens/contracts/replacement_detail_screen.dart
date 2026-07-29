@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/candidate_picker_dialog.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
 import 'package:practice_app/blocs/replacement/replacement_event.dart';
@@ -33,7 +34,7 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final state = context.read<AuthBloc>().state;
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
     final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
@@ -75,68 +76,73 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-            // Back Button
-            InkWell(
-              onTap: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  context.go('/sales/contracts/replacements');
-                }
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.arrow_back,
-                      size: 18,
-                      color: isDark ? AppColors.white : AppColors.navyBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Back to Replacements',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                  // Back Button
+                  InkWell(
+                    onTap: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        context.go('/sales/contracts/replacements');
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_back,
+                            size: 18,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Back to Replacements',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isDark ? AppColors.white : AppColors.navyBlue,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Header Card
+                  _buildHeaderCard(request, dateFormat, isDark),
+                  const SizedBox(height: 20),
+
+                  // Info Cards
+                  _buildInfoCard(context, request, isDark),
+                  const SizedBox(height: 20),
+
+                  // Sourcing Suggestions
+                  if (request.suggestedCandidateIds.isNotEmpty &&
+                      request.status != ReplacementStatus.resolved) ...[
+                    _buildSourcingSuggestionsCard(context, request, isDark),
+                    const SizedBox(height: 20),
                   ],
-                ),
+
+                  // Resolution Card (if resolved)
+                  if (request.status == ReplacementStatus.resolved) ...[
+                    _buildResolutionCard(request, dateFormat, isDark),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Action Button
+                  _buildActionButtons(context, request, state, isDark),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Header Card
-            _buildHeaderCard(request, dateFormat, isDark),
-            const SizedBox(height: 20),
-
-            // Info Cards
-            _buildInfoCard(context, request, isDark),
-            const SizedBox(height: 20),
-
-            // Sourcing Suggestions
-            if (request.suggestedCandidateIds.isNotEmpty &&
-                request.status != ReplacementStatus.resolved) ...[
-              _buildSourcingSuggestionsCard(context, request, isDark),
-              const SizedBox(height: 20),
-            ],
-
-            // Resolution Card (if resolved)
-            if (request.status == ReplacementStatus.resolved) ...[
-              _buildResolutionCard(request, dateFormat, isDark),
-              const SizedBox(height: 20),
-            ],
-
-            // Action Button
-            _buildActionButtons(context, request, state, isDark),
-          ],
-        ),
-      ),
-    );
+          );
         }
         return const SizedBox.shrink();
       },
@@ -345,10 +351,14 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
   ) {
     if (request.suggestedCandidateIds.isEmpty) return const SizedBox.shrink();
 
-    final state = Provider.of<GlobalAppState>(context, listen: false);
+    final candidateState = context.read<CandidateBloc>().state;
+    final candidates =
+        candidateState is CandidateLoaded
+            ? candidateState.candidates
+            : <CandidateModel>[];
     final suggestedCandidates =
         request.suggestedCandidateIds
-            .map((id) => state.candidates.where((c) => c.id == id).firstOrNull)
+            .map((id) => candidates.where((c) => c.id == id).firstOrNull)
             .where((c) => c != null)
             .cast<CandidateModel>()
             .toList();
@@ -467,8 +477,7 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
         if (request.status != ReplacementStatus.resolved &&
             !request.isEscalatedToSourcing)
           OutlinedButton.icon(
-            onPressed:
-                () => _showEscalateToSourcingSheet(context, request, state),
+            onPressed: () => _showEscalateToSourcingSheet(context, request),
             icon: const Icon(Icons.support_agent),
             label: Text(
               'Request Urgent Sourcing',
@@ -487,7 +496,6 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
   void _showEscalateToSourcingSheet(
     BuildContext context,
     ReplacementRequestModel request,
-    GlobalAppState state,
   ) {
     showDialog(
       context: context,
@@ -502,11 +510,12 @@ class _ReplacementDetailScreenState extends State<ReplacementDetailScreen> {
   ) async {
     final selectedCandidate = await CandidatePickerDialog.show(context);
     if (selectedCandidate != null) {
-      // ignore: undefined_method
-      state.assignReplacementStaff(
-        request.id,
-        selectedCandidate['id'],
-        selectedCandidate['name'],
+      context.read<ReplacementBloc>().add(
+        AssignReplacementStaff(
+          requestId: request.id,
+          newCandidateId: selectedCandidate['id']!,
+          newCandidateName: selectedCandidate['name']!,
+        ),
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -680,10 +689,16 @@ class _EscalateToSourcingSheetState extends State<_EscalateToSourcingSheet> {
 
   void _escalate() {
     _formKey.currentState!.save();
-    final state = Provider.of<GlobalAppState>(context, listen: false);
 
-    // Call new state method
-    state.escalateReplacementToSourcing(widget.request.id, _criteria);
+    // Escalate via BLoC
+    context.read<ReplacementBloc>().add(
+      UpdateReplacement(
+        widget.request.copyWith(
+          isEscalatedToSourcing: true,
+          requiredCriteria: _criteria,
+        ),
+      ),
+    );
 
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(

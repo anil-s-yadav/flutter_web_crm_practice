@@ -1,7 +1,7 @@
 -- Run this script in phpMyAdmin or via MySQL command line to create the database and tables.
 
-CREATE DATABASE IF NOT EXISTS crm_db;
-USE crm_db;
+CREATE DATABASE IF NOT EXISTS verifiedmaids_db;
+USE verifiedmaids_db;
 
 -- 1. Users (Employees/Staff)
 CREATE TABLE IF NOT EXISTS users (
@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin', 'sales', 'sourcing', 'executive') NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) UNIQUE,
+    alternate_phone VARCHAR(20),
     active BOOLEAN DEFAULT TRUE,
     profile_image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS clients (
     name VARCHAR(100) NOT NULL,
     company_name VARCHAR(150),
     email VARCHAR(150),
-    phone VARCHAR(20) NOT NULL,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    alternate_phone VARCHAR(20),
     address TEXT,
     status ENUM('lead', 'followUp', 'converted', 'inactive') DEFAULT 'lead',
     loyalty_points INT DEFAULT 0,
@@ -38,7 +40,8 @@ CREATE TABLE IF NOT EXISTS clients (
 CREATE TABLE IF NOT EXISTS candidates (
     id VARCHAR(50) PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
+    phone VARCHAR(20) NOT NULL UNIQUE,
+    alternate_phone VARCHAR(20),
     category VARCHAR(100),
     expected_salary DECIMAL(10, 2),
     status ENUM('newlyAdded', 'verificationPending', 'medicalPending', 'readyToPlace', 'placed', 'blacklisted') DEFAULT 'newlyAdded',

@@ -121,8 +121,8 @@ const getSalesAnalytics = async (req, res) => {
 const getSourcingAnalytics = async (req, res) => {
   try {
     const sourcingId = req.user.id;
-    const [candidatesRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE added_by_id = ?', [sourcingId]);
-    const [pipelineRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE added_by_id = ? AND status IN ("verification_pending", "medical_pending", "ready_to_place")', [sourcingId]);
+    const [candidatesRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE sourced_by_id = ?', [sourcingId]);
+    const [pipelineRes] = await pool.execute('SELECT COUNT(*) as count FROM candidates WHERE sourced_by_id = ? AND status IN ("verificationPending", "verification_pending", "medicalPending", "medical_pending", "readyToPlace", "ready_to_place")', [sourcingId]);
     const [replacementsRes] = await pool.execute('SELECT COUNT(*) as count FROM replacement_requests WHERE status = "pending"');
 
     res.json({

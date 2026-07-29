@@ -10,7 +10,7 @@ import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/utils/fullscreen.dart';
 import 'package:practice_app/screens/shared/notification_panel.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:practice_app/widgets/global_search_dialog.dart';
 
 class DesktopShell extends StatefulWidget {
   final Widget child;
@@ -505,25 +505,24 @@ class _DesktopShellState extends State<DesktopShell> {
         body: widget.child,
       );
     } else {
-
       mainScaffold = Scaffold(
-      endDrawer: const NotificationPanel(),
-      body: Row(
-        children: [
-          // Sidebar
-          _buildSidebar(isDark, currentLocation, user),
-          // Content
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(isDark, currentLocation, timerProvider),
-                Expanded(child: widget.child),
-              ],
+        endDrawer: const NotificationPanel(),
+        body: Row(
+          children: [
+            // Sidebar
+            _buildSidebar(isDark, currentLocation, user),
+            // Content
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(isDark, currentLocation, timerProvider),
+                  Expanded(child: widget.child),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
     }
 
     return PopScope(
@@ -551,7 +550,10 @@ class _DesktopShellState extends State<DesktopShell> {
         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
       ),
       actions: [
-        // _buildTimerChip(timerProvider),
+        IconButton(
+          icon: const Icon(Icons.search, size: 22),
+          onPressed: () => GlobalSearchDialog.show(context),
+        ),
         _buildThemeToggle(isDark),
         if (context.media.width >= 600)
           IconButton(
@@ -560,11 +562,11 @@ class _DesktopShellState extends State<DesktopShell> {
           ),
         Builder(
           builder: (context) {
-            final appState = Provider.of<GlobalAppState>(context);
+            const unreadNotificationCount = 0;
             return Badge(
-              isLabelVisible: appState.unreadNotificationCount > 0,
+              isLabelVisible: unreadNotificationCount > 0,
               label: Text(
-                appState.unreadNotificationCount.toString(),
+                unreadNotificationCount.toString(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,
@@ -998,34 +1000,32 @@ class _DesktopShellState extends State<DesktopShell> {
           const Spacer(),
 
           // Search bar
-          Container(
-            width: 240,
-            height: 38,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.grey100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 12),
-                Icon(Icons.search, size: 18, color: AppColors.grey500),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    style: GoogleFonts.poppins(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      hintStyle: GoogleFonts.poppins(
+          InkWell(
+            onTap: () => GlobalSearchDialog.show(context),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 240,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : AppColors.grey100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  Icon(Icons.search, size: 18, color: AppColors.grey500),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Search anything...',
+                      style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: AppColors.grey500,
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -1094,11 +1094,11 @@ class _DesktopShellState extends State<DesktopShell> {
           // Notifications
           Builder(
             builder: (context) {
-              final appState = Provider.of<GlobalAppState>(context);
+              const unreadNotificationCount = 0;
               return Badge(
-                isLabelVisible: appState.unreadNotificationCount > 0,
+                isLabelVisible: unreadNotificationCount > 0,
                 label: Text(
-                  appState.unreadNotificationCount.toString(),
+                  unreadNotificationCount.toString(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -1222,7 +1222,9 @@ class _DesktopShellState extends State<DesktopShell> {
 
     if (location.endsWith('/contracts/active')) return 'Fresh Contracts';
     if (location.endsWith('/contracts/renewals')) return 'Renewed Contracts';
-    if (location.contains('/contracts/replacements/')) return 'Replacement Details';
+    if (location.contains('/contracts/replacements/')) {
+      return 'Replacement Details';
+    }
     if (location.endsWith('/contracts/replacements')) return 'Replacements';
     if (location.contains('/contracts/')) return 'Contract Details';
     if (location.endsWith('/contracts')) return 'Contracts';

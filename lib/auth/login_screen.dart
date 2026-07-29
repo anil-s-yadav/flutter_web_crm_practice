@@ -164,22 +164,22 @@ class _LoginScreenState extends State<LoginScreen>
                                 // Email field
                                 TextFormField(
                                   controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
+                                  keyboardType: TextInputType.text,
                                   style: GoogleFonts.poppins(fontSize: 14),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Please enter your email';
+                                      return 'Please enter your email or mobile number';
                                     }
                                     return null;
                                   },
                                   decoration: InputDecoration(
-                                    labelText: 'Email',
+                                    labelText: 'Email / Mobile Number',
                                     labelStyle: GoogleFonts.poppins(
                                       fontSize: 13,
                                       color: AppColors.grey500,
                                     ),
                                     prefixIcon: Icon(
-                                      Icons.email_outlined,
+                                      Icons.person_outline,
                                       color: AppColors.gold.withValues(alpha: 0.8),
                                       size: 20,
                                     ),
@@ -299,6 +299,31 @@ class _LoginScreenState extends State<LoginScreen>
                                             ),
                                   ),
                                 ),
+                                const SizedBox(height: 32),
+
+                                // One-click demo logins
+                                Center(
+                                  child: Text(
+                                    'One-Click Demo Login',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: AppColors.grey500,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    _buildDemoLoginButton('Admin', 'admin@example.com', 'password123'),
+                                    _buildDemoLoginButton('Sales', 'sales@example.com', 'password123'),
+                                    _buildDemoLoginButton('Sourcing', 'sourcing@example.com', 'password123'),
+                                    _buildDemoLoginButton('Executive', 'executive@example.com', 'password123'),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
@@ -312,6 +337,19 @@ class _LoginScreenState extends State<LoginScreen>
           },
         ),
       ),
+    );
+  }
+  
+  Widget _buildDemoLoginButton(String label, String email, String password) {
+    return ActionChip(
+      label: Text(label, style: GoogleFonts.poppins(fontSize: 12)),
+      backgroundColor: AppColors.gold.withValues(alpha: 0.1),
+      side: const BorderSide(color: AppColors.gold),
+      onPressed: () {
+        _emailController.text = email;
+        _passwordController.text = password;
+        _submitLogin();
+      },
     );
   }
 }

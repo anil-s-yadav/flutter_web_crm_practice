@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logAction } = require('../services/auditService');
 const { sendPushToUser } = require('../services/notificationService');
 
 // @route   GET /api/replacements
@@ -6,21 +7,57 @@ const { sendPushToUser } = require('../services/notificationService');
 // @access  Private
 const getReplacements = async (req, res) => {
   try {
-    const { status, escalated } = req.query;
-    let query = 'SELECT * FROM replacement_requests WHERE 1=1';
+    const { status, escalated, search, q, page, limit } = req.query;
+    let whereClause = ' WHERE 1=1';
     const params = [];
 
     if (status) {
-      query += ' AND status = ?';
+      whereClause += ' AND status = ?';
       params.push(status);
     }
     if (escalated === 'true') {
-      query += ' AND is_escalated_to_sourcing = TRUE';
+      whereClause += ' AND is_escalated_to_sourcing = TRUE';
+    }
+    const searchTerm = search || q;
+    if (searchTerm) {
+      whereClause += ' AND (id LIKE ? OR client_name LIKE ? OR original_candidate_name LIKE ? OR reason LIKE ?)';
+      const s = `%${searchTerm.trim()}%`;
+      params.push(s, s, s, s);
     }
 
-    query += ' ORDER BY request_date DESC';
+    if (page || limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 20;
+      const offset = (pageNum - 1) * limitNum;
 
-    const [requests] = await pool.execute(query, params);
+      const countSql = `SELECT COUNT(*) as total FROM replacement_requests${whereClause}`;
+      const [[{ total }]] = await pool.execute(countSql, params);
+
+      const dataSql = `SELECT * FROM replacement_requests${whereClause} ORDER BY request_date DESC LIMIT ${limitNum} OFFSET ${offset}`;
+      const [requests] = await pool.execute(dataSql, params);
+
+      for (let reqObj of requests) {
+        const [suggestions] = await pool.execute(
+          `SELECT c.* FROM candidates c 
+           JOIN replacement_suggestions rs ON c.id = rs.candidate_id 
+           WHERE rs.replacement_request_id = ?`,
+          [reqObj.id]
+        );
+        reqObj.suggestedCandidates = suggestions;
+      }
+
+      return res.json({
+        data: requests,
+        pagination: {
+          total: Number(total),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
+
+    const [requests] = await pool.execute(`SELECT * FROM replacement_requests${whereClause} ORDER BY request_date DESC`, params);
 
     // Fetch suggested candidates for each request
     for (let req of requests) {
@@ -73,6 +110,7 @@ const createReplacement = async (req, res) => {
       connection.release();
 
       res.status(201).json({ message: 'Replacement requested successfully', requestId });
+      await logAction('replacement', requestId, 'create', `Requested replacement for contract ${contract_id}`, createdBy);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();
@@ -108,6 +146,7 @@ const escalateReplacement = async (req, res) => {
     }
 
     res.json({ message: 'Replacement escalated to Sourcing' });
+    await logAction('replacement', id, 'update', 'Escalated to Sourcing Team', req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -148,6 +187,7 @@ const suggestCandidates = async (req, res) => {
       connection.release();
 
       res.json({ message: 'Suggestions added successfully' });
+      await logAction('replacement', id, 'update', `Added ${candidateIds.length} suggestions from Sourcing`, req.user.id);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();
@@ -177,6 +217,7 @@ const resolveReplacement = async (req, res) => {
     );
 
     res.json({ message: 'Replacement resolved successfully' });
+    await logAction('replacement', id, 'statusChange', `Resolved with candidate ${new_candidate_id}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

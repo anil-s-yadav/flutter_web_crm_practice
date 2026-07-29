@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/models/client_model.dart';
-import 'package:practice_app/providers/global_app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_event.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +27,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   // Personal Info
   String _fullName = '';
   String _phone = '';
+  String _altPhone = '';
   String _email = '';
   String _locality = '';
   String _city = '';
@@ -41,6 +45,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   // Service Requirements
   String _preferredCategory = '';
   String _budgetRange = '';
+  String _remarks = '';
 
   final List<String> _houseTypes = [
     '1BHK',
@@ -56,48 +61,44 @@ class _EditClientScreenState extends State<EditClientScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = Provider.of<GlobalAppState>(context, listen: false);
+    final clientState = context.read<ClientBloc>().state;
+    if (clientState is ClientLoaded) {
       try {
-        final found = state.clients.firstWhere((c) => c.id == widget.clientId);
+        final found = clientState.clients.firstWhere((c) => c.id == widget.clientId);
         setState(() {
           _client = found;
-          _fullName = _client.fullName;
-          _phone = _client.phone;
-          _email = _client.email;
-          _locality = _client.locality;
-          _city = _client.city;
-          _address = _client.address;
-
-          _houseType = _client.houseType;
-          _familySize = _client.familySize;
-          _hasPets = _client.hasPets;
-          _petDetails = _client.petDetails ?? '';
-          _hasElderlyMembers = _client.hasElderlyMembers;
-          _hasChildren = _client.hasChildren;
-          _childrenCount = _client.childrenCount ?? 0;
-
-          _preferredCategory = _client.preferredCandidateCategory;
-          _budgetRange = _client.budgetRange;
-
+          _fullName = found.fullName;
+          _phone = found.phone;
+          _altPhone = found.altPhone ?? '';
+          _email = found.email;
+          _address = found.address;
+          _city = found.city;
+          _locality = found.locality;
+          _houseType = found.houseType;
+          _familySize = found.familySize;
+          _hasPets = found.hasPets;
+          _petDetails = found.petDetails ?? '';
+          _hasElderlyMembers = found.hasElderlyMembers;
+          _hasChildren = found.hasChildren;
+          _childrenCount = found.childrenCount ?? 1;
+          _preferredCategory = found.preferredCandidateCategory;
+          _remarks = found.remarks ?? '';
           _isLoading = false;
         });
-      } catch (_) {
+      } catch (e) {
         context.pop();
       }
-    });
+    }
   }
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final state = Provider.of<GlobalAppState>(context, listen: false);
 
-      final updatedClient = ClientModel(
-        id: _client.id,
+      final updatedClient = _client.copyWith(
         fullName: _fullName,
         phone: _phone,
-        altPhone: _client.altPhone,
+        altPhone: _altPhone.isEmpty ? null : _altPhone,
         email: _email,
         address: _address,
         city: _city,
@@ -110,21 +111,16 @@ class _EditClientScreenState extends State<EditClientScreen> {
         hasChildren: _hasChildren,
         childrenCount: _hasChildren ? _childrenCount : null,
         preferredCandidateCategory: _preferredCategory,
-        requiredSkills: _client.requiredSkills,
-        budgetRange: _budgetRange,
-        status: _client.status,
-        assignedEmployeeId: _client.assignedEmployeeId,
-        source: _client.source,
-        inquiryDate: _client.inquiryDate,
-        remarks: _client.remarks,
       );
 
-      state.updateClient(updatedClient);
+      context.read<ClientBloc>().add(UpdateClient(updatedClient));
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Client Profile updated successfully.')),
-      );
-      context.pop();
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Client details updated successfully')),
+        );
+      }
     }
   }
 
@@ -187,6 +183,19 @@ class _EditClientScreenState extends State<EditClientScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Alternate Phone',
+                              isDark: isDark,
+                              initialValue: _altPhone,
+                              onSaved: (v) => _altPhone = v ?? '',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
                           Expanded(
                             child: _buildTextField(
                               label: 'Email',

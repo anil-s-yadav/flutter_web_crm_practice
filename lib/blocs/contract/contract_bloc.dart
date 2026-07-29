@@ -10,6 +10,7 @@ class ContractBloc extends Bloc<ContractEvent, ContractState> {
     on<LoadContracts>(_onLoadContracts);
     on<CreateContract>(_onCreateContract);
     on<UpdateContract>(_onUpdateContract);
+    on<RenewContract>(_onRenewContract);
   }
 
   Future<void> _onLoadContracts(
@@ -45,6 +46,23 @@ class ContractBloc extends Bloc<ContractEvent, ContractState> {
     try {
       await contractRepository.updateContract(event.contract);
       // Reload contracts after updating
+      add(const LoadContracts());
+    } catch (e) {
+      emit(ContractError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onRenewContract(
+    RenewContract event,
+    Emitter<ContractState> emit,
+  ) async {
+    try {
+      await contractRepository.renewContract(
+        event.contractId,
+        newCandidateId: event.newCandidateId,
+        newCandidateName: event.newCandidateName,
+      );
+      // Reload contracts after renewing
       add(const LoadContracts());
     } catch (e) {
       emit(ContractError(message: e.toString()));

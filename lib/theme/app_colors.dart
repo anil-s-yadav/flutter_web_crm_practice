@@ -75,6 +75,7 @@ class AppColors {
   static const Color statusBlacklisted = Color(0xFFEF4444);
   static const Color statusInterviewed = Color(0xFFA855F7);
   static const Color statusJobLeft = Color(0xFFF97316);
+  static const Color statusRenewal = Color(0xFFEAB308);
 
   // ─── Divider ───
   static const Color dividerLight = Color(0xFFE2E8F0);

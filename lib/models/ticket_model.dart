@@ -107,25 +107,25 @@ class TicketModel {
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      priority: TicketPriorityExtension.fromString(json['priority'] as String),
-      status: TicketStatusExtension.fromString(json['status'] as String),
-      clientId: json['clientId'] as String,
-      clientName: json['clientName'] as String,
-      candidateId: json['candidateId'] as String?,
-      candidateName: json['candidateName'] as String?,
-      contractId: json['contractId'] as String?,
-      assignedTo: json['assignedTo'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      resolvedAt: json['resolvedAt'] != null
-          ? DateTime.parse(json['resolvedAt'] as String)
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      priority: TicketPriorityExtension.fromString(json['priority']?.toString() ?? 'standard'),
+      status: TicketStatusExtension.fromString(json['status']?.toString() ?? 'open'),
+      clientId: json['client_id']?.toString() ?? '',
+      clientName: json['clientName']?.toString() ?? 'Unknown Client',
+      candidateId: json['candidate_id']?.toString(),
+      candidateName: json['candidateName']?.toString(),
+      contractId: json['contract_id']?.toString(),
+      assignedTo: json['assigned_to']?.toString() ?? 'Unassigned',
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : DateTime.now(),
+      resolvedAt: json['resolved_at'] != null
+          ? DateTime.parse(json['resolved_at'].toString())
           : null,
-      slaDeadline: json['slaDeadline'] != null
-          ? DateTime.parse(json['slaDeadline'] as String)
+      slaDeadline: json['sla_deadline'] != null
+          ? DateTime.parse(json['sla_deadline'].toString())
           : null,
-      resolution: json['resolution'] as String?
+      resolution: json['resolution']?.toString()
     );
   }
 
@@ -136,15 +136,15 @@ class TicketModel {
       'description': description,
       'priority': priority.name,
       'status': status.name,
-      'clientId': clientId,
+      'client_id': clientId,
       'clientName': clientName,
-      'candidateId': candidateId,
+      'candidate_id': candidateId,
       'candidateName': candidateName,
-      'contractId': contractId,
-      'assignedTo': assignedTo,
-      'createdAt': createdAt.toIso8601String(),
-      'resolvedAt': resolvedAt?.toIso8601String(),
-      'slaDeadline': slaDeadline?.toIso8601String(),
+      'contract_id': contractId,
+      'assigned_to': assignedTo,
+      'created_at': createdAt.toIso8601String(),
+      'resolved_at': resolvedAt?.toIso8601String(),
+      'sla_deadline': slaDeadline?.toIso8601String(),
       'resolution': resolution
     };
   }

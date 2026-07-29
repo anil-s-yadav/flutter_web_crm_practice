@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logAction } = require('../services/auditService');
 const { sendPushToUser } = require('../services/notificationService');
 
 // @route   GET /api/tasks
@@ -6,18 +7,49 @@ const { sendPushToUser } = require('../services/notificationService');
 // @access  Private
 const getTasks = async (req, res) => {
   try {
-    let query = 'SELECT * FROM executive_tasks';
+    const { status, search, q, page, limit } = req.query;
+    let whereClause = ' WHERE 1=1';
     const params = [];
 
     // If user is executive, only show their tasks
     if (req.user.role === 'executive') {
-      query += ' WHERE assigned_executive_id = ?';
+      whereClause += ' AND assigned_executive_id = ?';
       params.push(req.user.id);
     }
-    
-    query += ' ORDER BY due_date ASC';
+    if (status) {
+      whereClause += ' AND status = ?';
+      params.push(status);
+    }
+    const searchTerm = search || q;
+    if (searchTerm) {
+      whereClause += ' AND (id LIKE ? OR task_type LIKE ? OR client_name LIKE ? OR address LIKE ?)';
+      const s = `%${searchTerm.trim()}%`;
+      params.push(s, s, s, s);
+    }
 
-    const [tasks] = await pool.execute(query, params);
+    if (page || limit) {
+      const pageNum = parseInt(page, 10) || 1;
+      const limitNum = parseInt(limit, 10) || 20;
+      const offset = (pageNum - 1) * limitNum;
+
+      const countSql = `SELECT COUNT(*) as total FROM executive_tasks${whereClause}`;
+      const [[{ total }]] = await pool.execute(countSql, params);
+
+      const dataSql = `SELECT * FROM executive_tasks${whereClause} ORDER BY due_date ASC LIMIT ${limitNum} OFFSET ${offset}`;
+      const [tasks] = await pool.execute(dataSql, params);
+
+      return res.json({
+        data: tasks,
+        pagination: {
+          total: Number(total),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
+
+    const [tasks] = await pool.execute(`SELECT * FROM executive_tasks${whereClause} ORDER BY due_date ASC`, params);
     res.json(tasks);
   } catch (err) {
     console.error(err);
@@ -53,6 +85,7 @@ const createTask = async (req, res) => {
     );
 
     res.status(201).json({ message: 'Task created successfully', taskId });
+    await logAction('task', taskId, 'create', `Assigned task ${title} to ${assigned_executive_id}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -89,6 +122,7 @@ const updateTaskStatus = async (req, res) => {
     );
 
     res.json({ message: 'Task status updated' });
+    await logAction('task', id, 'statusChange', `Status updated to ${newStatus}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

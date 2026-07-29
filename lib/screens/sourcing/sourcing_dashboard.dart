@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/core/mock_data_generator.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -21,9 +20,7 @@ class SourcingDashboard extends StatefulWidget {
 }
 
 class _SourcingDashboardState extends State<SourcingDashboard> {
-  final _stats = MockDataGenerator.getSourcingStats();
-  late final List<CandidateModel> _recentCandidates;
-  final _indianFormat = NumberFormat('#,##,###', 'en_IN');
+  final NumberFormat _indianFormat = NumberFormat.decimalPattern('en_IN');
 
   @override
   void initState() {
@@ -40,7 +37,8 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
 
     return BlocBuilder<DashboardBloc, DashboardState>(
       builder: (context, dashboardState) {
-        if (dashboardState is DashboardLoading || dashboardState is DashboardInitial) {
+        if (dashboardState is DashboardLoading ||
+            dashboardState is DashboardInitial) {
           return const Center(child: CircularProgressIndicator());
         } else if (dashboardState is DashboardError) {
           return Center(child: Text('Error: ${dashboardState.message}'));
@@ -53,195 +51,222 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
         final verificationPending = pipelineData['verificationPending'] ?? 0;
         final medicalPending = pipelineData['medicalPending'] ?? 0;
         final readyToPlace = pipelineData['readyToPlace'] ?? 0;
-        final totalPipeline = newlyAdded + verificationPending + medicalPending + readyToPlace;
-        
+        final totalPipeline =
+            newlyAdded + verificationPending + medicalPending + readyToPlace;
+
         final addedThisMonth = data['myCandidates'] ?? 0;
         final targetThisMonth = 50; // Mock target
         final addedLastMonth = 0;
         final totalCandidates = data['myCandidates'] ?? 0;
 
-    return Scaffold(
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () => context.go('/sourcing/add_candidate'),
-      //   backgroundColor: AppColors.navyBlue,
-      //   foregroundColor: AppColors.white,
-      //   icon: const Icon(Icons.person_add),
-      //   label: Text(
-      //     'Add Candidate',
-      //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      //   ),
-      // ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(isDesktop ? 24 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Pipeline visualization
-            Text(
-              'Verification Pipeline',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                ),
-              ),
-              color: isDark ? AppColors.darkSurface : AppColors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child:
-                    isTablet
-                        ? Row(children: _buildPipelineSteps(isDark, true, newlyAdded, verificationPending, medicalPending, readyToPlace))
-                        : Column(children: _buildPipelineSteps(isDark, false, newlyAdded, verificationPending, medicalPending, readyToPlace)),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Stat cards
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isDesktop = constraints.maxWidth > 900;
-                final isTablet = constraints.maxWidth > 600 && !isDesktop;
-
-                final monthlyGoalCard = _buildStatCard(
-                  icon: Icons.person_add_alt_1,
-                  iconColor: AppColors.stageMedicalCheck,
-                  title: 'Added This Month',
-                  value: _indianFormat.format(addedThisMonth),
-                  isDark: isDark,
-                  progress: addedThisMonth / targetThisMonth,
-                  progressText: '${_indianFormat.format(addedThisMonth)} / ${_indianFormat.format(targetThisMonth)} Goal',
-                );
-
-                final statGrid = GridView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isDesktop ? 2 : (isTablet ? 2 : 1),
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    mainAxisExtent: 90,
+        return Scaffold(
+          // floatingActionButton: FloatingActionButton.extended(
+          //   onPressed: () => context.go('/sourcing/add_candidate'),
+          //   backgroundColor: AppColors.navyBlue,
+          //   foregroundColor: AppColors.white,
+          //   icon: const Icon(Icons.person_add),
+          //   label: Text(
+          //     'Add Candidate',
+          //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          //   ),
+          // ),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(isDesktop ? 24 : 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pipeline visualization
+                Text(
+                  'Verification Pipeline',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
                   ),
-                  children: [
-                    _buildStatCard(
-                      icon: Icons.person_add,
-                      iconColor: AppColors.successGreen,
-                      title: 'Added Last Month',
-                      value: _indianFormat.format(addedLastMonth),
-                      isDark: isDark,
-                      compact: true,
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: isDark ? AppColors.dividerDark : AppColors.grey200,
                     ),
-                    _buildStatCard(
-                      icon: Icons.check_circle_outline,
-                      iconColor: AppColors.stageVerified,
-                      title: 'Ready (No Medical)',
-                      value: _indianFormat.format(readyToPlace),
-                      isDark: isDark,
-                      compact: true,
-                    ),
-                    _buildStatCard(
-                      icon: Icons.medical_services,
-                      iconColor: AppColors.successGreen,
-                      title: 'Ready (Medical Verified)',
-                      value: _indianFormat.format(readyToPlace), // Simplify for now
-                      isDark: isDark,
-                      compact: true,
-                    ),
-                    _buildStatCard(
-                      icon: Icons.people_outline,
-                      iconColor: AppColors.gold,
-                      title: 'Total Candidates',
-                      value: _indianFormat.format(totalCandidates),
-                      isDark: isDark,
-                      compact: true,
-                    ),
-                  ],
-                );
-
-                if (isDesktop) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Monthly Sourcing Goal',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  color: isDark ? AppColors.darkSurface : AppColors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child:
+                        isTablet
+                            ? Row(
+                              children: _buildPipelineSteps(
+                                isDark,
+                                true,
+                                newlyAdded,
+                                verificationPending,
+                                medicalPending,
+                                readyToPlace,
+                              ),
+                            )
+                            : Column(
+                              children: _buildPipelineSteps(
+                                isDark,
+                                false,
+                                newlyAdded,
+                                verificationPending,
+                                medicalPending,
+                                readyToPlace,
+                              ),
                             ),
-                            const SizedBox(height: 12),
-                            monthlyGoalCard,
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Performance Overview',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 12),
-                            statGrid,
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Monthly Sourcing Goal',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                // Stat cards
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isDesktop = constraints.maxWidth > 900;
+                    final isTablet = constraints.maxWidth > 600 && !isDesktop;
+
+                    final monthlyGoalCard = _buildStatCard(
+                      icon: Icons.person_add_alt_1,
+                      iconColor: AppColors.stageMedicalCheck,
+                      title: 'Added This Month',
+                      value: _indianFormat.format(addedThisMonth),
+                      isDark: isDark,
+                      progress: addedThisMonth / targetThisMonth,
+                      progressText:
+                          '${_indianFormat.format(addedThisMonth)} / ${_indianFormat.format(targetThisMonth)} Goal',
+                    );
+
+                    final statGrid = GridView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: isDesktop ? 2 : (isTablet ? 2 : 1),
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        mainAxisExtent: 90,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: monthlyGoalCard,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Performance Overview',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    statGrid,
-                  ],
-                );
-              },
+                      children: [
+                        _buildStatCard(
+                          icon: Icons.person_add,
+                          iconColor: AppColors.successGreen,
+                          title: 'Added Last Month',
+                          value: _indianFormat.format(addedLastMonth),
+                          isDark: isDark,
+                          compact: true,
+                        ),
+                        _buildStatCard(
+                          icon: Icons.check_circle_outline,
+                          iconColor: AppColors.stageVerified,
+                          title: 'Ready (No Medical)',
+                          value: _indianFormat.format(readyToPlace),
+                          isDark: isDark,
+                          compact: true,
+                        ),
+                        _buildStatCard(
+                          icon: Icons.medical_services,
+                          iconColor: AppColors.successGreen,
+                          title: 'Ready (Medical Verified)',
+                          value: _indianFormat.format(
+                            readyToPlace,
+                          ), // Simplify for now
+                          isDark: isDark,
+                          compact: true,
+                        ),
+                        _buildStatCard(
+                          icon: Icons.people_outline,
+                          iconColor: AppColors.gold,
+                          title: 'Total Candidates',
+                          value: _indianFormat.format(totalCandidates),
+                          isDark: isDark,
+                          compact: true,
+                        ),
+                      ],
+                    );
+
+                    if (isDesktop) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Monthly Sourcing Goal',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 12),
+                                monthlyGoalCard,
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Performance Overview',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 12),
+                                statGrid,
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Monthly Sourcing Goal',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: monthlyGoalCard,
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Performance Overview',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        statGrid,
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }
 
-  List<Widget> _buildPipelineSteps(bool isDark, bool isHorizontal, int newlyAdded, int verificationPending, int medicalPending, int readyToPlace) {
+  List<Widget> _buildPipelineSteps(
+    bool isDark,
+    bool isHorizontal,
+    int newlyAdded,
+    int verificationPending,
+    int medicalPending,
+    int readyToPlace,
+  ) {
     final steps = [
       _PipelineStep(
         'Newly Added',
@@ -349,12 +374,6 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
         ),
       ),
     );
-  }
-
-  double _cardWidth(double screenWidth, bool isDesktop, bool isTablet) {
-    if (isDesktop) return (screenWidth - 240 - 48 - 48) / 4;
-    if (isTablet) return (screenWidth - 48 - 16) / 2;
-    return screenWidth - 32;
   }
 
   Widget _buildStatCard({
@@ -497,11 +516,9 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
       case CandidateStatus.renewalPending:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        return AppColors.statusRenewal;
       case CandidateStatus.jobLeft:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        return AppColors.statusJobLeft;
     }
   }
 
