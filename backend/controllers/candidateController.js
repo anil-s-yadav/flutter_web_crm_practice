@@ -101,7 +101,6 @@ const createCandidate = async (req, res) => {
     );
 
     res.status(201).json({ message: 'Candidate created successfully', candidateId });
-    await logAction('candidate', candidateId, 'create', `Created candidate ${full_name}`, sourcedById);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -114,7 +113,7 @@ const createCandidate = async (req, res) => {
 const updateCandidateStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, is_police_verified, is_aadhaar_verified, is_medical_cleared } = req.body;
+    const { status, is_police_verified, is_aadhaar_verified, is_medical_cleared, reason } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -133,7 +132,11 @@ const updateCandidateStatus = async (req, res) => {
     );
 
     res.json({ message: 'Candidate status updated' });
-    await logAction('candidate', id, 'statusChange', `Status updated to ${newStatus}`, req.user.id);
+    let logDesc = `Status updated to ${newStatus}`;
+    if (reason) {
+      logDesc += ` (Reason: ${reason})`;
+    }
+    await logAction('candidate', id, 'statusChange', logDesc, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -146,7 +149,7 @@ const updateCandidateStatus = async (req, res) => {
 const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, phone, alternate_phone, category, expected_salary, experience_years, age, location } = req.body;
+    const { full_name, phone, alternate_phone, category, expected_salary, experience_years, age, location, status, reason } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -176,7 +179,12 @@ const updateCandidate = async (req, res) => {
     );
 
     res.json({ message: 'Candidate updated' });
-    await logAction('candidate', id, 'update', `Updated details for ${newName}`, req.user.id);
+    
+    if (status && status !== existing[0].status) {
+      let logDesc = `Status changed to ${status}`;
+      if (reason) logDesc += ` (Reason: ${reason})`;
+      await logAction('candidate', id, 'statusChange', logDesc, req.user.id);
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

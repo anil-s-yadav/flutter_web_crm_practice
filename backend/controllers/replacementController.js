@@ -110,7 +110,6 @@ const createReplacement = async (req, res) => {
       connection.release();
 
       res.status(201).json({ message: 'Replacement requested successfully', requestId });
-      await logAction('replacement', requestId, 'create', `Requested replacement for contract ${contract_id}`, createdBy);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();
@@ -187,7 +186,6 @@ const suggestCandidates = async (req, res) => {
       connection.release();
 
       res.json({ message: 'Suggestions added successfully' });
-      await logAction('replacement', id, 'update', `Added ${candidateIds.length} suggestions from Sourcing`, req.user.id);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();

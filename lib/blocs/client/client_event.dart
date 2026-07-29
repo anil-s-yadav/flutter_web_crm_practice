@@ -28,9 +28,10 @@ class CreateClient extends ClientEvent {
 
 class UpdateClient extends ClientEvent {
   final ClientModel client;
+  final String? reason;
 
-  const UpdateClient(this.client);
+  const UpdateClient(this.client, {this.reason});
 
   @override
-  List<Object> get props => [client];
+  List<Object> get props => reason != null ? [client, reason!] : [client];
 }

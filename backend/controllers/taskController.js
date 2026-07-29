@@ -85,7 +85,6 @@ const createTask = async (req, res) => {
     );
 
     res.status(201).json({ message: 'Task created successfully', taskId });
-    await logAction('task', taskId, 'create', `Assigned task ${title} to ${assigned_executive_id}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

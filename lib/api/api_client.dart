@@ -21,6 +21,7 @@ class ApiClient {
     final token = LocalStoragePref().getToken();
     return {
       'Content-Type': 'application/json',
+      'x-api-key': 'crm-secure-key-2026',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }

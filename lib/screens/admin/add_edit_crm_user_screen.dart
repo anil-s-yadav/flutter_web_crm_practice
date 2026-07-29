@@ -8,7 +8,6 @@ import 'package:practice_app/utils/extensions.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/user/user_bloc.dart';
 import 'package:practice_app/blocs/user/user_event.dart';
-import 'package:practice_app/blocs/user/user_state.dart';
 
 class AddEditCrmUserScreen extends StatefulWidget {
   final String? userId; // null = add mode

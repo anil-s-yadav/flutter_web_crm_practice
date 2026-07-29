@@ -24,7 +24,10 @@ class _SalesDashboardState extends State<SalesDashboard> {
   @override
   void initState() {
     super.initState();
-    context.read<DashboardBloc>().add(LoadSalesDashboard());
+    final dashboardBloc = context.read<DashboardBloc>();
+    if (dashboardBloc.state is! DashboardLoaded) {
+      dashboardBloc.add(LoadSalesDashboard());
+    }
   }
 
   @override
@@ -45,22 +48,22 @@ class _SalesDashboardState extends State<SalesDashboard> {
 
         final data = (dashboardState as DashboardLoaded).data;
 
-        final followUps = data['clients']['followUps'] ?? 0;
-        final interested = data['clients']['interested'] ?? 0;
-        final notInterested = data['clients']['notInterested'] ?? 0;
-        final converted = data['clients']['converted'] ?? 0;
-        final totalPipeline = data['clients']['totalPipeline'] ?? 0;
+        final followUps = data['clients']?['followUps'] ?? 0;
+        final interested = data['clients']?['interested'] ?? 0;
+
+        final converted = data['clients']?['converted'] ?? 0;
+        final totalPipeline = data['clients']?['totalPipeline'] ?? 0;
 
         final currentMonthRevenue =
-            (data['revenue']['currentMonth'] ?? 0).toDouble();
-        final lastMonthRevenue = (data['revenue']['lastMonth'] ?? 0).toDouble();
-        final currentMonthClosed = data['contracts']['currentMonthClosed'] ?? 0;
-        final lastMonthClosed = data['contracts']['lastMonthClosed'] ?? 0;
+            (data['revenue']?['currentMonth'] ?? 0).toDouble();
+        final lastMonthRevenue = (data['revenue']?['lastMonth'] ?? 0).toDouble();
+        final currentMonthClosed = data['contracts']?['currentMonthClosed'] ?? 0;
+        final lastMonthClosed = data['contracts']?['lastMonthClosed'] ?? 0;
         final slaCountdowns = data['slaCountdowns'] ?? 0;
 
         // Simplified stats for UI
-        final currentMonthInquiries = data['inquiries']['currentMonth'] ?? 0;
-        final lastMonthInquiries = data['inquiries']['lastMonth'] ?? 0;
+        final currentMonthInquiries = data['inquiries']?['currentMonth'] ?? 0;
+        final lastMonthInquiries = data['inquiries']?['lastMonth'] ?? 0;
 
         final currentConversionRate =
             currentMonthInquiries > 0
@@ -79,11 +82,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
             lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
 
         final followUpClients =
-            (data['recent']['followUpClients'] as List).cast<ClientModel>()
+            ((data['recent']?['followUpClients'] ?? []) as List).cast<ClientModel>()
               ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
 
         final topWins =
-            (data['recent']['topWins'] as List).cast<ContractModel>();
+            ((data['recent']?['topWins'] ?? []) as List).cast<ContractModel>();
 
         final topCategories =
             (data['categories'] as List).cast<MapEntry<String, int>>();
@@ -181,14 +184,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                       trend: contractsTrend,
                     );
 
-                    final slaCard = _buildStatCard(
-                      icon: Icons.timer_outlined,
-                      iconColor: AppColors.urgentAmber,
-                      title: 'Expiring Contracts',
-                      value: _indianFormat.format(slaCountdowns),
-                      isDark: isDark,
-                      subtitle: '< 1 month left',
-                    );
+
 
                     final conversionTrend =
                         lastConversionRate > 0
@@ -523,113 +519,6 @@ class _SalesDashboardState extends State<SalesDashboard> {
     );
   }
 
-  Widget _buildUpcomingRenewals(
-    BuildContext context,
-    List<ContractModel> myContracts,
-    bool isDark,
-  ) {
-    final upcomingRenewals =
-        myContracts.where((c) {
-          if (c.contractStatus != ContractStatus.active) return false;
-          final expiryDate = DateTime(
-            c.placementDate.year,
-            c.placementDate.month + 11,
-            c.placementDate.day,
-          );
-          final daysToExpiry = expiryDate.difference(DateTime.now()).inDays;
-          return daysToExpiry >= 0 && daysToExpiry <= 30;
-        }).toList();
-
-    if (upcomingRenewals.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.event_busy,
-              color: AppColors.urgentAmber,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Upcoming Renewals (30 Days)',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.urgentAmber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${upcomingRenewals.length}',
-                style: const TextStyle(
-                  color: AppColors.urgentAmber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: upcomingRenewals.length,
-          itemBuilder: (context, index) {
-            final contract = upcomingRenewals[index];
-            final expiryDate = DateTime(
-              contract.placementDate.year,
-              contract.placementDate.month + 11,
-              contract.placementDate.day,
-            );
-            final daysLeft = expiryDate.difference(DateTime.now()).inDays;
-
-            return Card(
-              elevation: 0,
-              margin: const EdgeInsets.only(bottom: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
-                ),
-              ),
-              color: isDark ? AppColors.darkSurface : AppColors.white,
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.urgentAmber.withValues(alpha: 0.1),
-                  child: const Icon(
-                    Icons.warning_amber_rounded,
-                    color: AppColors.urgentAmber,
-                    size: 20,
-                  ),
-                ),
-                title: Text(
-                  contract.clientName,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  'Candidate: ${contract.candidateName} • Expires in $daysLeft days',
-                ),
-                trailing: TextButton(
-                  onPressed: () {},
-                  child: const Text('Follow Up'),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
 
   Widget _buildFollowUpList(
     BuildContext context,

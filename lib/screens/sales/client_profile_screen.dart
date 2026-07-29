@@ -604,6 +604,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 context.read<ClientBloc>().add(
                   UpdateClient(
                     client.copyWith(status: nextStatus, remarks: newRemarks),
+                    reason: note,
                   ),
                 );
 

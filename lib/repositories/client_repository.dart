@@ -50,10 +50,13 @@ class ClientRepository {
     }
   }
 
-  Future<ClientModel> updateClient(ClientModel client) async {
+  Future<ClientModel> updateClient(ClientModel client, {String? reason}) async {
+    final body = client.toJson();
+    if (reason != null) body['reason'] = reason;
+    
     final response = await ApiClient.put(
       '/api/clients/${client.id}',
-      client.toJson(),
+      body,
     );
 
     if (response != null) {

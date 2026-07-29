@@ -43,7 +43,7 @@ class ClientBloc extends Bloc<ClientEvent, ClientState> {
     Emitter<ClientState> emit,
   ) async {
     try {
-      await clientRepository.updateClient(event.client);
+      await clientRepository.updateClient(event.client, reason: event.reason);
       // Reload clients after updating
       add(const LoadClients());
     } catch (e) {

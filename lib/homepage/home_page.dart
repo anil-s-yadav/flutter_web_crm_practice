@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:practice_app/auth/logout_timer_provider.dart';
 import 'package:practice_app/drawer_widget/user_details.dart';
 import 'package:practice_app/test.dart';
 import 'package:practice_app/theme/theme_provider.dart';
@@ -125,20 +124,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             ),
-          SizedBox(width: 10),
-          Center(
-            child: Consumer<LogoutTimerProvider>(
-              builder: (context, countdown, child) {
-                return Text(
-                  "Session ends in: ${_format(countdown.remaining)}",
-                  style: const TextStyle(
-                    // fontSize: 20,
-                    // fontWeight: FontWeight.bold,
-                  ),
-                );
-              },
-            ),
-          ),
           SizedBox(width: 10),
           IconButton(
             onPressed: () {

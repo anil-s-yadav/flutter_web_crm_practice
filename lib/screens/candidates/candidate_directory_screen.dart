@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,7 +10,6 @@ import 'package:practice_app/blocs/auth/auth_bloc.dart';
 import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,6 +46,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   final _searchController = TextEditingController();
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
   String _searchQuery = '';
+  Timer? _debounce;
   String? _selectedLanguage;
   String? _selectedExperience;
   String? _selectedLocation;
@@ -58,7 +59,17 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<CandidateBloc>().add(LoadCandidates());
+    final candidateBloc = context.read<CandidateBloc>();
+    if (candidateBloc.state is! CandidateLoaded) {
+      candidateBloc.add(LoadCandidates());
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   bool get _isNewStyle =>
@@ -661,7 +672,10 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (val) {
-                setState(() => _searchQuery = val);
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  setState(() => _searchQuery = val);
+                });
               },
               style: GoogleFonts.poppins(fontSize: 13),
               decoration: InputDecoration(

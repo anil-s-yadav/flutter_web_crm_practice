@@ -84,7 +84,6 @@ const createClient = async (req, res) => {
     );
 
     res.status(201).json({ message: 'Client created successfully', clientId });
-    await logAction('client', clientId, 'create', `Created client ${name}`, req.user.id);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -97,7 +96,7 @@ const createClient = async (req, res) => {
 const updateClient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, company_name, email, phone, alternate_phone, address, status, loyalty_points } = req.body;
+    const { name, company_name, email, phone, alternate_phone, address, status, loyalty_points, reason } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM clients WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -132,7 +131,12 @@ const updateClient = async (req, res) => {
     );
 
     res.json({ message: 'Client updated successfully' });
-    await logAction('client', id, 'update', `Updated details for ${newName}`, req.user.id);
+    
+    if (status && status !== client.status) {
+      let logDesc = `Status changed to ${status}`;
+      if (reason) logDesc += ` (Reason: ${reason})`;
+      await logAction('client', id, 'statusChange', logDesc, req.user.id);
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

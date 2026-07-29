@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/widgets/empty_state_widget.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
@@ -35,6 +36,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
   String? _selectedCity;
   String? _selectedCategory;
   String? _selectedDateRange;
+  Timer? _debounce;
 
   final _indianFormat = NumberFormat('#,##,###', 'en_IN');
 
@@ -42,7 +44,10 @@ class _ClientListScreenState extends State<ClientListScreen> {
   void initState() {
     super.initState();
     _selectedStatus = widget.initialStatus;
-    context.read<ClientBloc>().add(LoadClients());
+    final clientBloc = context.read<ClientBloc>();
+    if (clientBloc.state is! ClientLoaded) {
+      clientBloc.add(LoadClients());
+    }
   }
 
   @override
@@ -65,6 +70,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -677,8 +683,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: (val) {
-                  setState(() => _searchQuery = val);
-                  _initializeDataSource();
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 300), () {
+                    setState(() => _searchQuery = val);
+                    _initializeDataSource();
+                  });
                 },
                 decoration: InputDecoration(
                   hintText: 'Search clients...',
@@ -752,8 +761,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
           child: TextField(
             controller: _searchController,
             onChanged: (val) {
-              setState(() => _searchQuery = val);
-              _initializeDataSource();
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 300), () {
+                setState(() => _searchQuery = val);
+                _initializeDataSource();
+              });
             },
             decoration: InputDecoration(
               hintText: 'Search clients...',

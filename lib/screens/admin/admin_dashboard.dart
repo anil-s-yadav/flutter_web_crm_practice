@@ -23,8 +23,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   void initState() {
     super.initState();
-    context.read<DashboardBloc>().add(LoadAdminDashboard());
-    context.read<AuditLogBloc>().add(const LoadAuditLogs());
+    final dashboardBloc = context.read<DashboardBloc>();
+    if (dashboardBloc.state is! DashboardLoaded) {
+      dashboardBloc.add(LoadAdminDashboard());
+    }
+    final auditBloc = context.read<AuditLogBloc>();
+    if (auditBloc.state is! AuditLogLoaded) {
+      auditBloc.add(const LoadAuditLogs());
+    }
   }
 
   String _formatCurrency(double value) {
@@ -62,39 +68,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
         final data = (dashboardState as DashboardLoaded).data;
 
         // Map BLoC data to variables
-        final candidatesThisMonth = data['pipeline']['thisMonth'] ?? 0;
-        final candidatesPrevMonth = data['pipeline']['prevMonth'] ?? 0;
-        final totalCandidates = data['pipeline']['total'] ?? 0;
+        final candidatesThisMonth = data['pipeline']?['thisMonth'] ?? 0;
+        final candidatesPrevMonth = data['pipeline']?['prevMonth'] ?? 0;
+        final totalCandidates = data['pipeline']?['total'] ?? 0;
 
-        final clientsThisMonth = data['clients']['thisMonth'] ?? 0;
-        final clientsPrevMonth = data['clients']['prevMonth'] ?? 0;
-        final totalClients = data['clients']['total'] ?? 0;
+        final clientsThisMonth = data['clients']?['thisMonth'] ?? 0;
+        final clientsPrevMonth = data['clients']?['prevMonth'] ?? 0;
+        final totalClients = data['clients']?['total'] ?? 0;
 
-        final placementsThisMonth = data['placements']['thisMonth'] ?? 0;
-        final placementsPrevMonth = data['placements']['prevMonth'] ?? 0;
-        final totalPlacements = data['placements']['total'] ?? 0;
+        final placementsThisMonth = data['placements']?['thisMonth'] ?? 0;
+        final placementsPrevMonth = data['placements']?['prevMonth'] ?? 0;
+        final totalPlacements = data['placements']?['total'] ?? 0;
 
-        final revenueThisMonth = (data['revenue']['thisMonth'] ?? 0).toDouble();
-        final revenuePrevMonth = (data['revenue']['prevMonth'] ?? 0).toDouble();
-        final totalRevenue = (data['revenue']['total'] ?? 0).toDouble();
-        final pendingCollections = (data['revenue']['pending'] ?? 0).toDouble();
+        final revenueThisMonth = (data['revenue']?['thisMonth'] ?? 0).toDouble();
+        final revenuePrevMonth = (data['revenue']?['prevMonth'] ?? 0).toDouble();
+        final totalRevenue = (data['revenue']?['total'] ?? 0).toDouble();
+        final pendingCollections = (data['revenue']?['pending'] ?? 0).toDouble();
 
-        final activeContracts = data['contracts']['active'] ?? 0;
-        final renewedContracts = data['contracts']['renewed'] ?? 0;
-        final expiredContracts = data['contracts']['expired'] ?? 0;
-        final pendingReplacements = data['replacements']['pending'] ?? 0;
+        final activeContracts = data['contracts']?['active'] ?? 0;
+        final renewedContracts = data['contracts']?['renewed'] ?? 0;
+        final expiredContracts = data['contracts']?['expired'] ?? 0;
+        final pendingReplacements = data['replacements']?['pending'] ?? 0;
 
-        final activeClients = data['clients']['active'] ?? 0;
-        final newInquiries = data['clients']['leads'] ?? 0;
-        final followUpClients = data['clients']['followUps'] ?? 0;
+        final activeClients = data['clients']?['active'] ?? 0;
+        final newInquiries = data['clients']?['leads'] ?? 0;
+        final followUpClients = data['clients']?['followUps'] ?? 0;
 
-        final newlyAdded = data['pipeline']['newlyAdded'] ?? 0;
+        final newlyAdded = data['pipeline']?['newlyAdded'] ?? 0;
         final verificationPending =
-            data['pipeline']['verificationPending'] ?? 0;
-        final medicalPending = data['pipeline']['medicalPending'] ?? 0;
-        final readyToPlace = data['pipeline']['readyToPlace'] ?? 0;
-        final placed = data['pipeline']['placed'] ?? 0;
-        final blacklisted = data['pipeline']['blacklisted'] ?? 0;
+            data['pipeline']?['verificationPending'] ?? 0;
+        final medicalPending = data['pipeline']?['medicalPending'] ?? 0;
+        final readyToPlace = data['pipeline']?['readyToPlace'] ?? 0;
+        final placed = data['pipeline']?['placed'] ?? 0;
+        final blacklisted = data['pipeline']?['blacklisted'] ?? 0;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),

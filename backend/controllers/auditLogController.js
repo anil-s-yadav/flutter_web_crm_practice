@@ -9,6 +9,12 @@ const getAuditLogs = async (req, res) => {
     let whereClause = ' WHERE 1=1';
     const params = [];
 
+    // Filter for non-admin users to only see their own activity
+    if (req.user.role !== 'admin') {
+      whereClause += ' AND a.performed_by = ?';
+      params.push(req.user.id);
+    }
+
     const searchTerm = search || q;
     if (searchTerm) {
       whereClause += ' AND (a.description LIKE ? OR a.action LIKE ? OR u.name LIKE ? OR a.entity_id LIKE ?)';

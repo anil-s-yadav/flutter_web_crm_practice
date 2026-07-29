@@ -103,7 +103,6 @@ const createContract = async (req, res) => {
       connection.release();
 
       res.status(201).json({ message: 'Contract created successfully', contractId });
-      await logAction('contract', contractId, 'create', `Created contract for candidate ${candidate_id}`, createdBy);
     } catch (dbErr) {
       await connection.rollback();
       connection.release();

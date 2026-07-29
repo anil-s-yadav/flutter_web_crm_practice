@@ -5,7 +5,7 @@ const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware
 
 router.use(authMiddleware);
 
-// Only admins can view audit logs
-router.get('/', roleMiddleware(['admin']), getAuditLogs);
+// Allow all authenticated users, controller will filter by role
+router.get('/', getAuditLogs);
 
 module.exports = router;

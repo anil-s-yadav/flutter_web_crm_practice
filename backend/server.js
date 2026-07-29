@@ -2,14 +2,20 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const apiKeyMiddleware = require('./middleware/apiKeyMiddleware');
 
 // Initialize Express App
 const app = express();
 
 // Middleware
+app.use(helmet({ crossOriginResourcePolicy: false })); // Basic HTTP headers security, crossOriginResourcePolicy false to allow images
 app.use(cors());
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true }));
+
+// Global API Key Protection
+app.use(apiKeyMiddleware);
 
 // Static folder for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

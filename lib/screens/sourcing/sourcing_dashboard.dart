@@ -25,7 +25,10 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
   @override
   void initState() {
     super.initState();
-    context.read<DashboardBloc>().add(LoadSourcingDashboard());
+    final dashboardBloc = context.read<DashboardBloc>();
+    if (dashboardBloc.state is! DashboardLoaded) {
+      dashboardBloc.add(LoadSourcingDashboard());
+    }
   }
 
   @override

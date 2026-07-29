@@ -71,7 +71,7 @@ class _ExecutiveShellState extends State<ExecutiveShell> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentLocation = GoRouterState.of(context).uri.toString();
-    final appState = context.read<AuthBloc>().state;
+
 
     return Scaffold(
       endDrawer: const NotificationPanel(),

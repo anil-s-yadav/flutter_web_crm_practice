@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { logAction } = require('../services/auditService');
 
 // @desc    Create a new ticket
 // @route   POST /api/tickets
@@ -220,6 +221,18 @@ const updateTicket = async (req, res) => {
     }
 
     res.json({ message: 'Ticket updated successfully' });
+    
+    // Create a meaningful description based on what changed
+    let updateDesc = 'Updated ticket details';
+    if (status && status !== existing[0].status) {
+      updateDesc = `Status changed to ${status}`;
+    } else if (resolution !== undefined && resolution !== existing[0].resolution) {
+      updateDesc = 'Added/Updated resolution notes';
+    } else if (assignedTo && assignedTo !== existing[0].assigned_to) {
+      updateDesc = `Reassigned ticket`;
+    }
+    
+    await logAction('ticket', id, 'update', updateDesc, req.user.id);
   } catch (error) {
     console.error('Error updating ticket:', error);
     res.status(500).json({ message: 'Server Error' });

@@ -4,11 +4,11 @@ import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
-import 'auth/logout_timer_provider.dart';
 import 'auth/user_manager.dart';
 import 'routing/app_router.dart';
 import 'theme/text.dart';
 import 'theme/theme.dart';
+import 'package:practice_app/widgets/session_timeout_manager.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/repositories/auth_repository.dart';
@@ -157,7 +157,6 @@ void main() async {
         child: MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
-            ChangeNotifierProvider(create: (_) => LogoutTimerProvider()),
           ],
           child: const MyApp(),
         ),
@@ -192,14 +191,16 @@ class _MyAppState extends State<MyApp> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     TextTheme textTheme = createTextTheme(context, "Poppins", "Poppins");
 
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Verified Maids CRM',
-      theme: MaterialTheme(textTheme).light(),
-      darkTheme: MaterialTheme(textTheme).dark(),
-      themeMode: themeProvider.themeMode,
-      routerConfig: _router,
-      builder: EasyLoading.init(),
+    return SessionTimeoutManager(
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Verified Maids CRM',
+        theme: MaterialTheme(textTheme).light(),
+        darkTheme: MaterialTheme(textTheme).dark(),
+        themeMode: themeProvider.themeMode,
+        routerConfig: _router,
+        builder: EasyLoading.init(),
+      ),
     );
   }
 }

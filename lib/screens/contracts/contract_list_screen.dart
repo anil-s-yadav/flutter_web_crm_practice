@@ -47,8 +47,14 @@ class _ContractListScreenState extends State<ContractListScreen> {
   void initState() {
     super.initState();
     _currentViewMode = widget.initialViewMode;
-    context.read<ContractBloc>().add(LoadContracts());
-    context.read<ReplacementBloc>().add(const LoadReplacements());
+    final contractBloc = context.read<ContractBloc>();
+    if (contractBloc.state is! ContractLoaded) {
+      contractBloc.add(LoadContracts());
+    }
+    final replacementBloc = context.read<ReplacementBloc>();
+    if (replacementBloc.state is! ReplacementLoaded) {
+      replacementBloc.add(const LoadReplacements());
+    }
   }
 
   @override

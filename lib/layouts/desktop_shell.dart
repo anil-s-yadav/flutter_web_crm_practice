@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/auth/user_manager.dart';
-import 'package:practice_app/auth/logout_timer_provider.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/models/user_model.dart';
@@ -480,7 +479,6 @@ class _DesktopShellState extends State<DesktopShell> {
     final isNarrow = context.media.width < 800;
     final currentLocation = GoRouterState.of(context).uri.toString();
     final user = UserManager().currentUser;
-    final timerProvider = context.watch<LogoutTimerProvider>();
 
     String dashboardPath = '/login';
     if (currentLocation.startsWith('/admin')) {
@@ -500,7 +498,7 @@ class _DesktopShellState extends State<DesktopShell> {
     if (isNarrow) {
       mainScaffold = Scaffold(
         endDrawer: const NotificationPanel(),
-        appBar: _buildAppBar(context, isDark, currentLocation, timerProvider),
+        appBar: _buildAppBar(context, isDark, currentLocation),
         drawer: _buildDrawer(isDark, currentLocation, user),
         body: widget.child,
       );
@@ -515,7 +513,7 @@ class _DesktopShellState extends State<DesktopShell> {
             Expanded(
               child: Column(
                 children: [
-                  _buildTopBar(isDark, currentLocation, timerProvider),
+                  _buildTopBar(isDark, currentLocation),
                   Expanded(child: widget.child),
                 ],
               ),
@@ -541,7 +539,6 @@ class _DesktopShellState extends State<DesktopShell> {
     BuildContext context,
     bool isDark,
     String currentLocation,
-    LogoutTimerProvider timerProvider,
   ) {
     return AppBar(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.gold,
@@ -969,11 +966,7 @@ class _DesktopShellState extends State<DesktopShell> {
     );
   }
 
-  Widget _buildTopBar(
-    bool isDark,
-    String currentLocation,
-    LogoutTimerProvider timerProvider,
-  ) {
+  Widget _buildTopBar(bool isDark, String currentLocation) {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1073,7 +1066,6 @@ class _DesktopShellState extends State<DesktopShell> {
           const SizedBox(width: 24),
 
           // Timer
-          // _buildTimerChip(timerProvider),
           const SizedBox(width: 8),
 
           // Theme toggle
@@ -1124,37 +1116,6 @@ class _DesktopShellState extends State<DesktopShell> {
       ),
     );
   }
-
-  // Widget _buildTimerChip(LogoutTimerProvider timerProvider) {
-  //   final remaining = timerProvider.remaining;
-  //   final hours = remaining.inHours.toString().padLeft(2, '0');
-  //   final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
-  //   final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
-
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-  //     decoration: BoxDecoration(
-  //       color: AppColors.gold.withValues(alpha: 0.1),
-  //       borderRadius: BorderRadius.circular(8),
-  //       border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-  //     ),
-  //     child: Row(
-  //       mainAxisSize: MainAxisSize.min,
-  //       children: [
-  //         const Icon(Icons.timer_outlined, size: 14, color: AppColors.gold),
-  //         const SizedBox(width: 4),
-  //         Text(
-  //           '$hours:$minutes:$seconds',
-  //           style: GoogleFonts.poppins(
-  //             fontSize: 11,
-  //             fontWeight: FontWeight.w600,
-  //             color: AppColors.gold,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildThemeToggle(bool isDark) {
     return IconButton(
@@ -1245,7 +1206,7 @@ class _DesktopShellState extends State<DesktopShell> {
 
   Future<void> _handleLogout() async {
     await UserManager().clearUser();
-    context.read<LogoutTimerProvider>().stopCountdown();
+
     if (mounted) {
       context.go('/login');
     }
