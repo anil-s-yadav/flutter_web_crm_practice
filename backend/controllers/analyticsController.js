@@ -164,16 +164,27 @@ const getSourcingAnalytics = async (req, res) => {
 const getExecutiveAnalytics = async (req, res) => {
   try {
     const execId = req.user.id;
-    const [tasksRes] = await pool.execute('SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_to_id = ? AND status = "pending"', [execId]);
-    const [clientsRes] = await pool.execute('SELECT COUNT(*) as count FROM clients'); // simplified for now
+    const [pendingRes] = await pool.execute(
+      'SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_executive_id = ? AND status = "pending"',
+      [execId]
+    );
+    const [inProgressRes] = await pool.execute(
+      'SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_executive_id = ? AND status = "inProgress"',
+      [execId]
+    );
+    const [completedRes] = await pool.execute(
+      'SELECT COUNT(*) as count FROM executive_tasks WHERE assigned_executive_id = ? AND status = "completed" AND DATE(completed_date) = CURDATE()',
+      [execId]
+    );
+    const [clientsRes] = await pool.execute('SELECT COUNT(*) as count FROM clients');
 
     res.json({
-      pendingTasks: tasksRes[0].count,
+      pendingTasks: pendingRes[0].count,
       activeClients: clientsRes[0].count,
       tasks: {
-        pending: tasksRes[0].count,
-        inProgress: 0,
-        completedToday: 0
+        pending: pendingRes[0].count,
+        inProgress: inProgressRes[0].count,
+        completedToday: completedRes[0].count
       },
       clients: {
         followUps: 0,
@@ -184,8 +195,8 @@ const getExecutiveAnalytics = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('getExecutiveAnalytics error:', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 
