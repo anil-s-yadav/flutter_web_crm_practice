@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
+const { generateTicketId, generateInternalId } = require('../utils/idGenerator');
 
 // @desc    Create a new ticket
 // @route   POST /api/tickets
@@ -8,8 +9,10 @@ const createTicket = async (req, res) => {
   try {
     const { id, title, description, priority, status, clientId, candidateId, contractId, assignedTo } = req.body;
     
-    // Default values if missing
-    const ticketId = id || `T${Date.now()}`;
+    // Generate TCK-1, TCK-2, ...
+    const ticketId = (id && id.startsWith('TCK-'))
+      ? id 
+      : await generateTicketId(pool);
     const tPriority = priority || 'standard';
     const tStatus = status || 'open';
 
@@ -33,7 +36,7 @@ const createTicket = async (req, res) => {
 
     // Send notification to the assigned user
     if (assignedTo) {
-      const notifId = `N${Date.now()}`;
+      const notifId = await generateInternalId(pool, 'notifications');
       const notifQuery = `
         INSERT INTO notifications (id, user_id, title, message, type, link_route)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -48,7 +51,8 @@ const createTicket = async (req, res) => {
       ]);
     }
 
-    res.status(201).json({ message: 'Ticket created successfully', id: ticketId });
+    res.status(201).json({ message: 'Ticket created successfully', id: ticketId, ticketId });
+
   } catch (error) {
     console.error('Error creating ticket:', error);
     res.status(500).json({ message: 'Server Error' });

@@ -14,10 +14,11 @@ const pool = mysql.createPool({
 
 // Test the connection
 pool.getConnection()
-  .then((connection) => {
+  .then(async (connection) => {
     console.log('Successfully connected to the MySQL Database.');
     connection.release();
   })
+
   .catch((err) => {
     console.error('Error connecting to the database. Make sure XAMPP MySQL is running and the database exists.', err.message);
   });

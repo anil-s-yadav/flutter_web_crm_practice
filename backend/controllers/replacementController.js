@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
 const { sendPushToUser } = require('../services/notificationService');
+const { generateInternalId } = require('../utils/idGenerator');
 
 // @route   GET /api/replacements
 // @desc    Get all replacement requests
@@ -88,7 +89,6 @@ const createReplacement = async (req, res) => {
       return res.status(400).json({ message: 'Contract ID and reason are required' });
     }
 
-    const requestId = `RPL_${Date.now().toString().slice(-6)}`;
     const createdBy = req.user.id;
 
     // Use transaction to update contract status and insert request
@@ -96,6 +96,8 @@ const createReplacement = async (req, res) => {
     await connection.beginTransaction();
 
     try {
+      const requestId = await generateInternalId(connection, 'replacement_requests');
+
       await connection.execute(
         `UPDATE contracts SET status = 'rePlaced', replacements_used = replacements_used + 1 WHERE id = ?`,
         [contract_id]
@@ -109,7 +111,7 @@ const createReplacement = async (req, res) => {
       await connection.commit();
       connection.release();
 
-      res.status(201).json({ message: 'Replacement requested successfully', requestId });
+      res.status(201).json({ message: 'Replacement request created successfully', requestId, id: requestId });
     } catch (dbErr) {
       await connection.rollback();
       connection.release();

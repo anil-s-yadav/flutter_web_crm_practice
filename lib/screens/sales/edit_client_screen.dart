@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
@@ -46,6 +47,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   String _preferredCategory = '';
   String _budgetRange = '';
   String _remarks = '';
+
 
   final List<String> _houseTypes = [
     '1BHK',
@@ -111,7 +113,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
         hasChildren: _hasChildren,
         childrenCount: _hasChildren ? _childrenCount : null,
         preferredCandidateCategory: _preferredCategory,
+        remarks: _remarks.isEmpty ? null : _remarks,
       );
+
 
       context.read<ClientBloc>().add(UpdateClient(updatedClient));
 
@@ -177,6 +181,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Phone Number',
                               isDark: isDark,
                               initialValue: _phone,
+                              keyboardType: TextInputType.phone,
                               validator:
                                   (v) => v!.length < 10 ? 'Invalid' : null,
                               onSaved: (v) => _phone = v!,
@@ -188,6 +193,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Alternate Phone',
                               isDark: isDark,
                               initialValue: _altPhone,
+                              keyboardType: TextInputType.phone,
                               onSaved: (v) => _altPhone = v ?? '',
                             ),
                           ),
@@ -415,9 +421,11 @@ class _EditClientScreenState extends State<EditClientScreen> {
     String? initialValue,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    int? maxLength,
     String? Function(String?)? validator,
     void Function(String?)? onSaved,
   }) {
+    final isPhone = keyboardType == TextInputType.phone;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -432,7 +440,15 @@ class _EditClientScreenState extends State<EditClientScreen> {
         const SizedBox(height: 6),
         TextFormField(
           initialValue: initialValue,
+          maxLength: isPhone ? 10 : maxLength,
+          inputFormatters: isPhone
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ]
+              : null,
           decoration: InputDecoration(
+            counterText: '',
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,

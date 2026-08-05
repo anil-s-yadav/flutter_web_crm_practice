@@ -327,7 +327,6 @@ class _UrgentReplacementCardState extends State<_UrgentReplacementCard> {
                 status: CandidateStatus.readyToPlace,
                 isMedicalCleared: true,
                 isPoliceVerified: true,
-                isAadhaarVerified: true,
                 addedBy: 'System',
                 dateAdded: DateTime.now(),
               ),

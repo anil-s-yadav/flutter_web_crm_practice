@@ -13,10 +13,11 @@ async function createTables() {
         candidate_id VARCHAR(50),
         contract_id VARCHAR(50),
         assigned_to VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         resolved_at TIMESTAMP NULL,
         sla_deadline TIMESTAMP NULL,
         resolution TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
         FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE SET NULL,
         FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE SET NULL,
@@ -34,6 +35,7 @@ async function createTables() {
         is_read BOOLEAN DEFAULT FALSE,
         link_route VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
     `;
@@ -53,4 +55,8 @@ async function createTables() {
   }
 }
 
-createTables();
+if (require.main === module) {
+  createTables();
+}
+
+module.exports = createTables;

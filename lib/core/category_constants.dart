@@ -85,4 +85,17 @@ class CategoryConstants {
     'Elderly Care': 16000,
     'Driver': 15000,
   };
+
+  static const List<String> educationLevels = [
+    '10th Pass',
+    'Below 10th',
+    'Below 8th',
+    'Below 5th',
+    'Illiterate (Non-literate)',
+    '12th Pass',
+    'Graduate',
+    'Post Graduate',
+    'Not Specified',
+  ];
 }
+

@@ -1053,6 +1053,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         ? (isDark ? const Color(0xFF141A28) : AppColors.grey100)
         : (isDark ? const Color(0xFF141A28) : AppColors.grey50);
     final borderColor = isDark ? const Color(0xFF2A3448) : AppColors.grey300;
+    final isPhone = keyboardType == TextInputType.phone;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1077,6 +1078,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           readOnly: readOnly,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          maxLength: isPhone ? 10 : null,
+          inputFormatters: isPhone
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ]
+              : null,
           validator: validator,
           style: GoogleFonts.poppins(
             fontSize: 14,

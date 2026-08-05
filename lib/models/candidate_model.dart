@@ -64,12 +64,13 @@ class CandidateModel {
   // Verification Flags
   final bool isMedicalCleared;
   final bool isPoliceVerified;
-  final bool isAadhaarVerified;
 
   // Document URLs
   final String? medicalClearanceDocUrl;
   final String? policeVerificationDocUrl;
   final String? aadhaarDocUrl;
+  final String? panDocUrl;
+  final String? passportDocUrl;
 
   // Placement & Metadata
   final String? currentPlacementId; // nullable - linked to a Contract
@@ -107,10 +108,11 @@ class CandidateModel {
     required this.status,
     required this.isMedicalCleared,
     required this.isPoliceVerified,
-    required this.isAadhaarVerified,
     this.medicalClearanceDocUrl,
     this.policeVerificationDocUrl,
     this.aadhaarDocUrl,
+    this.panDocUrl,
+    this.passportDocUrl,
     this.photoUrl = '',
     this.currentPlacementId,
     required this.addedBy,
@@ -127,62 +129,80 @@ class CandidateModel {
   });
 
   factory CandidateModel.fromJson(Map<String, dynamic> json) {
+    // Support both camelCase (mock JSON) and snake_case (MySQL DB) keys
+    final languagesRaw = json['languages'];
+    List<String> languages;
+    if (languagesRaw is List) {
+      languages = List<String>.from(languagesRaw);
+    } else if (languagesRaw is String && languagesRaw.isNotEmpty) {
+      languages = languagesRaw.split(',').map((e) => e.trim()).toList();
+    } else {
+      languages = ['Hindi'];
+    }
+
+    final dateAddedRaw = json['dateAdded'] ?? json['created_at'];
+    DateTime dateAdded;
+    if (dateAddedRaw is String) {
+      dateAdded = DateTime.tryParse(dateAddedRaw) ?? DateTime.now();
+    } else {
+      dateAdded = DateTime.now();
+    }
+
+    bool parseBoolField(dynamic val1, dynamic val2) {
+      if (val1 == true || val1 == 1 || val1 == '1' || val1 == 'true') return true;
+      if (val1 == false || val1 == 0 || val1 == '0' || val1 == 'false') return false;
+      if (val2 == true || val2 == 1 || val2 == '1' || val2 == 'true') return true;
+      return false;
+    }
+
     return CandidateModel(
-      id: json['id'],
-      fullName: json['fullName'],
-      age: json['age'],
-      phone: json['phone'],
-      altPhone: json['alternate_phone'],
-      address: json['address'],
-      city: json['city'],
-      state: json['state'],
-      languages: List<String>.from(json['languages']),
-      religion: json['religion'],
-      category: json['category'],
+      id: json['id'] ?? '',
+      fullName: json['fullName'] ?? json['full_name'] ?? '',
+      age: json['age'] ?? 25,
+      phone: json['phone'] ?? '',
+      altPhone: json['altPhone'] ?? json['alternate_phone'],
+      address: json['address'] ?? '',
+      city: json['city'] ?? '',
+      state: json['state'] ?? '',
+      languages: languages,
+      religion: json['religion'] ?? '',
+      category: json['category'] ?? '',
       education: json['education'] ?? 'Not Specified',
-      experienceYears: json['experienceYears'],
-      expectedSalary: json['expectedSalary'],
-      workingHoursPerDay: json['workingHoursPerDay'],
-      preferredWorkType: json['preferredWorkType'],
+      experienceYears: json['experienceYears'] ?? json['experience_years'] ?? 0,
+      expectedSalary: (json['expectedSalary'] ?? json['expected_salary'] ?? '').toString(),
+      workingHoursPerDay: json['workingHoursPerDay'] ?? json['working_hours_per_day'] ?? 10,
+      preferredWorkType: json['preferredWorkType'] ?? json['preferred_work_type'],
       status: CandidateStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
+        (e) => e.toString().split('.').last == (json['status'] ?? 'newlyAdded'),
         orElse: () => CandidateStatus.newlyAdded,
       ),
-      isMedicalCleared: json['isMedicalCleared'] ?? false,
-      isPoliceVerified: json['isPoliceVerified'] ?? false,
-      isAadhaarVerified: json['isAadhaarVerified'] ?? false,
-      medicalClearanceDocUrl: json['medicalClearanceDocUrl'],
-      policeVerificationDocUrl: json['policeVerificationDocUrl'],
-      aadhaarDocUrl: json['aadhaarDocUrl'],
-      photoUrl: json['photoUrl'] ?? '',
-      currentPlacementId: json['currentPlacementId'],
-      addedBy: json['addedBy'],
-      dateAdded: DateTime.parse(json['dateAdded']),
-      dateVerificationSent:
-          json['dateVerificationSent'] != null
-              ? DateTime.parse(json['dateVerificationSent'])
-              : null,
-      dateMedicalSent:
-          json['dateMedicalSent'] != null
-              ? DateTime.parse(json['dateMedicalSent'])
-              : null,
-      dateReadyToHire:
-          json['dateReadyToHire'] != null
-              ? DateTime.parse(json['dateReadyToHire'])
-              : null,
-      datePlaced:
-          json['datePlaced'] != null
-              ? DateTime.parse(json['datePlaced'])
-              : null,
-      availableFrom:
-          json['availableFrom'] != null
-              ? DateTime.parse(json['availableFrom'])
-              : null,
+      isMedicalCleared: parseBoolField(json['isMedicalCleared'], json['is_medical_cleared']),
+      isPoliceVerified: parseBoolField(json['isPoliceVerified'], json['is_police_verified']),
+      medicalClearanceDocUrl: json['medicalClearanceDocUrl'] ?? json['medical_clearance_doc_url'],
+      policeVerificationDocUrl: json['policeVerificationDocUrl'] ?? json['police_verification_doc_url'],
+      aadhaarDocUrl: json['aadhaarDocUrl'] ?? json['aadhaar_doc_url'],
+      panDocUrl: json['panDocUrl'] ?? json['pan_doc_url'],
+      passportDocUrl: json['passportDocUrl'] ?? json['passport_doc_url'],
+      photoUrl: json['photoUrl'] ?? json['profile_image_url'] ?? '',
+      currentPlacementId: json['currentPlacementId'] ?? json['current_placement_id'],
+      addedBy: json['addedBy'] ?? json['sourced_by_id'] ?? 'System',
+      dateAdded: dateAdded,
+      dateVerificationSent: _tryParseDate(json['dateVerificationSent'] ?? json['date_verification_sent']),
+      dateMedicalSent: _tryParseDate(json['dateMedicalSent'] ?? json['date_medical_sent']),
+      dateReadyToHire: _tryParseDate(json['dateReadyToHire'] ?? json['date_ready_to_hire']),
+      datePlaced: _tryParseDate(json['datePlaced'] ?? json['date_placed']),
+      availableFrom: _tryParseDate(json['availableFrom'] ?? json['available_from']),
       remarks: json['remarks'],
-      sourcedById: json['sourcedById'],
-      sourcedByName: json['sourcedByName'],
-      sourcedByPhone: json['sourcedByPhone'],
+      sourcedById: json['sourcedById'] ?? json['sourced_by_id'],
+      sourcedByName: json['sourcedByName'] ?? json['sourced_by_name'],
+      sourcedByPhone: json['sourcedByPhone'] ?? json['sourced_by_phone'],
     );
+  }
+
+  static DateTime? _tryParseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -206,10 +226,11 @@ class CandidateModel {
       'status': status.toString().split('.').last,
       'isMedicalCleared': isMedicalCleared,
       'isPoliceVerified': isPoliceVerified,
-      'isAadhaarVerified': isAadhaarVerified,
       'medicalClearanceDocUrl': medicalClearanceDocUrl,
       'policeVerificationDocUrl': policeVerificationDocUrl,
       'aadhaarDocUrl': aadhaarDocUrl,
+      'panDocUrl': panDocUrl,
+      'passportDocUrl': passportDocUrl,
       'photoUrl': photoUrl,
       'currentPlacementId': currentPlacementId,
       'addedBy': addedBy,
@@ -228,7 +249,15 @@ class CandidateModel {
 
   String toJsonString() => jsonEncode(toJson());
 
+  String get formattedExpectedSalary {
+    if (expectedSalary.trim().isEmpty) return '₹15,000 - ₹25,000';
+    final trimmed = expectedSalary.trim();
+    if (trimmed.contains('₹')) return trimmed;
+    return '₹$trimmed';
+  }
+
   CandidateModel copyWith({
+    String? id,
     String? fullName,
     int? age,
     String? phone,
@@ -247,10 +276,11 @@ class CandidateModel {
     CandidateStatus? status,
     bool? isMedicalCleared,
     bool? isPoliceVerified,
-    bool? isAadhaarVerified,
     String? medicalClearanceDocUrl,
     String? policeVerificationDocUrl,
     String? aadhaarDocUrl,
+    String? panDocUrl,
+    String? passportDocUrl,
     String? photoUrl,
     String? currentPlacementId,
     DateTime? dateVerificationSent,
@@ -264,8 +294,9 @@ class CandidateModel {
     String? sourcedByPhone,
   }) {
     return CandidateModel(
-      id: id,
+      id: id ?? this.id,
       fullName: fullName ?? this.fullName,
+
       age: age ?? this.age,
       phone: phone ?? this.phone,
       altPhone: altPhone ?? this.altPhone,
@@ -283,12 +314,13 @@ class CandidateModel {
       status: status ?? this.status,
       isMedicalCleared: isMedicalCleared ?? this.isMedicalCleared,
       isPoliceVerified: isPoliceVerified ?? this.isPoliceVerified,
-      isAadhaarVerified: isAadhaarVerified ?? this.isAadhaarVerified,
       medicalClearanceDocUrl:
           medicalClearanceDocUrl ?? this.medicalClearanceDocUrl,
       policeVerificationDocUrl:
           policeVerificationDocUrl ?? this.policeVerificationDocUrl,
       aadhaarDocUrl: aadhaarDocUrl ?? this.aadhaarDocUrl,
+      panDocUrl: panDocUrl ?? this.panDocUrl,
+      passportDocUrl: passportDocUrl ?? this.passportDocUrl,
       photoUrl: photoUrl ?? this.photoUrl,
       currentPlacementId: currentPlacementId ?? this.currentPlacementId,
       addedBy: addedBy,
@@ -326,7 +358,6 @@ class CandidateModel {
       status: status,
       isMedicalCleared: isMedicalCleared,
       isPoliceVerified: isPoliceVerified,
-      isAadhaarVerified: isAadhaarVerified,
       medicalClearanceDocUrl: medicalClearanceDocUrl,
       policeVerificationDocUrl: policeVerificationDocUrl,
       aadhaarDocUrl: aadhaarDocUrl,

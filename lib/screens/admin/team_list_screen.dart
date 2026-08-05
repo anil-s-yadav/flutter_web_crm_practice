@@ -112,7 +112,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
         _teamDataSource!.rows
             .map((row) => row.getCells()[0].value as CrmUserModel)
             .toList();
-    final totalPages = (allFiltered.length / _pageSize).ceil();
     final pagedUsers =
         allFiltered.skip(_currentPage * _pageSize).take(_pageSize).toList();
 
@@ -685,28 +684,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  Widget _buildMiniStat(String label, int value, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value.toString(),
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.white : AppColors.navyBlue,
-          ),
-        ),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: isDark ? AppColors.grey400 : AppColors.grey500,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   void _showUserDetailDialog(CrmUserModel user, bool isDark) {
     final dateFormat = DateFormat('dd MMM yyyy');

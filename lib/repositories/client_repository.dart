@@ -43,12 +43,20 @@ class ClientRepository {
       client.toJson(),
     );
 
-    if (response != null) {
-      return ClientModel.fromJson(response as Map<String, dynamic>);
+    if (response != null && response is Map<String, dynamic>) {
+      if (response.containsKey('name') || response.containsKey('full_name') || response.containsKey('fullName')) {
+        return ClientModel.fromJson(response);
+      }
+      final assignedId = (response['clientId'] ?? response['id'])?.toString();
+      if (assignedId != null && assignedId.isNotEmpty) {
+        return client.copyWith(id: assignedId);
+      }
+      return client;
     } else {
       throw Exception('Failed to create client');
     }
   }
+
 
   Future<ClientModel> updateClient(ClientModel client, {String? reason}) async {
     final body = client.toJson();

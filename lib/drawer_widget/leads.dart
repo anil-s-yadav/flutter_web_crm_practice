@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:practice_app/utils/extensions.dart';
 
 class LeadScreen extends StatelessWidget {
@@ -407,8 +408,14 @@ class _AddLeadDialogState extends State<AddLeadDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: mobileCtrl,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: const InputDecoration(
                           labelText: "Mobile No *",
+                          counterText: "",
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -423,8 +430,14 @@ class _AddLeadDialogState extends State<AddLeadDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: altMobileCtrl,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: const InputDecoration(
                           labelText: "Alternate Mobile No",
+                          counterText: "",
                         ),
                         keyboardType: TextInputType.phone,
                       ),

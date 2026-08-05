@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/models/crm_user_model.dart';
@@ -357,6 +358,7 @@ class _AddEditCrmUserScreenState extends State<AddEditCrmUserScreen> {
     String? hintText,
     String? Function(String?)? validator,
   }) {
+    final isPhone = keyboardType == TextInputType.phone;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -372,10 +374,18 @@ class _AddEditCrmUserScreenState extends State<AddEditCrmUserScreen> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          maxLength: isPhone ? 10 : null,
+          inputFormatters: isPhone
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ]
+              : null,
           obscureText: obscureText,
           validator: validator,
           style: GoogleFonts.poppins(fontSize: 14),
           decoration: InputDecoration(
+            counterText: '',
             hintText: hintText ?? 'Enter $label',
             hintStyle: GoogleFonts.poppins(
               fontSize: 13,

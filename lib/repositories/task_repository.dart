@@ -43,12 +43,20 @@ class TaskRepository {
       task.toJson(),
     );
 
-    if (response != null) {
-      return ExecutiveTaskModel.fromJson(response as Map<String, dynamic>);
+    if (response != null && response is Map<String, dynamic>) {
+      if (response.containsKey('title') || response.containsKey('due_date')) {
+        return ExecutiveTaskModel.fromJson(response);
+      }
+      final assignedId = (response['taskId'] ?? response['id'])?.toString();
+      if (assignedId != null && assignedId.isNotEmpty) {
+        return task.copyWith(id: assignedId);
+      }
+      return task;
     } else {
       throw Exception('Failed to create task');
     }
   }
+
 
   Future<ExecutiveTaskModel> updateTask(ExecutiveTaskModel task) async {
     final response = await ApiClient.put(

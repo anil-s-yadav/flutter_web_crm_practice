@@ -28,6 +28,20 @@ class AuditLogRepository {
     }
   }
 
+  Future<void> logAudit({
+    required String entityType,
+    required String targetId,
+    required String actionType,
+    required String description,
+  }) async {
+    await ApiClient.post('/api/audit-logs', {
+      'entityType': entityType,
+      'targetId': targetId,
+      'actionType': actionType,
+      'description': description,
+    });
+  }
+
   UserRole _parseUserRole(String roleStr) {
     switch (roleStr) {
       case 'admin': return UserRole.admin;
@@ -48,6 +62,7 @@ class AuditLogRepository {
       case 'contractRenewed': return ActionType.contractRenewed;
       case 'slaInitiated': return ActionType.slaInitiated;
       case 'taskCompleted': return ActionType.taskCompleted;
+      case 'rollback': return ActionType.rollback;
       default: return ActionType.update;
     }
   }

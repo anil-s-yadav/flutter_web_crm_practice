@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
@@ -59,11 +60,10 @@ class _AddClientScreenState extends State<AddClientScreen> {
   ];
 
   void _addClient() {
-    // Generate an ID based on current timestamp to be somewhat unique
-    final newId = 'CLI${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-
+    // Backend assigns VM00000001 format ID
     final client = ClientModel(
-      id: newId,
+      id: '',
+
       fullName: _fullName,
       phone: _phone,
       altPhone: _altPhone.isEmpty ? null : _altPhone,
@@ -562,9 +562,16 @@ class _AddClientScreenState extends State<AddClientScreen> {
     String? Function(String?)? validator,
     void Function(String?)? onSaved,
   }) {
+    final isPhone = keyboardType == TextInputType.phone;
     return TextFormField(
       initialValue: initialValue,
-      maxLength: maxLength,
+      maxLength: isPhone ? 10 : maxLength,
+      inputFormatters: isPhone
+          ? [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ]
+          : null,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(

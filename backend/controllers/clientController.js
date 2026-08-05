@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
 const { isPhoneGloballyUnique } = require('../utils/phoneValidator');
+const { generateClientId } = require('../utils/idGenerator');
 
 // @route   GET /api/clients
 // @desc    Get all clients (leads and converted)
@@ -73,8 +74,17 @@ const createClient = async (req, res) => {
       return res.status(409).json({ message: 'Phone number is already registered in the system.' });
     }
 
-    const clientId = `CL_${Date.now().toString().slice(-6)}`;
-    const assignedSalesId = req.user.role === 'sales' ? req.user.id : null;
+    const clientId = (req.body.id && req.body.id.startsWith('VM'))
+      ? req.body.id 
+      : await generateClientId(pool);
+    let assignedSalesId = null;
+    const requestedSalesId = (req.user && req.user.role === 'sales') ? req.user.id : (req.body.assigned_sales_id || null);
+    if (requestedSalesId) {
+      const [userRows] = await pool.execute('SELECT id FROM users WHERE id = ?', [requestedSalesId]);
+      if (userRows.length > 0) {
+        assignedSalesId = requestedSalesId;
+      }
+    }
 
     await pool.execute(
       `INSERT INTO clients 
@@ -83,7 +93,8 @@ const createClient = async (req, res) => {
       [clientId, name, company_name || null, email || null, phone, alternate_phone || null, address || null, assignedSalesId]
     );
 
-    res.status(201).json({ message: 'Client created successfully', clientId });
+    res.status(201).json({ message: 'Client created successfully', clientId, id: clientId });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

@@ -93,6 +93,32 @@ const getAuditLogs = async (req, res) => {
   }
 };
 
+// @route   POST /api/audit-logs
+// @desc    Create a new audit log entry
+// @access  Private
+const createAuditLog = async (req, res) => {
+  try {
+    const { entityType, entityId, targetId, action, actionType, description } = req.body;
+    const finalEntity = entityType || 'candidate';
+    const finalTargetId = targetId || entityId;
+    const finalAction = actionType || action || 'statusChange';
+    const performedBy = req.user?.id || 'system';
+
+    if (!finalTargetId || !description) {
+      return res.status(400).json({ message: 'Target ID and description are required' });
+    }
+
+    const { logAction } = require('../services/auditService');
+    await logAction(finalEntity, finalTargetId, finalAction, description, performedBy);
+
+    res.status(201).json({ message: 'Audit log created successfully' });
+  } catch (err) {
+    console.error('createAuditLog error:', err);
+    res.status(500).json({ message: 'Server error creating audit log' });
+  }
+};
+
 module.exports = {
-  getAuditLogs
+  getAuditLogs,
+  createAuditLog
 };

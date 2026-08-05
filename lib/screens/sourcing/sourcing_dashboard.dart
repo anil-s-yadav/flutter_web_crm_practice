@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 
@@ -54,12 +53,12 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
         final verificationPending = pipelineData['verificationPending'] ?? 0;
         final medicalPending = pipelineData['medicalPending'] ?? 0;
         final readyToPlace = pipelineData['readyToPlace'] ?? 0;
-        final totalPipeline =
-            newlyAdded + verificationPending + medicalPending + readyToPlace;
 
-        final addedThisMonth = data['myCandidates'] ?? 0;
+        final addedThisMonth = data['addedThisMonth'] ?? 0;
         final targetThisMonth = 50; // Mock target
-        final addedLastMonth = 0;
+        final addedLastMonth = data['addedLastMonth'] ?? 0;
+        final readyNoMedical = data['readyNoMedical'] ?? 0;
+        final readyMedicalVerified = data['readyMedicalVerified'] ?? 0;
         final totalCandidates = data['myCandidates'] ?? 0;
 
         return Scaffold(
@@ -164,7 +163,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                           icon: Icons.check_circle_outline,
                           iconColor: AppColors.stageVerified,
                           title: 'Ready (No Medical)',
-                          value: _indianFormat.format(readyToPlace),
+                          value: _indianFormat.format(readyNoMedical),
                           isDark: isDark,
                           compact: true,
                         ),
@@ -172,9 +171,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
                           icon: Icons.medical_services,
                           iconColor: AppColors.successGreen,
                           title: 'Ready (Medical Verified)',
-                          value: _indianFormat.format(
-                            readyToPlace,
-                          ), // Simplify for now
+                          value: _indianFormat.format(readyMedicalVerified),
                           isDark: isDark,
                           compact: true,
                         ),
@@ -504,44 +501,7 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
     );
   }
 
-  Color _candidateStatusColor(CandidateStatus status) {
-    switch (status) {
-      case CandidateStatus.newlyAdded:
-        return AppColors.statusInterviewed;
-      case CandidateStatus.verificationPending:
-        return AppColors.stagePoliceVerification;
-      case CandidateStatus.medicalPending:
-        return AppColors.stageMedicalCheck;
-      case CandidateStatus.readyToPlace:
-        return AppColors.statusVerified;
-      case CandidateStatus.Placed:
-        return AppColors.statusPlaced;
-      case CandidateStatus.blacklisted:
-        return AppColors.statusBlacklisted;
-      case CandidateStatus.renewalPending:
-        return AppColors.statusRenewal;
-      case CandidateStatus.jobLeft:
-        return AppColors.statusJobLeft;
-    }
-  }
 
-  Widget _buildStatusBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-      ),
-    );
-  }
 }
 
 class _PipelineStep {

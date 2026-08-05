@@ -110,7 +110,7 @@ class LearningScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildScriptCard(
               'Medical Checkup Reminder',
-              'Aapka police aur aadhaar verification complete ho gaya hai. Agla step medical checkup hai. Kripya apna medical clearance certificate jama karein taaki hum aapko jald se jald kaam dila sakein.',
+              'Aapka police verification complete ho gaya hai. Agla step medical checkup hai. Kripya apna medical clearance certificate jama karein taaki hum aapko jald se jald kaam dila sakein.',
               isDark,
             ),
             const SizedBox(height: 32),

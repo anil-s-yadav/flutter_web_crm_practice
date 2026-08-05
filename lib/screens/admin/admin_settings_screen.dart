@@ -535,13 +535,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       return;
                     }
 
-                                        final newNotif = NotificationModel(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      title: titleController.text,
-                      message: messageController.text,
-                      createdAt: DateTime.now(),
-                      type: selectedType,
-                    );
+
 
                     // TODO: Implement notification dispatch using appropriate bloc/service
                     Navigator.pop(context);

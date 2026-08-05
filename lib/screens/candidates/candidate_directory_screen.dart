@@ -17,6 +17,8 @@ import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/screens/candidates/candidate_data_source.dart';
+import 'package:practice_app/widgets/candidate_avatar.dart';
+import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 
 enum CandidateDirectoryType {
   newlyAdded,
@@ -54,7 +56,6 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   bool _showFilters = false;
 
   int _activeReadyTabIndex = 0;
-  int _activeVerifyTabIndex = 0;
 
   @override
   void initState() {
@@ -75,6 +76,24 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   bool get _isNewStyle =>
       widget.type == CandidateDirectoryType.readyToPlace ||
       widget.type == CandidateDirectoryType.verificationPending;
+
+  bool get _hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      (_selectedLanguage != null && _selectedLanguage != 'All') ||
+      (_selectedExperience != null && _selectedExperience != 'All') ||
+      (_selectedLocation != null && _selectedLocation != 'All') ||
+      (_selectedCategory != null && _selectedCategory != 'All');
+
+  void _clearFilters() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _selectedLanguage = null;
+      _selectedExperience = null;
+      _selectedLocation = null;
+      _selectedCategory = null;
+    });
+  }
 
   void _onRowTap(CandidateModel candidate) {
     final state = context.read<AuthBloc>().state;
@@ -102,38 +121,16 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
         context.push('$routePrefix/candidates/${candidate.id}/edit');
         break;
       case 'promote_verification':
-        context.read<CandidateBloc>().add(
-          UpdateCandidate(
-            candidate.copyWith(status: CandidateStatus.verificationPending),
-          ),
-        );
+        CandidatePromotionHelper.promoteToVerification(context, candidate);
+        break;
+      case 'rollback_newly_added':
+        CandidatePromotionHelper.rollbackToNewlyAdded(context, candidate);
         break;
       case 'promote_medical':
-        context.read<CandidateBloc>().add(
-          UpdateCandidate(
-            candidate.copyWith(
-              status: CandidateStatus.medicalPending,
-              isPoliceVerified: true,
-              isAadhaarVerified: true,
-            ),
-          ),
-        );
+        CandidatePromotionHelper.promoteToMedical(context, candidate);
         break;
       case 'promote_ready':
-        context.read<CandidateBloc>().add(
-          UpdateCandidate(
-            candidate.copyWith(
-              status: CandidateStatus.readyToPlace,
-              isPoliceVerified: true,
-              isAadhaarVerified: true,
-              isMedicalCleared:
-                  candidate.status == CandidateStatus.medicalPending
-                      ? true
-                      : false,
-              availableFrom: DateTime.now(),
-            ),
-          ),
-        );
+        CandidatePromotionHelper.promoteToReadyToPlace(context, candidate);
         break;
       case 'blacklist':
         _showBlacklistDialog(context, candidate);
@@ -238,11 +235,11 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             ),
           );
         } else if (candidateState is CandidateLoaded) {
-          // 1. Search Filter
+          // 1. Search & Dropdown Filters
           final baseCandidates =
               candidateState.candidates.where((m) {
                 if (_searchQuery.isNotEmpty) {
-                  final q = _searchQuery.toLowerCase();
+                  final q = _searchQuery.toLowerCase().trim();
                   final matchesQuery =
                       m.fullName.toLowerCase().contains(q) ||
                       m.id.toLowerCase().contains(q) ||
@@ -251,11 +248,18 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                           m.altPhone!.toLowerCase().contains(q)) ||
                       m.category.toLowerCase().contains(q) ||
                       m.languages.any((l) => l.toLowerCase().contains(q)) ||
+                      m.city.toLowerCase().contains(q) ||
                       m.education.toLowerCase().contains(q);
                   if (!matchesQuery) return false;
                 }
                 if (_selectedLanguage != null && _selectedLanguage != 'All') {
-                  if (!m.languages.contains(_selectedLanguage)) return false;
+                  if (!m.languages.any(
+                    (l) =>
+                        l.trim().toLowerCase() ==
+                        _selectedLanguage!.trim().toLowerCase(),
+                  )) {
+                    return false;
+                  }
                 }
                 if (_selectedExperience != null &&
                     _selectedExperience != 'All') {
@@ -276,14 +280,14 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                   }
                 }
                 if (_selectedLocation != null && _selectedLocation != 'All') {
-                  if (m.city.toLowerCase() !=
-                      _selectedLocation!.toLowerCase()) {
+                  if (m.city.trim().toLowerCase() !=
+                      _selectedLocation!.trim().toLowerCase()) {
                     return false;
                   }
                 }
                 if (_selectedCategory != null && _selectedCategory != 'All') {
-                  if (m.category.toLowerCase() !=
-                      _selectedCategory!.toLowerCase()) {
+                  if (m.category.trim().toLowerCase() !=
+                      _selectedCategory!.trim().toLowerCase()) {
                     return false;
                   }
                 }
@@ -292,7 +296,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
 
           // 2. Routing Logic based on Directory Type
           if (widget.type == CandidateDirectoryType.readyToPlace) {
-            final policeAndAadhaar =
+            final policeVerified =
                 baseCandidates
                     .where((m) => m.status == CandidateStatus.readyToPlace)
                     .toList();
@@ -306,7 +310,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                     .toList();
 
             final tabs = [
-              'Police & Aadhaar Verified (${policeAndAadhaar.length})',
+              'Police Verified (${policeVerified.length})',
               'Medical Cleared (${medicalCleared.length})',
             ];
 
@@ -369,13 +373,19 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(
-                          _showFilters
-                              ? Icons.filter_list_off
-                              : Icons.filter_list,
-                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        icon: Badge(
+                          isLabelVisible: _hasActiveFilters,
+                          backgroundColor: AppColors.urgentAmber,
+                          smallSize: 8,
+                          child: Icon(
+                            _showFilters
+                                ? Icons.filter_list_off
+                                : Icons.filter_list,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
                         ),
-                        tooltip: 'Toggle Filters',
+                        tooltip: _showFilters ? 'Hide Filters' : 'Show Filters',
                         onPressed: () {
                           setState(() {
                             _showFilters = !_showFilters;
@@ -386,12 +396,18 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                   ),
                 ),
                 if (_showFilters)
-                  _buildToolbar(context, isDark, policeAndAadhaar.length),
+                  _buildToolbar(
+                    context,
+                    isDark,
+                    _activeReadyTabIndex == 0
+                        ? policeVerified.length
+                        : medicalCleared.length,
+                  ),
                 Expanded(
                   child:
                       _activeReadyTabIndex == 0
                           ? _CandidateGridView(
-                            candidates: policeAndAadhaar,
+                            candidates: policeVerified,
                             isDark: isDark,
                             isNewStyle: _isNewStyle,
                             onRowTap: _onRowTap,
@@ -409,122 +425,6 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             );
           }
 
-          if (widget.type == CandidateDirectoryType.verificationPending) {
-            final allPending =
-                baseCandidates
-                    .where(
-                      (m) => m.status == CandidateStatus.verificationPending,
-                    )
-                    .toList();
-            final policePending =
-                allPending.where((m) => !m.isPoliceVerified).toList();
-            final aadhaarPending =
-                allPending.where((m) => !m.isAadhaarVerified).toList();
-
-            final tabs = [
-              'Police Verification Pending (${policePending.length})',
-              'Aadhaar Verification Pending (${aadhaarPending.length})',
-            ];
-
-            return Column(
-              children: [
-                Container(
-                  color:
-                      isDark ? AppColors.darkSurface : AppColors.surfaceLight,
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: List.generate(tabs.length, (index) {
-                              final isSelected = _activeVerifyTabIndex == index;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ChoiceChip(
-                                  label: Text(
-                                    tabs[index],
-                                    style: GoogleFonts.poppins(
-                                      color:
-                                          isSelected
-                                              ? AppColors.navyBlue
-                                              : (isDark
-                                                  ? AppColors.textSecondaryDark
-                                                  : AppColors
-                                                      .textSecondaryLight),
-                                      fontWeight:
-                                          isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                    ),
-                                  ),
-                                  selected: isSelected,
-                                  selectedColor: AppColors.gold,
-                                  backgroundColor:
-                                      isDark
-                                          ? AppColors.darkSurfaceVariant
-                                          : AppColors.white,
-                                  side: BorderSide.none,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _activeVerifyTabIndex = index;
-                                    });
-                                  },
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _showFilters
-                              ? Icons.filter_list_off
-                              : Icons.filter_list,
-                          color: isDark ? AppColors.white : AppColors.navyBlue,
-                        ),
-                        tooltip: 'Toggle Filters',
-                        onPressed: () {
-                          setState(() {
-                            _showFilters = !_showFilters;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                if (_showFilters)
-                  _buildToolbar(context, isDark, allPending.length),
-                Expanded(
-                  child:
-                      _activeVerifyTabIndex == 0
-                          ? _CandidateGridView(
-                            candidates: policePending,
-                            isDark: isDark,
-                            onRowTap: _onRowTap,
-                            onActionTap: _onActionTap,
-                            isNewStyle: true,
-                          )
-                          : _CandidateGridView(
-                            candidates: aadhaarPending,
-                            isDark: isDark,
-                            onRowTap: _onRowTap,
-                            onActionTap: _onActionTap,
-                            isNewStyle: true,
-                          ),
-                ),
-              ],
-            );
-          }
-
           // For single view lists
           List<CandidateModel> displayCandidates = [];
           switch (widget.type) {
@@ -532,6 +432,14 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               displayCandidates =
                   baseCandidates
                       .where((m) => m.status == CandidateStatus.newlyAdded)
+                      .toList();
+              break;
+            case CandidateDirectoryType.verificationPending:
+              displayCandidates =
+                  baseCandidates
+                      .where(
+                        (m) => m.status == CandidateStatus.verificationPending,
+                      )
                       .toList();
               break;
             case CandidateDirectoryType.medicalPending:
@@ -844,6 +752,18 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
           onChanged: (val) => setState(() => _selectedLocation = val),
           isDark: isDark,
         ),
+        if (_hasActiveFilters) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(
+              Icons.clear_all,
+              size: 20,
+              color: AppColors.criticalRed,
+            ),
+            tooltip: 'Clear Filters',
+            onPressed: _clearFilters,
+          ),
+        ],
         const SizedBox(width: 12),
         SizedBox(
           width: 260,
@@ -1340,19 +1260,10 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
               // Top Row (Always visible)
               Row(
                 children: [
-                  CircleAvatar(
+                  CandidateAvatar(
+                    photoUrl: candidate.photoUrl,
+                    name: candidate.fullName,
                     radius: 20,
-                    backgroundColor:
-                        isDark
-                            ? AppColors.white.withValues(alpha: 0.1)
-                            : AppColors.navyBlue.withValues(alpha: 0.1),
-                    child: Text(
-                      candidate.fullName[0],
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.white : AppColors.navyBlue,
-                      ),
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1410,6 +1321,18 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                         );
                       } else if (candidate.status ==
                           CandidateStatus.verificationPending) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'rollback_newly_added',
+                            child: Row(
+                              children: [
+                                Icon(Icons.undo, size: 16, color: AppColors.urgentAmber),
+                                SizedBox(width: 8),
+                                Text('Rollback to Newly Added'),
+                              ],
+                            ),
+                          ),
+                        );
                         items.add(
                           const PopupMenuItem(
                             value: 'promote_medical',

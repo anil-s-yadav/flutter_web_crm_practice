@@ -650,7 +650,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     if (reason != null && reason.isNotEmpty) {
       final now = DateTime.now();
       final request = ReplacementRequestModel(
-        id: 'RPL${now.millisecondsSinceEpoch.toString().substring(5)}',
+        id: '',
+
         contractId: contract.id,
         clientId: contract.clientId,
         clientName: contract.clientName,
@@ -994,7 +995,8 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
     final taskTypeEnum = TaskTypeExtension.fromString(_selectedTaskType);
 
     final newTask = ExecutiveTaskModel(
-      id: 'TSK${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
+      id: '',
+
       title: taskTypeEnum.displayName,
       description:
           _remarks.isEmpty

@@ -40,12 +40,20 @@ class ContractRepository {
   Future<ContractModel> createContract(ContractModel contract) async {
     final response = await ApiClient.post('/api/contracts', contract.toJson());
 
-    if (response != null) {
-      return ContractModel.fromJson(response as Map<String, dynamic>);
+    if (response != null && response is Map<String, dynamic>) {
+      if (response.containsKey('start_date') || response.containsKey('startDate')) {
+        return ContractModel.fromJson(response);
+      }
+      final assignedId = (response['contractId'] ?? response['id'])?.toString();
+      if (assignedId != null && assignedId.isNotEmpty) {
+        return contract.copyWith(id: assignedId);
+      }
+      return contract;
     } else {
       throw Exception('Failed to create contract');
     }
   }
+
 
   Future<ContractModel> updateContract(ContractModel contract) async {
     final response = await ApiClient.put(

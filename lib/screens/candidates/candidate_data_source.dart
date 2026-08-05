@@ -4,6 +4,7 @@ import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:practice_app/widgets/candidate_avatar.dart';
 
 class CandidateDataSource extends DataGridSource {
   final BuildContext context;
@@ -71,7 +72,7 @@ class CandidateDataSource extends DataGridSource {
               ),
               DataGridCell<String>(
                 columnName: 'salary',
-                value: candidate.expectedSalary,
+                value: candidate.formattedExpectedSalary,
               ),
               DataGridCell<String>(
                 columnName: 'education',
@@ -164,21 +165,10 @@ class CandidateDataSource extends DataGridSource {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      CircleAvatar(
+                      CandidateAvatar(
+                        photoUrl: candidate.photoUrl,
+                        name: candidate.fullName,
                         radius: 16,
-                        backgroundColor:
-                            isDark
-                                ? AppColors.white.withValues(alpha: 0.1)
-                                : AppColors.navyBlue.withValues(alpha: 0.1),
-                        child: Text(
-                          candidate.fullName[0],
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color:
-                                isDark ? AppColors.white : AppColors.navyBlue,
-                          ),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

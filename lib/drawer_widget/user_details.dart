@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:practice_app/utils/extensions.dart';
-import 'package:provider/provider.dart';
-
-import '../theme/theme_provider.dart';
 import '../utils/shared_preferences.dart';
 
 // Assume ThemeProvider and extensions are defined elsewhere
@@ -12,9 +9,6 @@ class UserDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme myColors = Theme.of(context).colorScheme;
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isWeb = screenWidth > 600;
-    final bool isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
 
     return Scaffold(
       body: Container(

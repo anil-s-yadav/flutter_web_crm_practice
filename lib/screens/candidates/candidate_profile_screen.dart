@@ -5,11 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/contract_model.dart';
 import 'package:practice_app/models/candidate_model.dart';
-import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/models/audit_log_model.dart';
 import 'package:practice_app/models/client_model.dart';
-import 'package:practice_app/blocs/auth/auth_bloc.dart';
-import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/blocs/contract/contract_bloc.dart';
 import 'package:practice_app/blocs/contract/contract_state.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
@@ -21,6 +18,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
+import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
+import 'package:practice_app/widgets/candidate_avatar.dart';
+import 'package:practice_app/utils/image_picker_helper.dart';
+import 'package:practice_app/core/default_doc_urls.dart';
+import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 
 class CandidateProfileScreen extends StatelessWidget {
   final String candidateId;
@@ -103,7 +105,12 @@ class CandidateProfileScreen extends StatelessWidget {
         }
         final candidate = candidates[candidateIndex];
 
-        final relevantLogs = <AuditLogModel>[];
+        final auditState = context.watch<AuditLogBloc>().state;
+        final relevantLogs = auditState is AuditLogLoaded
+            ? auditState.auditLogs
+                .where((l) => l.targetId == candidate.id)
+                .toList()
+            : <AuditLogModel>[];
 
         return Scaffold(
           body: SingleChildScrollView(
@@ -158,9 +165,9 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 24),
         _buildPersonalDetails(candidate, isDark),
         const SizedBox(height: 16),
-        _buildVerificationStatus(candidate, isDark),
+        _buildVerificationStatus(context, candidate, isDark),
         const SizedBox(height: 16),
-        _buildDocuments(candidate, isDark),
+        _buildDocuments(context, candidate, isDark),
         const SizedBox(height: 16),
         if (candidate.currentPlacementId != null)
           _buildCurrentPlacement(candidate, isDark),
@@ -168,8 +175,6 @@ class CandidateProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _buildRemarks(candidate, isDark),
         ],
-        const SizedBox(height: 24),
-        _buildActionBar(context, candidate, isDark),
         const SizedBox(height: 32),
         AuditLogWidget(
           logs: relevantLogs.cast(),
@@ -203,22 +208,19 @@ class CandidateProfileScreen extends StatelessWidget {
           children: [
             Expanded(child: _buildPersonalDetails(candidate, isDark)),
             const SizedBox(width: 16),
-            Expanded(child: _buildVerificationStatus(candidate, isDark)),
+            Expanded(
+              child: _buildVerificationStatus(context, candidate, isDark),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildDocuments(candidate, isDark),
+        _buildDocuments(context, candidate, isDark),
         const SizedBox(height: 16),
         if (candidate.currentPlacementId != null)
           _buildCurrentPlacement(candidate, isDark),
         if (candidate.remarks != null) ...[
           const SizedBox(height: 16),
           _buildRemarks(candidate, isDark),
-        ],
-        const SizedBox(height: 24),
-        if (true) ...[
-          _buildActionBar(context, candidate, isDark),
-          const SizedBox(height: 16),
         ],
         const SizedBox(height: 32),
         AuditLogWidget(
@@ -249,8 +251,6 @@ class CandidateProfileScreen extends StatelessWidget {
               _buildTopActions(context, candidate),
               const SizedBox(height: 16),
               _buildPersonalDetails(candidate, isDark),
-              const SizedBox(height: 24),
-              if (true) ...[_buildActionBar(context, candidate, isDark)],
             ],
           ),
         ),
@@ -268,9 +268,11 @@ class CandidateProfileScreen extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: _buildVerificationStatus(candidate, isDark)),
+                  Expanded(
+                    child: _buildVerificationStatus(context, candidate, isDark),
+                  ),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildDocuments(candidate, isDark)),
+                  Expanded(child: _buildDocuments(context, candidate, isDark)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -336,22 +338,40 @@ class CandidateProfileScreen extends StatelessWidget {
           ),
         ),
 
-        ElevatedButton.icon(
-          onPressed: () {
-            context.push('/sourcing/candidates/${candidate.id}/edit');
-          },
-          icon: const Icon(Icons.edit, size: 16),
-          label: Text(
-            'Edit Profile',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        if (candidate.status == CandidateStatus.newlyAdded)
+          ElevatedButton.icon(
+            onPressed: () {
+              context.push('/sourcing/candidates/${candidate.id}/edit');
+            },
+            icon: const Icon(Icons.edit, size: 16),
+            label: Text(
+              'Edit Profile',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.white,
+              foregroundColor: AppColors.navyBlue,
+              elevation: 0,
+              side: BorderSide(color: AppColors.navyBlue.withValues(alpha: 0.2)),
+            ),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.white,
-            foregroundColor: AppColors.navyBlue,
-            elevation: 0,
-            side: BorderSide(color: AppColors.navyBlue.withValues(alpha: 0.2)),
+        if (candidate.status == CandidateStatus.verificationPending)
+          ElevatedButton.icon(
+            onPressed: () {
+              CandidatePromotionHelper.rollbackToNewlyAdded(context, candidate);
+            },
+            icon: const Icon(Icons.undo, size: 16),
+            label: Text(
+              'Rollback to Newly Added',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.white,
+              foregroundColor: AppColors.urgentAmber,
+              elevation: 0,
+              side: BorderSide(color: AppColors.urgentAmber.withValues(alpha: 0.4)),
+            ),
           ),
-        ),
         if (candidate.status != CandidateStatus.Placed &&
             candidate.status != CandidateStatus.blacklisted &&
             candidate.status != CandidateStatus.readyToPlace)
@@ -397,42 +417,42 @@ class CandidateProfileScreen extends StatelessWidget {
                 if (candidate.status == CandidateStatus.newlyAdded)
                   PopupMenuItem(
                     value:
-                        () => context.read<CandidateBloc>().add(
-                          UpdateCandidate(
-                            candidate.copyWith(
-                              status: CandidateStatus.verificationPending,
-                            ),
-                          ),
+                        () => CandidatePromotionHelper.promoteToVerification(
+                          context,
+                          candidate,
                         ),
-                    child: const Text('Promote to Police Verification'),
+                    child: const Text('Move to Verification'),
                   ),
                 if (candidate.status ==
                     CandidateStatus.verificationPending) ...[
                   PopupMenuItem(
                     value:
-                        () => context.read<CandidateBloc>().add(
-                          UpdateCandidate(
-                            candidate.copyWith(
-                              status: CandidateStatus.medicalPending,
-                              isPoliceVerified: true,
-                              isAadhaarVerified: true,
-                            ),
-                          ),
+                        () => CandidatePromotionHelper.rollbackToNewlyAdded(
+                          context,
+                          candidate,
+                        ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.undo, size: 16, color: AppColors.urgentAmber),
+                        SizedBox(width: 8),
+                        Text('Rollback to Newly Added'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value:
+                        () => CandidatePromotionHelper.promoteToMedical(
+                          context,
+                          candidate,
                         ),
                     child: const Text('Promote to Medical Test'),
                   ),
                   PopupMenuItem(
                     value:
-                        () => context.read<CandidateBloc>().add(
-                          UpdateCandidate(
-                            candidate.copyWith(
-                              status: CandidateStatus.readyToPlace,
-                              isPoliceVerified: true,
-                              isAadhaarVerified: true,
-                              isMedicalCleared: false,
-                              availableFrom: DateTime.now(),
-                            ),
-                          ),
+                        () => CandidatePromotionHelper.promoteToReadyToPlace(
+                          context,
+                          candidate,
+                          skipMedical: true,
                         ),
                     child: const Text(
                       'Promote to Ready to Hire (Skip Medical)',
@@ -442,14 +462,9 @@ class CandidateProfileScreen extends StatelessWidget {
                 if (candidate.status == CandidateStatus.medicalPending)
                   PopupMenuItem(
                     value:
-                        () => context.read<CandidateBloc>().add(
-                          UpdateCandidate(
-                            candidate.copyWith(
-                              status: CandidateStatus.readyToPlace,
-                              isMedicalCleared: true,
-                              availableFrom: DateTime.now(),
-                            ),
-                          ),
+                        () => CandidatePromotionHelper.promoteToReadyToPlace(
+                          context,
+                          candidate,
                         ),
                     child: const Text('Promote to Ready to Hire'),
                   ),
@@ -747,26 +762,10 @@ class CandidateProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            CircleAvatar(
+            CandidateAvatar(
+              photoUrl: candidate.photoUrl,
+              name: candidate.fullName,
               radius: 36,
-              backgroundColor:
-                  isDark
-                      ? AppColors.white.withValues(alpha: 0.1)
-                      : AppColors.navyBlue.withValues(alpha: 0.1),
-              child: Text(
-                candidate.fullName.isNotEmpty
-                    ? candidate.fullName
-                        .split(' ')
-                        .map((n) => n.isNotEmpty ? n[0] : '')
-                        .take(2)
-                        .join()
-                    : '?',
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.navyBlue,
-                ),
-              ),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -850,110 +849,153 @@ class CandidateProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Row(
-              children: List.generate(steps.length * 2 - 1, (i) {
-                if (i.isOdd) {
-                  final stepIndex = i ~/ 2;
-                  return Expanded(
-                    child: Container(
-                      height: 3,
-                      color:
-                          stepIndex < progress
-                              ? colors[stepIndex]
-                              : (isDark
-                                  ? AppColors.grey700
-                                  : AppColors.grey300),
-                    ),
-                  );
-                }
-                final stepIndex = i ~/ 2;
-                bool isComplete = stepIndex < progress - 1 || progress >= 4;
-                bool isActive = stepIndex == progress - 1 && progress < 4;
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(steps.length, (stepIndex) {
+                final isComplete = stepIndex < progress - 1 || progress >= 4;
+                final isActive = stepIndex == progress - 1 && progress < 4;
                 bool isSkipped = false;
 
                 // If past Medical (progress > 3) and medical not cleared, it was skipped
                 if (stepIndex == 2 &&
                     progress > 3 &&
                     !candidate.isMedicalCleared) {
-                  isComplete = false;
-                  isActive = false;
                   isSkipped = true;
                 }
 
-                return Column(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            isSkipped
-                                ? (isDark
-                                    ? AppColors.grey700
-                                    : AppColors.grey200)
-                                : ((isComplete || isActive)
-                                    ? colors[stepIndex]
-                                    : (isDark
-                                        ? AppColors.grey700
-                                        : AppColors.grey300)),
-                        border:
-                            isSkipped
-                                ? Border.all(color: AppColors.grey400, width: 2)
-                                : (isActive
-                                    ? Border.all(
-                                      color:
-                                          isDark
-                                              ? Colors.white
-                                              : AppColors.navyBlue,
-                                      width: 2,
-                                    )
-                                    : null),
-                      ),
-                      child: Icon(
-                        isSkipped
-                            ? Icons.double_arrow
-                            : (isComplete
-                                ? Icons.check
-                                : (isActive
-                                    ? Icons.hourglass_empty
-                                    : Icons.circle)),
-                        size:
-                            isSkipped
-                                ? 16
-                                : (isComplete ? 18 : (isActive ? 16 : 8)),
-                        color: isSkipped ? AppColors.grey500 : AppColors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isSkipped ? 'Skipped' : steps[stepIndex],
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight:
-                            (isComplete || isActive || isSkipped)
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                        color:
-                            isSkipped
-                                ? AppColors.grey500
-                                : ((isComplete || isActive)
-                                    ? colors[stepIndex]
-                                    : (isDark
+                final effectiveComplete = isSkipped ? false : isComplete;
+                final effectiveActive = isSkipped ? false : isActive;
+
+                return Expanded(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 32,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Horizontal connector lines passing through vertical center of node
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    height: 3,
+                                    color:
+                                        stepIndex == 0
+                                            ? Colors.transparent
+                                            : (progress > stepIndex
+                                                ? colors[stepIndex - 1]
+                                                : (isDark
+                                                    ? AppColors.grey700
+                                                    : AppColors.grey300)),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 3,
+                                    color:
+                                        stepIndex == steps.length - 1
+                                            ? Colors.transparent
+                                            : (progress > stepIndex + 1
+                                                ? colors[stepIndex]
+                                                : (isDark
+                                                    ? AppColors.grey700
+                                                    : AppColors.grey300)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Circle step node
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color:
+                                    isSkipped
+                                        ? (isDark
+                                            ? AppColors.grey700
+                                            : AppColors.grey200)
+                                        : ((effectiveComplete ||
+                                                effectiveActive)
+                                            ? colors[stepIndex]
+                                            : (isDark
+                                                ? AppColors.grey700
+                                                : AppColors.grey300)),
+                                border:
+                                    isSkipped
+                                        ? Border.all(
+                                          color: AppColors.grey400,
+                                          width: 2,
+                                        )
+                                        : (effectiveActive
+                                            ? Border.all(
+                                              color:
+                                                  isDark
+                                                      ? Colors.white
+                                                      : AppColors.navyBlue,
+                                              width: 2,
+                                            )
+                                            : null),
+                              ),
+                              child: Icon(
+                                isSkipped
+                                    ? Icons.double_arrow
+                                    : (effectiveComplete
+                                        ? Icons.check
+                                        : (effectiveActive
+                                            ? Icons.hourglass_empty
+                                            : Icons.circle)),
+                                size:
+                                    isSkipped
+                                        ? 16
+                                        : (effectiveComplete
+                                            ? 18
+                                            : (effectiveActive ? 16 : 8)),
+                                color:
+                                    isSkipped
                                         ? AppColors.grey500
-                                        : AppColors.grey600)),
-                      ),
-                    ),
-                    if (dates[stepIndex] != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        DateFormat('dd MMM yyyy').format(dates[stepIndex]!),
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          color: isDark ? AppColors.grey500 : AppColors.grey600,
+                                        : AppColors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isSkipped ? 'Skipped' : steps[stepIndex],
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight:
+                              (effectiveComplete ||
+                                      effectiveActive ||
+                                      isSkipped)
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                          color:
+                              isSkipped
+                                  ? AppColors.grey500
+                                  : ((effectiveComplete || effectiveActive)
+                                      ? colors[stepIndex]
+                                      : (isDark
+                                          ? AppColors.grey500
+                                          : AppColors.grey600)),
+                        ),
+                      ),
+                      if (dates[stepIndex] != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          DateFormat('dd MMM yyyy').format(dates[stepIndex]!),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            color:
+                                isDark ? AppColors.grey500 : AppColors.grey600,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 );
               }),
             ),
@@ -972,7 +1014,8 @@ class CandidateProfileScreen extends StatelessWidget {
       _infoRow('Address', candidate.address, isDark),
       _infoRow('City', '${candidate.city}, ${candidate.state}', isDark),
       _infoRow('Religion', candidate.religion, isDark),
-      _infoRow('Expected Salary', candidate.expectedSalary, isDark),
+      _infoRow('Education', candidate.education, isDark),
+      _infoRow('Expected Salary', candidate.formattedExpectedSalary, isDark),
       _infoRow(
         'Working Hours',
         '${candidate.workingHoursPerDay} hrs/day',
@@ -985,38 +1028,150 @@ class CandidateProfileScreen extends StatelessWidget {
     ]);
   }
 
-  Widget _buildVerificationStatus(CandidateModel candidate, bool isDark) {
+  Future<void> _handleUploadDocument(
+    BuildContext context,
+    CandidateModel candidate,
+    String docType,
+  ) async {
+    try {
+      final picked = await pickImageData();
+      if (picked != null) {
+        CandidateModel updated;
+        if (docType == 'Aadhaar Card') {
+          updated = candidate.copyWith(
+            aadhaarDocUrl: DefaultDocUrls.sanitizeDocUrl(
+              picked.base64DataUrl,
+              'Aadhaar',
+            ),
+          );
+        } else if (docType == 'PAN Card') {
+          updated = candidate.copyWith(
+            panDocUrl: DefaultDocUrls.sanitizeDocUrl(
+              picked.base64DataUrl,
+              'PAN',
+            ),
+          );
+        } else if (docType == 'Passport') {
+          updated = candidate.copyWith(
+            passportDocUrl: DefaultDocUrls.sanitizeDocUrl(
+              picked.base64DataUrl,
+              'Passport',
+            ),
+          );
+        } else if (docType == 'Police Verification') {
+          updated = candidate.copyWith(
+            policeVerificationDocUrl: DefaultDocUrls.sanitizeDocUrl(
+              picked.base64DataUrl,
+              'Police',
+            ),
+            isPoliceVerified: true,
+          );
+        } else if (docType == 'Medical Clearance') {
+          updated = candidate.copyWith(
+            medicalClearanceDocUrl: DefaultDocUrls.sanitizeDocUrl(
+              picked.base64DataUrl,
+              'Medical',
+            ),
+            isMedicalCleared: true,
+          );
+        } else {
+          return;
+        }
+
+        if (context.mounted) {
+          context.read<CandidateBloc>().add(UpdateCandidate(updated));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$docType uploaded successfully!'),
+              backgroundColor: AppColors.successGreen,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload document: $e'),
+            backgroundColor: AppColors.criticalRed,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildVerificationStatus(
+    BuildContext context,
+    CandidateModel candidate,
+    bool isDark,
+  ) {
+    final hasPoliceDoc = CandidatePromotionHelper.hasDoc(
+      candidate.policeVerificationDocUrl,
+    );
+    final hasMedicalDoc = CandidatePromotionHelper.hasDoc(
+      candidate.medicalClearanceDocUrl,
+    );
+    final isPoliceVerified = candidate.isPoliceVerified || hasPoliceDoc;
+    final isMedicalCleared = candidate.isMedicalCleared || hasMedicalDoc;
+
     return _buildSection('Verification Hub', isDark, [
       _verificationItem(
-        'Police Verification',
-        candidate.isPoliceVerified,
-        isDark,
+        context: context,
+        label: 'Police Verification',
+        isVerified: isPoliceVerified,
+        isDark: isDark,
       ),
       _verificationItem(
-        'Aadhaar Verification',
-        candidate.isAadhaarVerified,
-        isDark,
-      ),
-      _verificationItem(
-        'Medical Clearance',
-        candidate.isMedicalCleared,
-        isDark,
+        context: context,
+        label: 'Medical Clearance',
+        isVerified: isMedicalCleared,
+        isDark: isDark,
       ),
     ]);
   }
 
-  Widget _buildDocuments(CandidateModel candidate, bool isDark) {
+  Widget _buildDocuments(
+    BuildContext context,
+    CandidateModel candidate,
+    bool isDark,
+  ) {
     return _buildSection('Documents', isDark, [
-      _documentRow('Aadhaar', candidate.aadhaarDocUrl, isDark),
       _documentRow(
-        'Medical Clearance',
-        candidate.medicalClearanceDocUrl,
-        isDark,
+        context: context,
+        candidate: candidate,
+        name: 'Aadhaar Card',
+        url: candidate.aadhaarDocUrl,
+        isDark: isDark,
       ),
       _documentRow(
-        'Police Verification',
-        candidate.policeVerificationDocUrl,
-        isDark,
+        context: context,
+        candidate: candidate,
+        name: 'PAN Card',
+        url: candidate.panDocUrl,
+        isDark: isDark,
+      ),
+      _documentRow(
+        context: context,
+        candidate: candidate,
+        name: 'Passport',
+        url: candidate.passportDocUrl,
+        isDark: isDark,
+      ),
+      _documentRow(
+        context: context,
+        candidate: candidate,
+        name: 'Police Verification',
+        url: candidate.policeVerificationDocUrl,
+        isDark: isDark,
+        isPromotionOnly: true,
+      ),
+      _documentRow(
+        context: context,
+        candidate: candidate,
+        name: 'Medical Clearance',
+        url: candidate.medicalClearanceDocUrl,
+        isDark: isDark,
+        isPromotionOnly: true,
       ),
     ]);
   }
@@ -1037,139 +1192,6 @@ class CandidateProfileScreen extends StatelessWidget {
         ),
       ),
     ]);
-  }
-
-  Widget _buildActionBar(
-    BuildContext context,
-    CandidateModel candidate,
-    bool isDark,
-  ) {
-    final state = context.read<AuthBloc>().state;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color:
-              isDark
-                  ? AppColors.dividerDark
-                  : AppColors.criticalRed.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.center,
-        children: [
-          if (candidate.status == CandidateStatus.newlyAdded) ...[
-            if (((state is AuthAuthenticated) ? (state).user : null)?.role !=
-                UserRole.sales)
-              _actionButton(
-                'Edit Profile',
-                Icons.edit,
-                AppColors.navyBlue,
-                isDark,
-                () {
-                  final routePrefix =
-                      ((state is AuthAuthenticated) ? (state).user : null)
-                                  ?.role ==
-                              UserRole.admin
-                          ? '/admin'
-                          : '/sourcing';
-                  context.push('$routePrefix/candidates/${candidate.id}/edit');
-                },
-              ),
-            _actionButton(
-              'Move to Verification',
-              Icons.fact_check,
-              AppColors.stagePoliceVerification,
-              isDark,
-              () {
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.verificationPending,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-
-          if (candidate.status == CandidateStatus.verificationPending) ...[
-            _actionButton(
-              'Promote to Medical Test',
-              Icons.medical_services,
-              AppColors.stageMedicalCheck,
-              isDark,
-              () {
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.medicalPending,
-                      isPoliceVerified: true,
-                      isAadhaarVerified: true,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _actionButton(
-              'Promote to Ready to Hire',
-              Icons.verified,
-              AppColors.statusVerified,
-              isDark,
-              () {
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.readyToPlace,
-                      isPoliceVerified: true,
-                      isAadhaarVerified: true,
-                      isMedicalCleared: false, // Explicitly bypassed
-                      availableFrom: DateTime.now(),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-
-          if (candidate.status == CandidateStatus.medicalPending)
-            _actionButton(
-              'Promote to Ready to Hire',
-              Icons.verified,
-              AppColors.statusVerified,
-              isDark,
-              () {
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.readyToPlace,
-                      isMedicalCleared: true,
-                      availableFrom: DateTime.now(),
-                    ),
-                  ),
-                );
-              },
-            ),
-
-          if (candidate.status != CandidateStatus.blacklisted &&
-              candidate.status != CandidateStatus.Placed)
-            _actionButton(
-              'Blacklist',
-              Icons.block,
-              AppColors.statusBlacklisted,
-              isDark,
-              () {
-                _showBlacklistDialog(context, candidate);
-              },
-            ),
-        ],
-      ),
-    );
   }
 
   void _showBlacklistDialog(BuildContext context, CandidateModel candidate) {
@@ -1251,30 +1273,6 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(
-    String label,
-    IconData icon,
-    Color color,
-    bool isDark,
-    VoidCallback onPressed,
-  ) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 16),
-      label: Text(
-        label,
-        style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.1),
-        foregroundColor: color,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
-  }
-
   Widget _buildSection(String title, bool isDark, List<Widget> children) {
     return Card(
       elevation: 0,
@@ -1337,9 +1335,14 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _verificationItem(String label, bool isVerified, bool isDark) {
+  Widget _verificationItem({
+    required BuildContext context,
+    required String label,
+    required bool isVerified,
+    required bool isDark,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Icon(
@@ -1349,11 +1352,55 @@ class CandidateProfileScreen extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color:
+                        isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+                  ),
+                ),
+                Text(
+                  isVerified
+                      ? 'Verified (Certificate Uploaded)'
+                      : 'Pending (Upload on Promotion)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color:
+                        isVerified ? AppColors.successGreen : AppColors.grey500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color:
+                  isVerified
+                      ? AppColors.successGreen.withValues(alpha: 0.12)
+                      : AppColors.grey500.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color:
+                    isVerified
+                        ? AppColors.successGreen.withValues(alpha: 0.4)
+                        : AppColors.grey500.withValues(alpha: 0.3),
+              ),
+            ),
             child: Text(
-              label,
+              isVerified ? 'Verified' : 'Pending',
               style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color:
+                    isVerified
+                        ? AppColors.successGreen
+                        : (isDark ? AppColors.grey400 : AppColors.grey600),
               ),
             ),
           ),
@@ -1362,10 +1409,17 @@ class CandidateProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _documentRow(String name, String? url, bool isDark) {
-    final hasDoc = url != null && url.isNotEmpty;
+  Widget _documentRow({
+    required BuildContext context,
+    required CandidateModel candidate,
+    required String name,
+    required String? url,
+    required bool isDark,
+    bool isPromotionOnly = false,
+  }) {
+    final hasDoc = url != null && url.trim().isNotEmpty && url.trim() != 'null';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Icon(
@@ -1375,22 +1429,146 @@ class CandidateProfileScreen extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              name,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color:
+                        isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+                  ),
+                ),
+                Text(
+                  hasDoc
+                      ? 'Uploaded'
+                      : (isPromotionOnly ? 'Upload on Promotion' : 'Missing'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color:
+                        hasDoc
+                            ? AppColors.successGreen
+                            : (isPromotionOnly
+                                ? AppColors.grey500
+                                : AppColors.urgentAmber),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasDoc) ...[
+            InkWell(
+              onTap: () async {
+                final uri = Uri.tryParse(url.trim());
+                if (uri != null && await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Cannot open document: $url')),
+                    );
+                  }
+                }
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.successGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View Doc',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.successGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.open_in_new,
+                      size: 12,
+                      color: AppColors.successGreen,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Text(
-            hasDoc ? 'Uploaded' : 'Missing',
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: hasDoc ? AppColors.successGreen : AppColors.urgentAmber,
+            if (!isPromotionOnly) ...[
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 16),
+                tooltip: 'Replace $name',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                color: isDark ? AppColors.grey400 : AppColors.grey600,
+                onPressed:
+                    () => _handleUploadDocument(context, candidate, name),
+              ),
+            ],
+          ] else if (isPromotionOnly) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color:
+                    isDark
+                        ? AppColors.grey500.withValues(alpha: 0.1)
+                        : AppColors.grey200.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'Via Promotion',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                ),
+              ),
             ),
-          ),
+          ] else ...[
+            InkWell(
+              onTap: () => _handleUploadDocument(context, candidate, name),
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.file_upload_outlined,
+                      size: 13,
+                      color: AppColors.gold,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Upload',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

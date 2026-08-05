@@ -802,7 +802,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
       );
     }
 
-    final dateFormat = DateFormat('dd MMM yyyy');
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: clients.length,

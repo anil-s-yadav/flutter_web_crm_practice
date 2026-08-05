@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
 const { sendPushToUser } = require('../services/notificationService');
+const { generateInternalId } = require('../utils/idGenerator');
 
 // @route   GET /api/tasks
 // @desc    Get executive tasks
@@ -68,7 +69,7 @@ const createTask = async (req, res) => {
       return res.status(400).json({ message: 'Missing required task fields' });
     }
 
-    const taskId = `TSK_${Date.now().toString().slice(-6)}`;
+    const taskId = await generateInternalId(pool, 'executive_tasks');
 
     await pool.execute(
       `INSERT INTO executive_tasks 
@@ -84,7 +85,8 @@ const createTask = async (req, res) => {
       `You have been assigned a new task: ${title}`
     );
 
-    res.status(201).json({ message: 'Task created successfully', taskId });
+    res.status(201).json({ message: 'Task created successfully', taskId, id: taskId });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

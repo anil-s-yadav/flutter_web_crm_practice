@@ -249,7 +249,7 @@ class _CandidatePickerDialogState extends State<CandidatePickerDialog> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '📞 ${candidate.phone}   •   ₹${candidate.expectedSalary}',
+                    '📞 ${candidate.phone}   •   ${candidate.formattedExpectedSalary}',
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       fontSize: 11,

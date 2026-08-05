@@ -1,4 +1,5 @@
--- Run this script in phpMyAdmin or via MySQL command line to create the database and tables.
+-- Verified Maids CRM Complete Database Schema
+-- Standard: For every table, `created_at` and `updated_at` MUST be the last two columns.
 
 CREATE DATABASE IF NOT EXISTS verifiedmaids_db;
 USE verifiedmaids_db;
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. Clients (Leads -> Active)
+-- 2. Clients (Leads -> Converted)
 CREATE TABLE IF NOT EXISTS clients (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -27,10 +28,12 @@ CREATE TABLE IF NOT EXISTS clients (
     phone VARCHAR(20) NOT NULL UNIQUE,
     alternate_phone VARCHAR(20),
     address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
     status ENUM('lead', 'followUp', 'converted', 'inactive') DEFAULT 'lead',
     loyalty_points INT DEFAULT 0,
     assigned_sales_id VARCHAR(50),
-    profile_image_url VARCHAR(255), -- Uploaded during contract/doc collection
+    profile_image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (assigned_sales_id) REFERENCES users(id) ON DELETE SET NULL
@@ -42,14 +45,26 @@ CREATE TABLE IF NOT EXISTS candidates (
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL UNIQUE,
     alternate_phone VARCHAR(20),
+    age INT DEFAULT 25,
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    religion VARCHAR(50),
+    education VARCHAR(100) DEFAULT 'Not Specified',
+    experience_years INT DEFAULT 0,
+    languages VARCHAR(255),
     category VARCHAR(100),
-    expected_salary DECIMAL(10, 2),
+    expected_salary VARCHAR(100),
     status ENUM('newlyAdded', 'verificationPending', 'medicalPending', 'readyToPlace', 'placed', 'blacklisted') DEFAULT 'newlyAdded',
     is_police_verified BOOLEAN DEFAULT FALSE,
-    is_aadhaar_verified BOOLEAN DEFAULT FALSE,
     is_medical_cleared BOOLEAN DEFAULT FALSE,
+    aadhaar_doc_url TEXT,
+    pan_doc_url TEXT,
+    passport_doc_url TEXT,
+    police_verification_doc_url TEXT,
+    medical_clearance_doc_url TEXT,
     sourced_by_id VARCHAR(50),
-    profile_image_url VARCHAR(255),
+    profile_image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (sourced_by_id) REFERENCES users(id) ON DELETE SET NULL
@@ -105,21 +120,61 @@ CREATE TABLE IF NOT EXISTS replacement_requests (
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_date TIMESTAMP NULL,
     created_by VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
     FOREIGN KEY (new_candidate_id) REFERENCES candidates(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Note: In a real app, suggested candidates would be in a join table.
+-- 7. Replacement Suggestions (Join Table)
 CREATE TABLE IF NOT EXISTS replacement_suggestions (
     request_id VARCHAR(50) NOT NULL,
     candidate_id VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (request_id, candidate_id),
     FOREIGN KEY (request_id) REFERENCES replacement_requests(id) ON DELETE CASCADE,
     FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
 );
 
--- 7. Audit Logs
+-- 8. Tickets (Support & Queries)
+CREATE TABLE IF NOT EXISTS tickets (
+    id VARCHAR(50) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority ENUM('critical', 'urgent', 'standard') DEFAULT 'standard',
+    status ENUM('open', 'inProgress', 'resolved', 'closed') DEFAULT 'open',
+    client_id VARCHAR(50),
+    candidate_id VARCHAR(50),
+    contract_id VARCHAR(50),
+    assigned_to VARCHAR(50),
+    resolved_at TIMESTAMP NULL,
+    sla_deadline TIMESTAMP NULL,
+    resolution TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE SET NULL,
+    FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- 9. Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    type ENUM('info', 'warning', 'success', 'urgent') DEFAULT 'info',
+    is_read BOOLEAN DEFAULT FALSE,
+    link_route VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 10. Audit Logs
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     entity_type VARCHAR(50) NOT NULL,
@@ -128,11 +183,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     description TEXT,
     performed_by VARCHAR(50),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Insert a default admin user (password is 'admin123' hashed with bcrypt)
--- You can generate new hashes using tools or bcrypt directly.
+-- Default Admin User
 INSERT INTO users (id, name, email, password_hash, role) 
-VALUES ('U_ADMIN_001', 'System Admin', 'admin@example.com', '$2b$10$EPbT2.iW.R4w3S5u5Z.Mme/P6Zg8CqJ.gI0jY0v9Q3lV6X2e2z2iK', 'admin')
+VALUES ('VMU0001', 'System Admin', 'admin@example.com', '$2b$10$EPbT2.iW.R4w3S5u5Z.Mme/P6Zg8CqJ.gI0jY0v9Q3lV6X2e2z2iK', 'admin')
 ON DUPLICATE KEY UPDATE id=id;

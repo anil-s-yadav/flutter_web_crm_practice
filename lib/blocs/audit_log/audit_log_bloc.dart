@@ -11,6 +11,20 @@ class LoadAuditLogs extends AuditLogEvent {
   const LoadAuditLogs();
 }
 
+class LogAuditEvent extends AuditLogEvent {
+  final String entityType;
+  final String targetId;
+  final String actionType;
+  final String description;
+
+  const LogAuditEvent({
+    required this.entityType,
+    required this.targetId,
+    required this.actionType,
+    required this.description,
+  });
+}
+
 // States
 abstract class AuditLogState {
   const AuditLogState();
@@ -36,6 +50,7 @@ class AuditLogBloc extends Bloc<AuditLogEvent, AuditLogState> {
 
   AuditLogBloc({required this.auditLogRepository}) : super(AuditLogInitial()) {
     on<LoadAuditLogs>(_onLoadAuditLogs);
+    on<LogAuditEvent>(_onLogAuditEvent);
   }
 
   Future<void> _onLoadAuditLogs(
@@ -48,6 +63,27 @@ class AuditLogBloc extends Bloc<AuditLogEvent, AuditLogState> {
       emit(AuditLogLoaded(auditLogs: logs));
     } catch (e) {
       emit(AuditLogError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onLogAuditEvent(
+    LogAuditEvent event,
+    Emitter<AuditLogState> emit,
+  ) async {
+    try {
+      await auditLogRepository.logAudit(
+        entityType: event.entityType,
+        targetId: event.targetId,
+        actionType: event.actionType,
+        description: event.description,
+      );
+      final logs = await auditLogRepository.getAuditLogs();
+      emit(AuditLogLoaded(auditLogs: logs));
+    } catch (e) {
+      try {
+        final logs = await auditLogRepository.getAuditLogs();
+        emit(AuditLogLoaded(auditLogs: logs));
+      } catch (_) {}
     }
   }
 }

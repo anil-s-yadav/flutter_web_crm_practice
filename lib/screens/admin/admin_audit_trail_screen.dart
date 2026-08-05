@@ -863,6 +863,8 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
         return 'SLA Started';
       case ActionType.taskCompleted:
         return 'Task Done';
+      case ActionType.rollback:
+        return 'Rollback';
     }
   }
 
@@ -884,6 +886,8 @@ class _AdminAuditTrailScreenState extends State<AdminAuditTrailScreen> {
         return AppColors.urgentAmber;
       case ActionType.taskCompleted:
         return AppColors.stageMedicalCheck;
+      case ActionType.rollback:
+        return AppColors.urgentAmber;
     }
   }
 }

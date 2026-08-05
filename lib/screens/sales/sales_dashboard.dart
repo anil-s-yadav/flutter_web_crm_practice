@@ -81,15 +81,32 @@ class _SalesDashboardState extends State<SalesDashboard> {
         final lastAvgDeal =
             lastMonthClosed > 0 ? (lastMonthRevenue / lastMonthClosed) : 0.0;
 
-        final followUpClients =
-            ((data['recent']?['followUpClients'] ?? []) as List).cast<ClientModel>()
-              ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate));
+        final followUpClientsList = (data['recent']?['followUpClients'] ?? []) as List;
+        final followUpClients = followUpClientsList.isNotEmpty
+            ? (followUpClientsList
+                .map((e) => ClientModel.fromJson(e as Map<String, dynamic>))
+                .toList()
+              ..sort((a, b) => a.inquiryDate.compareTo(b.inquiryDate)))
+            : <ClientModel>[];
 
-        final topWins =
-            ((data['recent']?['topWins'] ?? []) as List).cast<ContractModel>();
+        final topWinsList = (data['recent']?['topWins'] ?? []) as List;
+        final topWins = topWinsList.isNotEmpty
+            ? topWinsList
+                .map((e) => ContractModel.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : <ContractModel>[];
 
-        final topCategories =
-            (data['categories'] as List).cast<MapEntry<String, int>>();
+        final categoriesList = (data['categories'] ?? []) as List;
+        final topCategories = categoriesList.isNotEmpty
+            ? categoriesList.map((e) {
+                final map = e as Map<String, dynamic>;
+                return MapEntry<String, int>(
+                  map['category'] as String,
+                  (map['count'] as num).toInt(),
+                );
+              }).toList()
+            : <MapEntry<String, int>>[];
+
 
         return Scaffold(
           body: SingleChildScrollView(

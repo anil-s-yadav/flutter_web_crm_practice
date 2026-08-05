@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const { isPhoneGloballyUnique } = require('../utils/phoneValidator');
+const { generateUserId } = require('../utils/idGenerator');
 
 // @route   GET /api/users
 // @desc    Get all users (Admin only)
@@ -84,8 +85,10 @@ const createUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Generate ID e.g., U_1698765432
-    const userId = `U_${Date.now().toString().slice(-6)}`;
+    // Generate VMU0001, VMU0002, ...
+    const userId = (req.body.id && req.body.id.startsWith('VMU'))
+      ? req.body.id 
+      : await generateUserId(pool);
 
     // Handle Image Upload if present
     const profileImageUrl = req.file ? `/uploads/${req.file.filename}` : null;
@@ -95,7 +98,8 @@ const createUser = async (req, res) => {
       [userId, name, email, hashedPassword, role, phone || null, alternate_phone || null, profileImageUrl]
     );
 
-    res.status(201).json({ message: 'User created successfully', userId });
+    res.status(201).json({ message: 'User created successfully', userId, id: userId });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

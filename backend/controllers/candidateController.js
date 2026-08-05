@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
 const { isPhoneGloballyUnique } = require('../utils/phoneValidator');
+const { generateCandidateId } = require('../utils/idGenerator');
 
 // @route   GET /api/candidates
 // @desc    Get all candidates (with optional status filter)
@@ -78,9 +79,24 @@ const getCandidateById = async (req, res) => {
 // @access  Private (Sourcing/Admin)
 const createCandidate = async (req, res) => {
   try {
-    const { full_name, phone, alternate_phone, category, expected_salary } = req.body;
+    const fullName = req.body.full_name || req.body.fullName;
+    const phone = req.body.phone;
+    const altPhone = req.body.alternate_phone || req.body.altPhone;
+    const category = req.body.category;
+    const expectedSalary = req.body.expected_salary || req.body.expectedSalary;
+    const age = req.body.age || null;
+    const address = req.body.address || null;
+    const city = req.body.city || null;
+    const state = req.body.state || null;
+    const religion = req.body.religion || null;
+    const education = req.body.education || null;
+    const experienceYears = req.body.experience_years !== undefined ? req.body.experience_years : (req.body.experienceYears !== undefined ? req.body.experienceYears : null);
+    const languages = req.body.languages ? (Array.isArray(req.body.languages) ? req.body.languages.join(',') : req.body.languages) : null;
+    const status = req.body.status || 'newlyAdded';
+    const isPoliceVerified = req.body.isPoliceVerified || req.body.is_police_verified || false;
+    const isMedicalCleared = req.body.isMedicalCleared || req.body.is_medical_cleared || false;
 
-    if (!full_name || !phone) {
+    if (!fullName || !phone) {
       return res.status(400).json({ message: 'Name and phone are required' });
     }
 
@@ -89,22 +105,78 @@ const createCandidate = async (req, res) => {
       return res.status(409).json({ message: 'Phone number is already registered in the system.' });
     }
 
-    const candidateId = `C_${Date.now().toString().slice(-6)}`;
-    const profileImageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    const sourcedById = req.user.id; // From authMiddleware
+    const candidateId = (req.body.id && req.body.id.startsWith('CN'))
+      ? req.body.id 
+      : await generateCandidateId(pool);
+    const profileImageUrl = req.file
+      ? `/uploads/${req.file.filename}`
+      : (req.body.photoUrl || req.body.profile_image_url || null);
+    let sourcedById = null;
+    const requestedSourcedId = req.body.sourcedById || req.body.sourced_by_id || (req.user ? req.user.id : null);
+    if (requestedSourcedId) {
+      const [userRows] = await pool.execute('SELECT id FROM users WHERE id = ?', [requestedSourcedId]);
+      if (userRows.length > 0) {
+        sourcedById = requestedSourcedId;
+      }
+    }
 
-    await pool.execute(
-      `INSERT INTO candidates 
-      (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [candidateId, full_name, phone, alternate_phone || null, category || null, expected_salary || null, sourcedById, profileImageUrl]
-    );
+    const aadhaarDocUrl = req.body.aadhaar_doc_url || req.body.aadhaarDocUrl || null;
+    const panDocUrl = req.body.pan_doc_url || req.body.panDocUrl || null;
+    const passportDocUrl = req.body.passport_doc_url || req.body.passportDocUrl || null;
+    const policeVerificationDocUrl = req.body.police_verification_doc_url || req.body.policeVerificationDocUrl || null;
+    const medicalClearanceDocUrl = req.body.medical_clearance_doc_url || req.body.medicalClearanceDocUrl || null;
 
-    res.status(201).json({ message: 'Candidate created successfully', candidateId });
+    try {
+      await pool.execute(
+        `INSERT INTO candidates 
+        (id, full_name, phone, alternate_phone, category, expected_salary, 
+         age, address, city, state, religion, education, experience_years, languages,
+         status, is_police_verified, is_medical_cleared,
+         aadhaar_doc_url, pan_doc_url, passport_doc_url, police_verification_doc_url, medical_clearance_doc_url,
+         sourced_by_id, profile_image_url) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
+         age, address, city, state, religion, education, experienceYears, languages,
+         status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
+         aadhaarDocUrl, panDocUrl, passportDocUrl, policeVerificationDocUrl, medicalClearanceDocUrl,
+         sourcedById, profileImageUrl]
+      );
+    } catch (sqlErr) {
+      console.warn('Full doc-enabled INSERT failed, trying standard INSERT:', sqlErr.message);
+      try {
+        await pool.execute(
+          `INSERT INTO candidates 
+          (id, full_name, phone, alternate_phone, category, expected_salary, 
+           age, address, city, state, religion, education, experience_years, languages,
+           status, is_police_verified, is_medical_cleared,
+           sourced_by_id, profile_image_url) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
+           age, address, city, state, religion, education, experienceYears, languages,
+           status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
+           sourcedById, profileImageUrl]
+        );
+      } catch (fallbackErr) {
+        console.warn('Standard INSERT failed, executing fallback core INSERT:', fallbackErr.message);
+        await pool.execute(
+          `INSERT INTO candidates 
+          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl]
+        );
+      }
+    }
+
+    res.status(201).json({ message: 'Candidate created successfully', candidateId, id: candidateId });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('createCandidate error:', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
+};
+
+const hasDocValue = (val) => {
+  return val && typeof val === 'string' && val.trim().length > 0 && val.trim() !== 'null';
 };
 
 // @route   PUT /api/candidates/:id/status
@@ -113,7 +185,7 @@ const createCandidate = async (req, res) => {
 const updateCandidateStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, is_police_verified, is_aadhaar_verified, is_medical_cleared, reason } = req.body;
+    const { status, is_police_verified, is_medical_cleared, reason } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -123,23 +195,44 @@ const updateCandidateStatus = async (req, res) => {
     const candidate = existing[0];
     const newStatus = status || candidate.status;
     const police = is_police_verified !== undefined ? is_police_verified : candidate.is_police_verified;
-    const aadhaar = is_aadhaar_verified !== undefined ? is_aadhaar_verified : candidate.is_aadhaar_verified;
     const medical = is_medical_cleared !== undefined ? is_medical_cleared : candidate.is_medical_cleared;
 
+    // Pipeline Progression Validation:
+    // 1. Verification -> Medical or Ready to Place: Police verification certificate must be uploaded
+    if (candidate.status === 'verificationPending' && (newStatus === 'medicalPending' || newStatus === 'readyToPlace')) {
+      if (!hasDocValue(candidate.police_verification_doc_url)) {
+        return res.status(400).json({ message: 'Police verification certificate must be uploaded before promoting from verification' });
+      }
+    }
+
+    // 2. Medical -> Ready to Place: Medical clearance certificate must be uploaded
+    if (candidate.status === 'medicalPending' && newStatus === 'readyToPlace') {
+      if (!hasDocValue(candidate.medical_clearance_doc_url)) {
+        return res.status(400).json({ message: 'Medical clearance certificate must be uploaded before promoting to ready to place' });
+      }
+    }
+
     await pool.execute(
-      'UPDATE candidates SET status = ?, is_police_verified = ?, is_aadhaar_verified = ?, is_medical_cleared = ? WHERE id = ?',
-      [newStatus, police, aadhaar, medical, id]
+      'UPDATE candidates SET status = ?, is_police_verified = ?, is_medical_cleared = ? WHERE id = ?',
+      [newStatus, police, medical, id]
     );
 
     res.json({ message: 'Candidate status updated' });
-    let logDesc = `Status updated to ${newStatus}`;
+    let logDesc = '';
+    if (newStatus === 'newlyAdded' && candidate.status === 'verificationPending') {
+      logDesc = 'Candidate rolled back from Verification to Newly Added (Profile unlocked)';
+    } else if (newStatus === 'newlyAdded') {
+      logDesc = 'Candidate rolled back to Newly Added (Profile unlocked)';
+    } else {
+      logDesc = `Status updated to ${newStatus}`;
+    }
     if (reason) {
       logDesc += ` (Reason: ${reason})`;
     }
-    await logAction('candidate', id, 'statusChange', logDesc, req.user.id);
+    await logAction('candidate', id, 'statusChange', logDesc, req.user?.id || 'system');
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('updateCandidateStatus error:', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 
@@ -149,7 +242,7 @@ const updateCandidateStatus = async (req, res) => {
 const updateCandidate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, phone, alternate_phone, category, expected_salary, experience_years, age, location, status, reason } = req.body;
+    const { status, reason } = req.body;
 
     const [existing] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -157,14 +250,44 @@ const updateCandidate = async (req, res) => {
     }
 
     const candidate = existing[0];
-    const newName = full_name || candidate.full_name;
-    const newPhone = phone || candidate.phone;
-    const newAlternatePhone = alternate_phone !== undefined ? alternate_phone : candidate.alternate_phone;
-    const newCategory = category !== undefined ? category : candidate.category;
-    const newSalary = expected_salary !== undefined ? expected_salary : candidate.expected_salary;
-    const newExp = experience_years !== undefined ? experience_years : candidate.experience_years;
-    const newAge = age !== undefined ? age : candidate.age;
-    const newLoc = location !== undefined ? location : candidate.location;
+    const newName = req.body.full_name || req.body.fullName || candidate.full_name;
+    const newPhone = req.body.phone || candidate.phone;
+    const newAlternatePhone = req.body.alternate_phone !== undefined ? req.body.alternate_phone : (req.body.altPhone !== undefined ? req.body.altPhone : candidate.alternate_phone);
+    const newCategory = req.body.category !== undefined ? req.body.category : candidate.category;
+    const newSalary = req.body.expected_salary || req.body.expectedSalary || candidate.expected_salary;
+    const newExp = req.body.experience_years !== undefined ? req.body.experience_years : (req.body.experienceYears !== undefined ? req.body.experienceYears : candidate.experience_years);
+    const newAge = req.body.age !== undefined ? req.body.age : candidate.age;
+    const newAddress = req.body.address !== undefined ? req.body.address : candidate.address;
+    const newCity = req.body.city !== undefined ? req.body.city : candidate.city;
+    const newState = req.body.state !== undefined ? req.body.state : candidate.state;
+    const newReligion = req.body.religion !== undefined ? req.body.religion : candidate.religion;
+    const newEducation = req.body.education !== undefined ? req.body.education : candidate.education;
+    const newLanguages = req.body.languages ? (Array.isArray(req.body.languages) ? req.body.languages.join(',') : req.body.languages) : candidate.languages;
+    const newStatus = req.body.status !== undefined ? req.body.status : candidate.status;
+    const newPoliceVerified = req.body.is_police_verified !== undefined ? (req.body.is_police_verified ? 1 : 0) : (req.body.isPoliceVerified !== undefined ? (req.body.isPoliceVerified ? 1 : 0) : candidate.is_police_verified);
+    const newMedicalCleared = req.body.is_medical_cleared !== undefined ? (req.body.is_medical_cleared ? 1 : 0) : (req.body.isMedicalCleared !== undefined ? (req.body.isMedicalCleared ? 1 : 0) : candidate.is_medical_cleared);
+
+    const newAadhaarDocUrl = req.body.aadhaar_doc_url !== undefined ? req.body.aadhaar_doc_url : (req.body.aadhaarDocUrl !== undefined ? req.body.aadhaarDocUrl : candidate.aadhaar_doc_url);
+    const newPanDocUrl = req.body.pan_doc_url !== undefined ? req.body.pan_doc_url : (req.body.panDocUrl !== undefined ? req.body.panDocUrl : candidate.pan_doc_url);
+    const newPassportDocUrl = req.body.passport_doc_url !== undefined ? req.body.passport_doc_url : (req.body.passportDocUrl !== undefined ? req.body.passportDocUrl : candidate.passport_doc_url);
+    const newPoliceDocUrl = req.body.police_verification_doc_url !== undefined ? req.body.police_verification_doc_url : (req.body.policeVerificationDocUrl !== undefined ? req.body.policeVerificationDocUrl : candidate.police_verification_doc_url);
+    const newMedicalDocUrl = req.body.medical_clearance_doc_url !== undefined ? req.body.medical_clearance_doc_url : (req.body.medicalClearanceDocUrl !== undefined ? req.body.medicalClearanceDocUrl : candidate.medical_clearance_doc_url);
+    const newProfileImageUrl = req.body.photoUrl || req.body.profile_image_url || candidate.profile_image_url;
+
+    // Pipeline Progression Validation:
+    // 1. Verification -> Medical or Ready to Place: Police verification certificate must be uploaded
+    if (candidate.status === 'verificationPending' && (newStatus === 'medicalPending' || newStatus === 'readyToPlace')) {
+      if (!hasDocValue(newPoliceDocUrl)) {
+        return res.status(400).json({ message: 'Police verification certificate must be uploaded before promoting from verification' });
+      }
+    }
+
+    // 2. Medical -> Ready to Place: Medical clearance certificate must be uploaded
+    if (candidate.status === 'medicalPending' && newStatus === 'readyToPlace') {
+      if (!hasDocValue(newMedicalDocUrl)) {
+        return res.status(400).json({ message: 'Medical clearance certificate must be uploaded before promoting to ready to place' });
+      }
+    }
 
     if (newPhone && newPhone !== candidate.phone) {
       const isUnique = await isPhoneGloballyUnique(newPhone, id);
@@ -174,19 +297,40 @@ const updateCandidate = async (req, res) => {
     }
 
     await pool.execute(
-      'UPDATE candidates SET full_name = ?, phone = ?, alternate_phone = ?, category = ?, expected_salary = ?, experience_years = ?, age = ?, location = ? WHERE id = ?',
-      [newName, newPhone, newAlternatePhone, newCategory, newSalary, newExp, newAge, newLoc, id]
+      `UPDATE candidates SET 
+        full_name = ?, phone = ?, alternate_phone = ?, category = ?, expected_salary = ?, 
+        age = ?, address = ?, city = ?, state = ?, religion = ?, education = ?, experience_years = ?, languages = ?,
+        status = ?, is_police_verified = ?, is_medical_cleared = ?,
+        aadhaar_doc_url = ?, pan_doc_url = ?, passport_doc_url = ?, police_verification_doc_url = ?, medical_clearance_doc_url = ?,
+        profile_image_url = ? 
+      WHERE id = ?`,
+      [
+        newName, newPhone, newAlternatePhone, newCategory, newSalary,
+        newAge, newAddress, newCity, newState, newReligion, newEducation, newExp, newLanguages,
+        newStatus, newPoliceVerified, newMedicalCleared,
+        newAadhaarDocUrl, newPanDocUrl, newPassportDocUrl, newPoliceDocUrl, newMedicalDocUrl,
+        newProfileImageUrl, id
+      ]
     );
 
-    res.json({ message: 'Candidate updated' });
+    const [updated] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
+    res.json(updated[0]);
     
-    if (status && status !== existing[0].status) {
-      let logDesc = `Status changed to ${status}`;
+    if (newStatus && newStatus !== candidate.status) {
+      let logDesc = '';
+      if (newStatus === 'newlyAdded' && candidate.status === 'verificationPending') {
+        logDesc = 'Candidate rolled back from Verification to Newly Added (Profile unlocked)';
+      } else if (newStatus === 'newlyAdded') {
+        logDesc = 'Candidate rolled back to Newly Added (Profile unlocked)';
+      } else {
+        logDesc = `Status changed to ${newStatus}`;
+      }
       if (reason) logDesc += ` (Reason: ${reason})`;
-      await logAction('candidate', id, 'statusChange', logDesc, req.user.id);
+      await logAction('candidate', id, 'statusChange', logDesc, req.user?.id || 'system');
     }
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('updateCandidate error:', err);
+    res.status(500).json({ message: err.message || 'Server error' });
   }
 };
 

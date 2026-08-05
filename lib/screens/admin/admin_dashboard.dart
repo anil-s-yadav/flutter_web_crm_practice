@@ -80,10 +80,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
         final placementsPrevMonth = data['placements']?['prevMonth'] ?? 0;
         final totalPlacements = data['placements']?['total'] ?? 0;
 
-        final revenueThisMonth = (data['revenue']?['thisMonth'] ?? 0).toDouble();
-        final revenuePrevMonth = (data['revenue']?['prevMonth'] ?? 0).toDouble();
+        final revenueThisMonth =
+            (data['revenue']?['thisMonth'] ?? 0).toDouble();
+        final revenuePrevMonth =
+            (data['revenue']?['prevMonth'] ?? 0).toDouble();
         final totalRevenue = (data['revenue']?['total'] ?? 0).toDouble();
-        final pendingCollections = (data['revenue']?['pending'] ?? 0).toDouble();
+        final pendingCollections =
+            (data['revenue']?['pending'] ?? 0).toDouble();
 
         final activeContracts = data['contracts']?['active'] ?? 0;
         final renewedContracts = data['contracts']?['renewed'] ?? 0;
@@ -398,9 +401,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       child: BlocBuilder<AuditLogBloc, AuditLogState>(
                         builder: (context, auditState) {
                           if (auditState is AuditLogLoaded) {
-                            return _buildRecentActivity(isDark, auditState.auditLogs);
+                            return _buildRecentActivity(
+                              isDark,
+                              auditState.auditLogs,
+                            );
                           }
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         },
                       ),
                     ),
@@ -463,7 +471,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     BlocBuilder<AuditLogBloc, AuditLogState>(
                       builder: (context, auditState) {
                         if (auditState is AuditLogLoaded) {
-                          return _buildRecentActivity(isDark, auditState.auditLogs);
+                          return _buildRecentActivity(
+                            isDark,
+                            auditState.auditLogs,
+                          );
                         }
                         return const Center(child: CircularProgressIndicator());
                       },
@@ -517,7 +528,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     BlocBuilder<AuditLogBloc, AuditLogState>(
                       builder: (context, auditState) {
                         if (auditState is AuditLogLoaded) {
-                          return _buildRecentActivity(isDark, auditState.auditLogs);
+                          return _buildRecentActivity(
+                            isDark,
+                            auditState.auditLogs,
+                          );
                         }
                         return const Center(child: CircularProgressIndicator());
                       },
@@ -1306,6 +1320,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   case ActionType.taskCompleted:
                     actionColor = AppColors.stageVerified;
                     actionIcon = Icons.task_alt;
+                    break;
+                  case ActionType.rollback:
+                    actionColor = AppColors.urgentAmber;
+                    actionIcon = Icons.undo;
                     break;
                 }
 

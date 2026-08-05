@@ -8,7 +8,8 @@ enum ActionType {
   paymentLogged,
   contractRenewed,
   slaInitiated,
-  taskCompleted
+  taskCompleted,
+  rollback,
 }
 
 class AuditLogModel {

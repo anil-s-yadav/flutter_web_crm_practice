@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { logAction } = require('../services/auditService');
+const { generateContractId } = require('../utils/idGenerator');
 
 // @route   GET /api/contracts
 // @desc    Get all contracts
@@ -71,14 +72,24 @@ const createContract = async (req, res) => {
       return res.status(400).json({ message: 'Missing required contract fields' });
     }
 
-    const contractId = `CON_${Date.now().toString().slice(-6)}`;
-    const createdBy = req.user.id;
+    let createdBy = null;
+    const requestedUserId = req.user ? req.user.id : null;
+    if (requestedUserId) {
+      const [userRows] = await pool.execute('SELECT id FROM users WHERE id = ?', [requestedUserId]);
+      if (userRows.length > 0) {
+        createdBy = requestedUserId;
+      }
+    }
 
     // We should use a transaction to ensure atomic updates
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
+      const contractId = (req.body.id && req.body.id.startsWith('CNT'))
+        ? req.body.id
+        : await generateContractId(connection);
+
       // 1. Insert contract
       await connection.execute(
         `INSERT INTO contracts 
@@ -102,12 +113,13 @@ const createContract = async (req, res) => {
       await connection.commit();
       connection.release();
 
-      res.status(201).json({ message: 'Contract created successfully', contractId });
+      res.status(201).json({ message: 'Contract created successfully', contractId, id: contractId });
     } catch (dbErr) {
       await connection.rollback();
       connection.release();
       throw dbErr;
     }
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

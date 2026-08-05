@@ -44,12 +44,19 @@ class ReplacementRepository {
       replacement.toJson(),
     );
 
-    if (response != null) {
-      return ReplacementRequestModel.fromJson(
-          response as Map<String, dynamic>);
+    if (response != null && response is Map<String, dynamic>) {
+      if (response.containsKey('contract_id') || response.containsKey('contractId')) {
+        return ReplacementRequestModel.fromJson(response);
+      }
+      final assignedId = (response['requestId'] ?? response['id'])?.toString();
+      if (assignedId != null && assignedId.isNotEmpty) {
+        return replacement.copyWith(id: assignedId);
+      }
+      return replacement;
     } else {
       throw Exception('Failed to create replacement');
     }
+
   }
 
   Future<ReplacementRequestModel> updateReplacement(
