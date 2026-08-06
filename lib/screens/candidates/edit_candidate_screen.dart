@@ -9,6 +9,7 @@ import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/core/default_doc_urls.dart';
+import 'package:practice_app/core/service_constants.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -42,6 +43,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
   String _expectedSalary = '';
   String _minSalary = '15000';
   String _maxSalary = '25000';
+  String _leadSource = '';
 
   String? _aadhaarDocUrl;
   String? _panDocUrl;
@@ -77,6 +79,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           _languages = List.from(_candidate.languages);
           _experienceYears = _candidate.experienceYears;
           _expectedSalary = _candidate.expectedSalary;
+          _leadSource =
+              _candidate.source.isNotEmpty
+                  ? _candidate.source
+                  : ServiceConstants.leadSources.first;
           _photoUrl = _candidate.photoUrl;
           _aadhaarDocUrl = _candidate.aadhaarDocUrl;
           _panDocUrl = _candidate.panDocUrl;
@@ -110,9 +116,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick photo: $e')));
       }
     }
   }
@@ -123,29 +129,30 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     );
     final url = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          'Enter Photo URL',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Image URL',
-            hintText: 'https://example.com/photo.jpg',
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(
+              'Enter Photo URL',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            ),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Image URL',
+                hintText: 'https://example.com/photo.jpg',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
 
     if (url != null && url.isNotEmpty) {
@@ -192,9 +199,8 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      _expectedSalary = '₹${_minSalary.replaceAll('₹', '').trim()} - ₹${_maxSalary.replaceAll('₹', '').trim()}';
-
-
+      _expectedSalary =
+          '₹${_minSalary.replaceAll('₹', '').trim()} - ₹${_maxSalary.replaceAll('₹', '').trim()}';
 
       // Determine what changed for the audit log
       List<String> changes = [];
@@ -245,6 +251,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
         education: _education,
         experienceYears: _experienceYears,
         expectedSalary: _expectedSalary,
+        source: _leadSource,
         photoUrl: DefaultDocUrls.sanitizePhotoUrl(_photoUrl),
         aadhaarDocUrl: _aadhaarDocUrl,
         panDocUrl: _panDocUrl,
@@ -311,10 +318,14 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           ),
                           margin: const EdgeInsets.only(bottom: 20),
                           decoration: BoxDecoration(
-                            color: AppColors.urgentAmber.withValues(alpha: 0.12),
+                            color: AppColors.urgentAmber.withValues(
+                              alpha: 0.12,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppColors.urgentAmber.withValues(alpha: 0.4),
+                              color: AppColors.urgentAmber.withValues(
+                                alpha: 0.4,
+                              ),
                             ),
                           ),
                           child: Row(
@@ -331,7 +342,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                                    color:
+                                        isDark
+                                            ? AppColors.white
+                                            : AppColors.navyBlue,
                                   ),
                                 ),
                               ),
@@ -368,7 +382,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                               keyboardType: TextInputType.phone,
                               validator:
                                   (v) =>
-                                      v!.length < 10 ? 'Invalid phone' : null,
+                                      v == null || v.length != 10
+                                          ? 'Enter exactly 10 digits'
+                                          : null,
                               onSaved: (v) => _phone = v!,
                             ),
                           ),
@@ -434,21 +450,25 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         label: 'Education',
                         isDark: isDark,
                         value:
-                            CategoryConstants.educationLevels.contains(_education)
+                            CategoryConstants.educationLevels.contains(
+                                  _education,
+                                )
                                 ? _education
                                 : (_education.isEmpty
                                     ? 'Not Specified'
                                     : _education),
                         items:
-                            CategoryConstants.educationLevels.contains(_education)
+                            CategoryConstants.educationLevels.contains(
+                                  _education,
+                                )
                                 ? CategoryConstants.educationLevels
                                 : [
-                                    ...CategoryConstants.educationLevels,
-                                    if (_education.isNotEmpty &&
-                                        !CategoryConstants.educationLevels
-                                            .contains(_education))
-                                      _education,
-                                  ],
+                                  ...CategoryConstants.educationLevels,
+                                  if (_education.isNotEmpty &&
+                                      !CategoryConstants.educationLevels
+                                          .contains(_education))
+                                    _education,
+                                ],
                         onChanged: (val) => setState(() => _education = val!),
                       ),
                       const SizedBox(height: 32),
@@ -516,10 +536,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                         initialValue: _experienceYears.toString(),
                         keyboardType: TextInputType.number,
                         validator:
-                            (v) =>
-                                int.tryParse(v!) == null
-                                    ? 'Invalid'
-                                    : null,
+                            (v) => int.tryParse(v!) == null ? 'Invalid' : null,
                         onSaved: (v) => _experienceYears = int.parse(v!),
                       ),
                       const SizedBox(height: 20),
@@ -540,7 +557,11 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                               isDark: isDark,
                               initialValue: _minSalary,
                               keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Required'
+                                          : null,
                               onSaved: (v) => _minSalary = v ?? '15000',
                             ),
                           ),
@@ -551,11 +572,26 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                               isDark: isDark,
                               initialValue: _maxSalary,
                               keyboardType: TextInputType.number,
-                              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Required'
+                                          : null,
                               onSaved: (v) => _maxSalary = v ?? '25000',
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildDropdown<String>(
+                        label: 'Lead Source',
+                        isDark: isDark,
+                        value:
+                            _leadSource.isNotEmpty
+                                ? _leadSource
+                                : ServiceConstants.leadSources.first,
+                        items: ServiceConstants.leadSources,
+                        onChanged: (val) => setState(() => _leadSource = val!),
                       ),
                       const SizedBox(height: 28),
                       Text(
@@ -575,7 +611,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           final picked = await pickImageData();
                           if (picked != null) {
                             setState(() {
-                              _aadhaarDocUrl = DefaultDocUrls.sanitizeDocUrl(picked.base64DataUrl, 'Aadhaar');
+                              _aadhaarDocUrl = DefaultDocUrls.sanitizeDocUrl(
+                                picked.base64DataUrl,
+                                'Aadhaar',
+                              );
                             });
                           }
                         },
@@ -590,7 +629,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           final picked = await pickImageData();
                           if (picked != null) {
                             setState(() {
-                              _panDocUrl = DefaultDocUrls.sanitizeDocUrl(picked.base64DataUrl, 'PAN');
+                              _panDocUrl = DefaultDocUrls.sanitizeDocUrl(
+                                picked.base64DataUrl,
+                                'PAN',
+                              );
                             });
                           }
                         },
@@ -606,15 +648,20 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           final picked = await pickImageData();
                           if (picked != null) {
                             setState(() {
-                              _policeVerificationDocUrl = DefaultDocUrls.sanitizeDocUrl(picked.base64DataUrl, 'Police');
+                              _policeVerificationDocUrl =
+                                  DefaultDocUrls.sanitizeDocUrl(
+                                    picked.base64DataUrl,
+                                    'Police',
+                                  );
                               _isPoliceVerified = true;
                             });
                           }
                         },
-                        onRemove: () => setState(() {
-                          _policeVerificationDocUrl = null;
-                          _isPoliceVerified = false;
-                        }),
+                        onRemove:
+                            () => setState(() {
+                              _policeVerificationDocUrl = null;
+                              _isPoliceVerified = false;
+                            }),
                       ),
                       const SizedBox(height: 12),
                       _buildDocCard(
@@ -626,15 +673,20 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           final picked = await pickImageData();
                           if (picked != null) {
                             setState(() {
-                              _medicalClearanceDocUrl = DefaultDocUrls.sanitizeDocUrl(picked.base64DataUrl, 'Medical');
+                              _medicalClearanceDocUrl =
+                                  DefaultDocUrls.sanitizeDocUrl(
+                                    picked.base64DataUrl,
+                                    'Medical',
+                                  );
                               _isMedicalCleared = true;
                             });
                           }
                         },
-                        onRemove: () => setState(() {
-                          _medicalClearanceDocUrl = null;
-                          _isMedicalCleared = false;
-                        }),
+                        onRemove:
+                            () => setState(() {
+                              _medicalClearanceDocUrl = null;
+                              _isMedicalCleared = false;
+                            }),
                       ),
                       const SizedBox(height: 12),
                       _buildDocCard(
@@ -645,7 +697,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                           final picked = await pickImageData();
                           if (picked != null) {
                             setState(() {
-                              _passportDocUrl = DefaultDocUrls.sanitizeDocUrl(picked.base64DataUrl, 'Passport');
+                              _passportDocUrl = DefaultDocUrls.sanitizeDocUrl(
+                                picked.base64DataUrl,
+                                'Passport',
+                              );
                             });
                           }
                         },
@@ -724,7 +779,8 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       color: AppColors.gold,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? const Color(0xFF141A28) : AppColors.white,
+                        color:
+                            isDark ? const Color(0xFF141A28) : AppColors.white,
                         width: 2,
                       ),
                     ),
@@ -753,7 +809,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                 ),
                 Text(
                   _photoUrl.isNotEmpty
-                      ? (_photoUrl.startsWith('data:') ? 'Photo attached & ready' : _photoUrl)
+                      ? (_photoUrl.startsWith('data:')
+                          ? 'Photo attached & ready'
+                          : _photoUrl)
                       : 'Upload candidate photo or enter image URL',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
@@ -793,7 +851,8 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                       icon: const Icon(Icons.link, size: 15),
                       label: const Text('Image URL'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? AppColors.grey300 : AppColors.navyBlue,
+                        foregroundColor:
+                            isDark ? AppColors.grey300 : AppColors.navyBlue,
                         textStyle: GoogleFonts.poppins(fontSize: 12),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -852,12 +911,13 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
         TextFormField(
           initialValue: initialValue,
           maxLength: isPhone ? 10 : maxLength,
-          inputFormatters: isPhone
-              ? [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ]
-              : null,
+          inputFormatters:
+              isPhone
+                  ? [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ]
+                  : null,
           decoration: InputDecoration(
             counterText: '',
             contentPadding: const EdgeInsets.symmetric(
@@ -937,7 +997,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           dropdownColor:
               isDark ? AppColors.darkSurfaceVariant : AppColors.white,
           items:
-              items.map((T val) {
+              items.toSet().map((T val) {
                 return DropdownMenuItem<T>(
                   value: val,
                   child: Text(val.toString()),
@@ -990,12 +1050,17 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                 Text(
                   hasDoc
                       ? 'Document Attached'
-                      : (isPromotionOnly ? 'Upload during promotion' : 'Not Uploaded'),
+                      : (isPromotionOnly
+                          ? 'Upload during promotion'
+                          : 'Not Uploaded'),
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: hasDoc
-                        ? AppColors.successGreen
-                        : (isPromotionOnly ? AppColors.grey500 : AppColors.urgentAmber),
+                    color:
+                        hasDoc
+                            ? AppColors.successGreen
+                            : (isPromotionOnly
+                                ? AppColors.grey500
+                                : AppColors.urgentAmber),
                   ),
                 ),
               ],
@@ -1020,9 +1085,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.grey500.withValues(alpha: 0.1)
-                    : AppColors.grey200.withValues(alpha: 0.6),
+                color:
+                    isDark
+                        ? AppColors.grey500.withValues(alpha: 0.1)
+                        : AppColors.grey200.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1047,7 +1113,10 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),

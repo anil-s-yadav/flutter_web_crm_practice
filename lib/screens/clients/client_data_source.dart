@@ -40,6 +40,10 @@ class ClientDataSource extends DataGridSource {
                 value: DateFormat('MMM dd, yyyy').format(client.inquiryDate),
               ),
               DataGridCell<ClientModel>(columnName: 'client', value: client),
+              DataGridCell<String>(
+                columnName: 'location',
+                value: '${client.locality}, ${client.city}',
+              ),
               DataGridCell<String>(columnName: 'phone', value: client.phone),
               DataGridCell<String>(
                 columnName: 'requirement',
@@ -163,18 +167,6 @@ class ClientDataSource extends DataGridSource {
                                     isDark
                                         ? AppColors.white
                                         : AppColors.textPrimaryLight,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${client.locality}, ${client.city}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                color:
-                                    isDark
-                                        ? AppColors.grey400
-                                        : AppColors.grey600,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

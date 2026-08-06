@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
 import 'package:practice_app/core/default_doc_urls.dart';
+import 'package:practice_app/core/service_constants.dart';
 import 'package:practice_app/models/candidate_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
@@ -45,6 +46,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
 
   // Role & Experience
   String _category = CategoryConstants.categories.first;
+  String _leadSource = ServiceConstants.leadSources.first;
   final List<String> _languages = ['Hindi'];
 
   // Salary Range
@@ -230,6 +232,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       sourcedById: currentUser?.id,
       sourcedByName: currentUser?.name,
       sourcedByPhone: currentUser?.phone,
+      source: _leadSource,
     );
 
     setState(() => _isSubmitting = true);
@@ -477,11 +480,13 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                           isDark: isDark,
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
-                          validator:
-                              (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Required'
-                                      : null,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty)
+                              return 'Required';
+                            if (v.trim().length != 10)
+                              return 'Enter exactly 10 digits';
+                            return null;
+                          },
                         ),
                       ]),
                       const SizedBox(height: 24),
@@ -491,6 +496,14 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                           isDark: isDark,
                           controller: _altPhoneController,
                           keyboardType: TextInputType.phone,
+                          validator: (v) {
+                            if (v != null &&
+                                v.trim().isNotEmpty &&
+                                v.trim().length != 10) {
+                              return 'Enter exactly 10 digits';
+                            }
+                            return null;
+                          },
                         ),
                         // Placeholder for symmetry if needed, or leave empty
                         const SizedBox.shrink(),
@@ -595,6 +608,22 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                             return null;
                           },
                         ),
+                      ]),
+                      const SizedBox(height: 24),
+                      _buildResponsiveFields(context, [
+                        _buildDropdown<String>(
+                          label: 'Lead Source',
+                          value: _leadSource,
+                          items: ServiceConstants.leadSources,
+                          onChanged:
+                              (v) => setState(
+                                () =>
+                                    _leadSource =
+                                        v ?? ServiceConstants.leadSources.first,
+                              ),
+                          isDark: isDark,
+                        ),
+                        const SizedBox(),
                       ]),
                       const SizedBox(height: 24),
                       Text(
@@ -1207,8 +1236,8 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        DropdownButtonFormField<T>(
-          initialValue: value,
+        DropdownButtonFormField<String>(
+          initialValue: value as String,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -1233,15 +1262,16 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
             fontSize: 14,
             color: isDark ? AppColors.white : AppColors.navyBlue,
           ),
-          dropdownColor: isDark ? AppColors.darkSurface : AppColors.white,
+          dropdownColor:
+              isDark ? AppColors.darkSurfaceVariant : AppColors.white,
           items:
-              items.map((item) {
-                return DropdownMenuItem<T>(
-                  value: item,
-                  child: Text(item.toString()),
+              items.cast<String>().toSet().map((String val) {
+                return DropdownMenuItem<String>(
+                  value: val,
+                  child: Text(val.toString()),
                 );
               }).toList(),
-          onChanged: onChanged,
+          onChanged: (String? val) => onChanged(val as T?),
         ),
       ],
     );

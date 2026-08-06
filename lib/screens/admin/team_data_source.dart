@@ -33,6 +33,7 @@ class TeamDataSource extends DataGridSource {
           return DataGridRow(
             cells: [
               DataGridCell<CrmUserModel>(columnName: 'user', value: user),
+              DataGridCell<String>(columnName: 'email', value: user.email),
               DataGridCell<UserRole>(columnName: 'role', value: user.role),
               DataGridCell<CrmUserStatus>(
                 columnName: 'status',
@@ -181,18 +182,6 @@ class TeamDataSource extends DataGridSource {
                               fontWeight: FontWeight.w600,
                               color:
                                   isDark ? AppColors.white : AppColors.navyBlue,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            user.email,
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color:
-                                  isDark
-                                      ? AppColors.grey400
-                                      : AppColors.grey500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

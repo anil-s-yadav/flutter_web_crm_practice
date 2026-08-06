@@ -83,10 +83,11 @@ class CandidateModel {
   final DateTime? availableFrom;
   final String? remarks;
 
-  // Sourcing User Details
+  // Sourcing User Details & Source
   final String? sourcedById;
   final String? sourcedByName;
   final String? sourcedByPhone;
+  final String source;
 
   CandidateModel({
     required this.id,
@@ -126,6 +127,7 @@ class CandidateModel {
     this.sourcedById,
     this.sourcedByName,
     this.sourcedByPhone,
+    this.source = 'Direct / Walk-in',
   });
 
   factory CandidateModel.fromJson(Map<String, dynamic> json) {
@@ -196,6 +198,7 @@ class CandidateModel {
       sourcedById: json['sourcedById'] ?? json['sourced_by_id'],
       sourcedByName: json['sourcedByName'] ?? json['sourced_by_name'],
       sourcedByPhone: json['sourcedByPhone'] ?? json['sourced_by_phone'],
+      source: (json['source'] ?? 'Direct / Walk-in').toString(),
     );
   }
 
@@ -209,9 +212,11 @@ class CandidateModel {
     return {
       'id': id,
       'fullName': fullName,
+      'full_name': fullName,
       'age': age,
       'phone': phone,
       'alternate_phone': altPhone,
+      'altPhone': altPhone,
       'address': address,
       'city': city,
       'state': state,
@@ -220,18 +225,30 @@ class CandidateModel {
       'category': category,
       'education': education,
       'experienceYears': experienceYears,
+      'experience_years': experienceYears,
       'expectedSalary': expectedSalary,
+      'expected_salary': expectedSalary,
       'workingHoursPerDay': workingHoursPerDay,
+      'working_hours_per_day': workingHoursPerDay,
       'preferredWorkType': preferredWorkType,
+      'preferred_work_type': preferredWorkType,
       'status': status.toString().split('.').last,
       'isMedicalCleared': isMedicalCleared,
+      'is_medical_cleared': isMedicalCleared,
       'isPoliceVerified': isPoliceVerified,
+      'is_police_verified': isPoliceVerified,
       'medicalClearanceDocUrl': medicalClearanceDocUrl,
+      'medical_clearance_doc_url': medicalClearanceDocUrl,
       'policeVerificationDocUrl': policeVerificationDocUrl,
+      'police_verification_doc_url': policeVerificationDocUrl,
       'aadhaarDocUrl': aadhaarDocUrl,
+      'aadhaar_doc_url': aadhaarDocUrl,
       'panDocUrl': panDocUrl,
+      'pan_doc_url': panDocUrl,
       'passportDocUrl': passportDocUrl,
+      'passport_doc_url': passportDocUrl,
       'photoUrl': photoUrl,
+      'profile_image_url': photoUrl,
       'currentPlacementId': currentPlacementId,
       'addedBy': addedBy,
       'dateAdded': dateAdded.toIso8601String(),
@@ -242,8 +259,12 @@ class CandidateModel {
       'availableFrom': availableFrom?.toIso8601String(),
       'remarks': remarks,
       'sourcedById': sourcedById,
+      'sourced_by_id': sourcedById,
       'sourcedByName': sourcedByName,
+      'sourced_by_name': sourcedByName,
       'sourcedByPhone': sourcedByPhone,
+      'sourced_by_phone': sourcedByPhone,
+      'source': source,
     };
   }
 
@@ -292,11 +313,11 @@ class CandidateModel {
     String? sourcedById,
     String? sourcedByName,
     String? sourcedByPhone,
+    String? source,
   }) {
     return CandidateModel(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
-
       age: age ?? this.age,
       phone: phone ?? this.phone,
       altPhone: altPhone ?? this.altPhone,
@@ -334,6 +355,7 @@ class CandidateModel {
       sourcedById: sourcedById ?? this.sourcedById,
       sourcedByName: sourcedByName ?? this.sourcedByName,
       sourcedByPhone: sourcedByPhone ?? this.sourcedByPhone,
+      source: source ?? this.source,
     );
   }
 
@@ -371,6 +393,10 @@ class CandidateModel {
       datePlaced: datePlaced,
       availableFrom: availableFrom,
       remarks: remarks,
+      sourcedById: sourcedById,
+      sourcedByName: sourcedByName,
+      sourcedByPhone: sourcedByPhone,
+      source: source,
     );
   }
 

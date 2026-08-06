@@ -546,7 +546,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 label: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   alignment: Alignment.centerLeft,
-                  child: Text('Member', style: _headerStyle(isDark)),
+                  child: Text('Member Name', style: _headerStyle(isDark)),
+                ),
+              ),
+              GridColumn(
+                columnName: 'email',
+                columnWidthMode: ColumnWidthMode.auto,
+                label: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.centerLeft,
+                  child: Text('Email', style: _headerStyle(isDark)),
                 ),
               ),
               GridColumn(

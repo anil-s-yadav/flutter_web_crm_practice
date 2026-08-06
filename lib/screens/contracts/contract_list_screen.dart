@@ -659,7 +659,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
                                                 ),
                                                 GridColumn(
                                                   columnName: 'sr_no',
-                                                  // width: 90,
+                                                  width: 145,
                                                   label: Container(
                                                     padding:
                                                         const EdgeInsets.symmetric(
@@ -985,7 +985,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
         ),
         GridColumn(
           columnName: 'sr_no',
-          width: 90,
+          width: 145,
           label: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,

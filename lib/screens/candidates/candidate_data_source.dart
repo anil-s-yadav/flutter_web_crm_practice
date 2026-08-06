@@ -63,6 +63,10 @@ class CandidateDataSource extends DataGridSource {
                 value: candidate,
               ),
               DataGridCell<String>(
+                columnName: 'details',
+                value: '${candidate.age} yrs • ${candidate.city}',
+              ),
+              DataGridCell<String>(
                 columnName: 'category',
                 value: candidate.category,
               ),
@@ -189,16 +193,6 @@ class CandidateDataSource extends DataGridSource {
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${candidate.age} yrs • ${candidate.city}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                color:
-                                    isDark
-                                        ? AppColors.grey400
-                                        : AppColors.grey700,
-                              ),
                             ),
                           ],
                         ),

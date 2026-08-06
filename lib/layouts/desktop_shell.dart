@@ -1035,7 +1035,8 @@ class _DesktopShellState extends State<DesktopShell> {
             ),
           ),
 
-          if (currentLocation.startsWith('/sales/clients') ||
+          if (UserManager().currentUser?.role == UserRole.sales ||
+              currentLocation.startsWith('/sales/clients') ||
               currentLocation.startsWith('/admin/clients'))
             Padding(
               padding: const EdgeInsets.only(left: 16.0),

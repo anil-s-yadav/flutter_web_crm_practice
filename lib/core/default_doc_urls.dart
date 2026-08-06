@@ -12,10 +12,9 @@ class DefaultDocUrls {
   static const String medical =
       'https://dummyimage.com/600x400/1b5e20/fff.png&text=Medical+Clearance+Document';
 
-  /// Sanitizes photo URL: if empty or data URL, returns default placeholder
   static String sanitizePhotoUrl(String? url) {
     if (url == null || url.trim().isEmpty || url.startsWith('data:')) {
-      return candidatePhoto;
+      return '';
     }
     return url;
   }

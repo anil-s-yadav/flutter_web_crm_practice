@@ -1025,6 +1025,20 @@ class CandidateProfileScreen extends StatelessWidget {
         _infoRow('Pref. Work Type', candidate.preferredWorkType!, isDark),
       if (candidate.languages.isNotEmpty)
         _infoRow('Languages', candidate.languages.join(', '), isDark),
+      if (candidate.sourcedById != null && candidate.sourcedById!.isNotEmpty)
+        _infoRow(
+          'Sourced By',
+          (candidate.sourcedByName != null && candidate.sourcedByName!.isNotEmpty)
+              ? '${candidate.sourcedById} (${candidate.sourcedByName})'
+              : candidate.sourcedById!,
+          isDark,
+        ),
+      _infoRow(
+        'Date Added',
+        DateFormat('dd MMM yyyy').format(candidate.dateAdded),
+        isDark,
+      ),
+      _infoRow('Lead Source', candidate.source, isDark),
     ]);
   }
 
@@ -1500,7 +1514,7 @@ class CandidateProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            if (!isPromotionOnly) ...[
+            if (!isPromotionOnly && candidate.status != CandidateStatus.blacklisted) ...[
               const SizedBox(width: 6),
               IconButton(
                 icon: const Icon(Icons.refresh, size: 16),
@@ -1512,7 +1526,7 @@ class CandidateProfileScreen extends StatelessWidget {
                     () => _handleUploadDocument(context, candidate, name),
               ),
             ],
-          ] else if (isPromotionOnly) ...[
+          ] else if (isPromotionOnly || candidate.status == CandidateStatus.blacklisted) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -1523,7 +1537,7 @@ class CandidateProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                'Via Promotion',
+                isPromotionOnly ? 'Via Promotion' : 'Not Allowed',
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,

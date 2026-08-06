@@ -926,7 +926,7 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'sr_no',
-                        columnWidthMode: ColumnWidthMode.auto,
+                        width: 145,
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
@@ -959,7 +959,21 @@ class _CandidateGridView extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Profile',
+                            'Candidate Name',
+                            style: _headerStyle(isDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      GridColumn(
+                        columnName: 'details',
+                        width: 150,
+                        label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Details',
                             style: _headerStyle(isDark),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

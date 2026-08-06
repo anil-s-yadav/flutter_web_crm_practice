@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
+import 'package:practice_app/core/service_constants.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
@@ -33,6 +34,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   String _locality = '';
   String _city = '';
   String _address = '';
+  String _source = ServiceConstants.leadSources.first;
 
   // Household Details
   String _houseType = '';
@@ -45,9 +47,15 @@ class _EditClientScreenState extends State<EditClientScreen> {
 
   // Service Requirements
   String _preferredCategory = '';
+  String _serviceType = ServiceConstants.serviceTypes.first;
+  String _workTimings = ServiceConstants.workTimingPresets.first;
   String _budgetRange = '';
+  String _foodPreference = ServiceConstants.foodPreferences.first;
+  String _genderPreference = ServiceConstants.genderPreferences.first;
+  List<String> _preferredLanguages = ['Hindi'];
+  String _religionPreference = ServiceConstants.religionPreferences.first;
+  String _expectedJoining = ServiceConstants.expectedJoiningOptions.first;
   String _remarks = '';
-
 
   final List<String> _houseTypes = [
     '1BHK',
@@ -76,6 +84,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
           _address = found.address;
           _city = found.city;
           _locality = found.locality;
+          _source = found.source.isNotEmpty ? found.source : ServiceConstants.leadSources.first;
           _houseType = found.houseType;
           _familySize = found.familySize;
           _hasPets = found.hasPets;
@@ -84,6 +93,14 @@ class _EditClientScreenState extends State<EditClientScreen> {
           _hasChildren = found.hasChildren;
           _childrenCount = found.childrenCount ?? 1;
           _preferredCategory = found.preferredCandidateCategory;
+          _serviceType = found.serviceType.isNotEmpty ? found.serviceType : ServiceConstants.serviceTypes.first;
+          _workTimings = found.workTimings.isNotEmpty ? found.workTimings : ServiceConstants.workTimingPresets.first;
+          _budgetRange = found.budgetRange;
+          _foodPreference = found.foodPreference.isNotEmpty ? found.foodPreference : ServiceConstants.foodPreferences.first;
+          _genderPreference = found.genderPreference.isNotEmpty ? found.genderPreference : ServiceConstants.genderPreferences.first;
+          _preferredLanguages = found.preferredLanguages.isNotEmpty ? List<String>.from(found.preferredLanguages) : ['Hindi'];
+          _religionPreference = found.religionPreference.isNotEmpty ? found.religionPreference : ServiceConstants.religionPreferences.first;
+          _expectedJoining = found.expectedJoining.isNotEmpty ? found.expectedJoining : ServiceConstants.expectedJoiningOptions.first;
           _remarks = found.remarks ?? '';
           _isLoading = false;
         });
@@ -105,6 +122,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
         address: _address,
         city: _city,
         locality: _locality,
+        source: _source,
         houseType: _houseType,
         familySize: _familySize,
         hasPets: _hasPets,
@@ -113,9 +131,16 @@ class _EditClientScreenState extends State<EditClientScreen> {
         hasChildren: _hasChildren,
         childrenCount: _hasChildren ? _childrenCount : null,
         preferredCandidateCategory: _preferredCategory,
+        serviceType: _serviceType,
+        workTimings: _workTimings,
+        budgetRange: _budgetRange,
+        foodPreference: _foodPreference,
+        genderPreference: _genderPreference,
+        preferredLanguages: _preferredLanguages,
+        religionPreference: _religionPreference,
+        expectedJoining: _expectedJoining,
         remarks: _remarks.isEmpty ? null : _remarks,
       );
-
 
       context.read<ClientBloc>().add(UpdateClient(updatedClient));
 
@@ -136,6 +161,12 @@ class _EditClientScreenState extends State<EditClientScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Edit Client Details',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
@@ -183,7 +214,10 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               initialValue: _phone,
                               keyboardType: TextInputType.phone,
                               validator:
-                                  (v) => v!.length < 10 ? 'Invalid' : null,
+                                  (v) =>
+                                      v == null || v.length != 10
+                                          ? 'Enter exactly 10 digits'
+                                          : null,
                               onSaved: (v) => _phone = v!,
                             ),
                           ),
@@ -194,6 +228,12 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               isDark: isDark,
                               initialValue: _altPhone,
                               keyboardType: TextInputType.phone,
+                              validator: (v) {
+                                if (v != null && v.isNotEmpty && v.length != 10) {
+                                  return 'Enter exactly 10 digits';
+                                }
+                                return null;
+                              },
                               onSaved: (v) => _altPhone = v ?? '',
                             ),
                           ),
@@ -209,6 +249,16 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               initialValue: _email,
                               validator: (v) => v!.isEmpty ? 'Required' : null,
                               onSaved: (v) => _email = v!,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Lead Source',
+                              isDark: isDark,
+                              value: _source,
+                              items: ServiceConstants.leadSources,
+                              onChanged: (val) => setState(() => _source = val ?? ServiceConstants.leadSources.first),
                             ),
                           ),
                         ],
@@ -357,29 +407,155 @@ class _EditClientScreenState extends State<EditClientScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildDropdown<String>(
-                        label: 'Preferred Category',
-                        isDark: isDark,
-                        value: _preferredCategory,
-                        items:
-                            CategoryConstants.categories.contains(
-                                  _preferredCategory,
-                                )
-                                ? CategoryConstants.categories
-                                : [
-                                  ...CategoryConstants.categories,
-                                  _preferredCategory,
-                                ],
-                        onChanged:
-                            (val) => setState(() => _preferredCategory = val!),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Preferred Category',
+                              isDark: isDark,
+                              value: _preferredCategory,
+                              items:
+                                  CategoryConstants.categories.contains(
+                                        _preferredCategory,
+                                      )
+                                      ? CategoryConstants.categories
+                                      : [
+                                        ...CategoryConstants.categories,
+                                        _preferredCategory,
+                                      ],
+                              onChanged:
+                                  (val) => setState(() => _preferredCategory = val!),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Service Type',
+                              isDark: isDark,
+                              value: _serviceType,
+                              items: ServiceConstants.serviceTypes,
+                              onChanged:
+                                  (val) => setState(() => _serviceType = val ?? ServiceConstants.serviceTypes.first),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Work Timings',
+                              isDark: isDark,
+                              value: _workTimings,
+                              items: ServiceConstants.workTimingPresets,
+                              onChanged:
+                                  (val) => setState(() => _workTimings = val ?? ServiceConstants.workTimingPresets.first),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Budget Range (e.g. ₹15,000 - ₹25,000)',
+                              isDark: isDark,
+                              initialValue: _budgetRange,
+                              validator: (v) => v!.isEmpty ? 'Required' : null,
+                              onSaved: (v) => _budgetRange = v!,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Food Preference',
+                              isDark: isDark,
+                              value: _foodPreference,
+                              items: ServiceConstants.foodPreferences,
+                              onChanged:
+                                  (val) => setState(() => _foodPreference = val ?? ServiceConstants.foodPreferences.first),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Gender Preference',
+                              isDark: isDark,
+                              value: _genderPreference,
+                              items: ServiceConstants.genderPreferences,
+                              onChanged:
+                                  (val) => setState(() => _genderPreference = val ?? ServiceConstants.genderPreferences.first),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Preferred Language(s)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.grey300 : AppColors.grey700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ServiceConstants.commonLanguages.map((lang) {
+                          final selected = _preferredLanguages.contains(lang);
+                          return FilterChip(
+                            label: Text(lang),
+                            selected: selected,
+                            selectedColor: AppColors.gold.withValues(alpha: 0.3),
+                            checkmarkColor: AppColors.navyBlue,
+                            onSelected: (val) {
+                              setState(() {
+                                if (val) {
+                                  _preferredLanguages.add(lang);
+                                } else {
+                                  _preferredLanguages.remove(lang);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Religion Preference',
+                              isDark: isDark,
+                              value: _religionPreference,
+                              items: ServiceConstants.religionPreferences,
+                              onChanged:
+                                  (val) => setState(() => _religionPreference = val ?? ServiceConstants.religionPreferences.first),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Expected Joining',
+                              isDark: isDark,
+                              value: _expectedJoining,
+                              items: ServiceConstants.expectedJoiningOptions,
+                              onChanged:
+                                  (val) => setState(() => _expectedJoining = val ?? ServiceConstants.expectedJoiningOptions.first),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       _buildTextField(
-                        label: 'Budget Range',
+                        label: 'Internal Notes / Remarks',
                         isDark: isDark,
-                        initialValue: _budgetRange,
-                        validator: (v) => v!.isEmpty ? 'Required' : null,
-                        onSaved: (v) => _budgetRange = v!,
+                        initialValue: _remarks,
+                        maxLines: 3,
+                        onSaved: (v) => _remarks = v ?? '',
                       ),
                       const SizedBox(height: 32),
                       SizedBox(
@@ -485,6 +661,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
     required void Function(T?) onChanged,
     required bool isDark,
   }) {
+    final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : value);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -498,7 +675,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          initialValue: value,
+          initialValue: effectiveValue,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -526,7 +703,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
           dropdownColor:
               isDark ? AppColors.darkSurfaceVariant : AppColors.white,
           items:
-              items.map((T val) {
+              items.toSet().map((T val) {
                 return DropdownMenuItem<T>(
                   value: val,
                   child: Text(val.toString()),

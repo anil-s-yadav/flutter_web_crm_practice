@@ -314,7 +314,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'sr_no',
-                                        width: 100,
+                                        width: 145,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -349,7 +349,21 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                           ),
                                           alignment: Alignment.centerLeft,
                                           child: Text(
-                                            'Client',
+                                            'Client Name',
+                                            style: _headerStyle(isDark),
+                                          ),
+                                        ),
+                                      ),
+                                      GridColumn(
+                                        columnName: 'location',
+                                        width: 150,
+                                        label: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                          ),
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            'Location',
                                             style: _headerStyle(isDark),
                                           ),
                                         ),

@@ -25,14 +25,19 @@ extension ClientStatusExtension on ClientStatus {
   }
 
   static ClientStatus fromString(String value) {
-    // Handling legacy statuses from mock data just in case
-    if (value == 'newInquiry') return ClientStatus.followUp;
-    if (value == 'noResponse') return ClientStatus.notInterested;
-    if (value == 'active' || value == 'churned') return ClientStatus.converted;
+    if (value == 'newInquiry' || value == 'lead' || value == 'follow_up') {
+      return ClientStatus.followUp;
+    }
+    if (value == 'noResponse' || value == 'not_interested') {
+      return ClientStatus.notInterested;
+    }
+    if (value == 'active' || value == 'churned') {
+      return ClientStatus.converted;
+    }
 
     return ClientStatus.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => ClientStatus.followUp
+      orElse: () => ClientStatus.followUp,
     );
   }
 }
@@ -58,10 +63,20 @@ class ClientModel {
   final String budgetRange;
   final ClientStatus status;
   final String? assignedEmployeeId;
+  final String? assignedEmployeeName;
   final String source;
   final DateTime inquiryDate;
   final int renewalCount;
   final String? remarks;
+
+  // Service Requirements
+  final String serviceType;
+  final String workTimings;
+  final String foodPreference;
+  final String genderPreference;
+  final List<String> preferredLanguages;
+  final String religionPreference;
+  final String expectedJoining;
 
   const ClientModel({
     required this.id,
@@ -84,38 +99,102 @@ class ClientModel {
     required this.budgetRange,
     required this.status,
     this.assignedEmployeeId,
+    this.assignedEmployeeName,
     required this.source,
     required this.inquiryDate,
     this.renewalCount = 0,
-    this.remarks
+    this.remarks,
+    this.serviceType = '24 Hours Live-in',
+    this.workTimings = '24 Hours',
+    this.foodPreference = 'Any / No Preference',
+    this.genderPreference = 'Female',
+    this.preferredLanguages = const ['Hindi'],
+    this.religionPreference = 'Any / No Preference',
+    this.expectedJoining = 'Immediate (Within 1-2 Days)',
   });
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
+    List<String> parseSkills(dynamic raw) {
+      if (raw == null) return const ['Standard Duty'];
+      if (raw is List) return List<String>.from(raw);
+      if (raw is String) {
+        if (raw.trim().isEmpty) return const ['Standard Duty'];
+        return raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      }
+      return const ['Standard Duty'];
+    }
+
+    List<String> parseLanguages(dynamic raw) {
+      if (raw == null) return const ['Hindi'];
+      if (raw is List) return List<String>.from(raw);
+      if (raw is String) {
+        if (raw.trim().isEmpty) return const ['Hindi'];
+        return raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      }
+      return const ['Hindi'];
+    }
+
+    DateTime parseDate(dynamic raw) {
+      if (raw == null) return DateTime.now();
+      if (raw is DateTime) return raw;
+      try {
+        return DateTime.parse(raw.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
+    bool parseBool(dynamic val) {
+      if (val == null) return false;
+      if (val is bool) return val;
+      if (val is int) return val == 1;
+      if (val is String) return val == '1' || val.toLowerCase() == 'true';
+      return false;
+    }
+
+    int parseInt(dynamic val, int fallback) {
+      if (val == null) return fallback;
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? fallback;
+      return fallback;
+    }
+
     return ClientModel(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      phone: json['phone'] as String,
-      altPhone: json['alternate_phone'] as String?,
-      email: json['email'] as String,
-      address: json['address'] as String,
-      city: json['city'] as String,
-      locality: json['locality'] as String,
-      houseType: json['houseType'] as String,
-      familySize: json['familySize'] as int,
-      hasPets: (json['hasPets'] as bool?) ?? false,
-      petDetails: json['petDetails'] as String?,
-      hasElderlyMembers: (json['hasElderlyMembers'] as bool?) ?? false,
-      hasChildren: (json['hasChildren'] as bool?) ?? false,
-      childrenCount: json['childrenCount'] as int?,
-      preferredCandidateCategory: json['preferredCandidateCategory'] as String,
-      requiredSkills: List<String>.from(json['requiredSkills'] as List),
-      budgetRange: json['budgetRange'] as String,
-      status: ClientStatusExtension.fromString(json['status'] as String),
-      assignedEmployeeId: json['assignedEmployeeId'] as String?,
-      source: json['source'] as String,
-      inquiryDate: DateTime.parse(json['inquiryDate'] as String),
-      renewalCount: (json['renewalCount'] as int?) ?? 0,
-      remarks: json['remarks'] as String?
+      id: (json['id'] ?? '').toString(),
+      fullName: (json['fullName'] ?? json['name'] ?? json['full_name'] ?? '').toString(),
+      phone: (json['phone'] ?? '').toString(),
+      altPhone: (json['alternate_phone'] ?? json['altPhone'])?.toString(),
+      email: (json['email'] ?? '').toString(),
+      address: (json['address'] ?? '').toString(),
+      city: (json['city'] ?? 'Mumbai').toString(),
+      locality: (json['locality'] ?? 'Andheri').toString(),
+      houseType: (json['houseType'] ?? json['house_type'] ?? 'Apartment').toString(),
+      familySize: parseInt(json['familySize'] ?? json['family_size'], 4),
+      hasPets: parseBool(json['hasPets'] ?? json['has_pets']),
+      petDetails: (json['petDetails'] ?? json['pet_details'])?.toString(),
+      hasElderlyMembers: parseBool(json['hasElderlyMembers'] ?? json['has_elderly_members']),
+      hasChildren: parseBool(json['hasChildren'] ?? json['has_children']),
+      childrenCount: json['childrenCount'] != null 
+          ? parseInt(json['childrenCount'], 0) 
+          : (json['children_count'] != null ? parseInt(json['children_count'], 0) : null),
+      preferredCandidateCategory: (json['preferredCandidateCategory'] ?? json['preferred_category'] ?? 'House Maid').toString(),
+      requiredSkills: parseSkills(json['requiredSkills'] ?? json['required_skills']),
+      budgetRange: (json['budgetRange'] ?? json['budget_range'] ?? '₹15,000 - ₹25,000').toString(),
+      status: ClientStatusExtension.fromString((json['status'] ?? 'followUp').toString()),
+      assignedEmployeeId: (json['assignedEmployeeId'] ?? json['assigned_sales_id'])?.toString(),
+      assignedEmployeeName: (json['assignedEmployeeName'] ?? json['assigned_sales_name'])?.toString(),
+      source: (json['source'] ?? 'Direct / Walk-in').toString(),
+      inquiryDate: parseDate(json['inquiryDate'] ?? json['inquiry_date'] ?? json['created_at']),
+      renewalCount: parseInt(json['renewalCount'] ?? json['renewal_count'], 0),
+      remarks: (json['remarks'] ?? json['notes'])?.toString(),
+      serviceType: (json['serviceType'] ?? json['service_type'] ?? '24 Hours Live-in').toString(),
+      workTimings: (json['workTimings'] ?? json['work_timings'] ?? '24 Hours').toString(),
+      foodPreference: (json['foodPreference'] ?? json['food_preference'] ?? 'Any / No Preference').toString(),
+      genderPreference: (json['genderPreference'] ?? json['gender_preference'] ?? 'Female').toString(),
+      preferredLanguages: parseLanguages(json['preferredLanguages'] ?? json['preferred_languages']),
+      religionPreference: (json['religionPreference'] ?? json['religion_preference'] ?? 'Any / No Preference').toString(),
+      expectedJoining: (json['expectedJoining'] ?? json['expected_joining'] ?? 'Immediate (Within 1-2 Days)').toString(),
     );
   }
 
@@ -123,28 +202,57 @@ class ClientModel {
     return {
       'id': id,
       'fullName': fullName,
+      'name': fullName,
       'phone': phone,
       'alternate_phone': altPhone,
+      'altPhone': altPhone,
       'email': email,
       'address': address,
       'city': city,
       'locality': locality,
       'houseType': houseType,
+      'house_type': houseType,
       'familySize': familySize,
+      'family_size': familySize,
       'hasPets': hasPets,
+      'has_pets': hasPets,
       'petDetails': petDetails,
+      'pet_details': petDetails,
       'hasElderlyMembers': hasElderlyMembers,
+      'has_elderly_members': hasElderlyMembers,
       'hasChildren': hasChildren,
+      'has_children': hasChildren,
       'childrenCount': childrenCount,
+      'children_count': childrenCount,
       'preferredCandidateCategory': preferredCandidateCategory,
+      'preferred_category': preferredCandidateCategory,
       'requiredSkills': requiredSkills,
+      'required_skills': requiredSkills.join(', '),
       'budgetRange': budgetRange,
+      'budget_range': budgetRange,
       'status': status.name,
       'assignedEmployeeId': assignedEmployeeId,
+      'assigned_sales_id': assignedEmployeeId,
+      'assigned_sales_name': assignedEmployeeName,
       'source': source,
       'inquiryDate': inquiryDate.toIso8601String(),
       'renewalCount': renewalCount,
-      'remarks': remarks
+      'renewal_count': renewalCount,
+      'remarks': remarks,
+      'serviceType': serviceType,
+      'service_type': serviceType,
+      'workTimings': workTimings,
+      'work_timings': workTimings,
+      'foodPreference': foodPreference,
+      'food_preference': foodPreference,
+      'genderPreference': genderPreference,
+      'gender_preference': genderPreference,
+      'preferredLanguages': preferredLanguages,
+      'preferred_languages': preferredLanguages.join(', '),
+      'religionPreference': religionPreference,
+      'religion_preference': religionPreference,
+      'expectedJoining': expectedJoining,
+      'expected_joining': expectedJoining,
     };
   }
 
@@ -171,10 +279,18 @@ class ClientModel {
     String? budgetRange,
     ClientStatus? status,
     String? assignedEmployeeId,
+    String? assignedEmployeeName,
     String? source,
     DateTime? inquiryDate,
     int? renewalCount,
-    String? remarks
+    String? remarks,
+    String? serviceType,
+    String? workTimings,
+    String? foodPreference,
+    String? genderPreference,
+    List<String>? preferredLanguages,
+    String? religionPreference,
+    String? expectedJoining,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -197,10 +313,18 @@ class ClientModel {
       budgetRange: budgetRange ?? this.budgetRange,
       status: status ?? this.status,
       assignedEmployeeId: assignedEmployeeId ?? this.assignedEmployeeId,
+      assignedEmployeeName: assignedEmployeeName ?? this.assignedEmployeeName,
       source: source ?? this.source,
       inquiryDate: inquiryDate ?? this.inquiryDate,
       renewalCount: renewalCount ?? this.renewalCount,
-      remarks: remarks ?? this.remarks
+      remarks: remarks ?? this.remarks,
+      serviceType: serviceType ?? this.serviceType,
+      workTimings: workTimings ?? this.workTimings,
+      foodPreference: foodPreference ?? this.foodPreference,
+      genderPreference: genderPreference ?? this.genderPreference,
+      preferredLanguages: preferredLanguages ?? this.preferredLanguages,
+      religionPreference: religionPreference ?? this.religionPreference,
+      expectedJoining: expectedJoining ?? this.expectedJoining,
     );
   }
 

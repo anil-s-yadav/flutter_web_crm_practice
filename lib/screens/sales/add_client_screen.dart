@@ -3,10 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/core/category_constants.dart';
+import 'package:practice_app/core/service_constants.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
 import 'package:practice_app/blocs/client/client_event.dart';
+import 'package:practice_app/repositories/client_repository.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +24,7 @@ class AddClientScreen extends StatefulWidget {
 
 class _AddClientScreenState extends State<AddClientScreen> {
   int _currentStep = 0;
+  bool _isSubmitting = false;
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
   final _formKey3 = GlobalKey<FormState>();
@@ -32,6 +37,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
   String _locality = '';
   String _city = 'Mumbai';
   String _address = '';
+  String _source = ServiceConstants.leadSources.first;
 
   // Step 2: Household Details
   String _houseType = '2BHK';
@@ -44,8 +50,15 @@ class _AddClientScreenState extends State<AddClientScreen> {
 
   // Step 3: Service Requirements
   String _preferredCategory = CategoryConstants.categories.first;
+  String _serviceType = ServiceConstants.serviceTypes.first;
+  String _workTimings = ServiceConstants.workTimingPresets.first;
   double _budgetBase = 15000;
-  double _budgetEnd = 20000;
+  double _budgetEnd = 25000;
+  String _foodPreference = ServiceConstants.foodPreferences.first;
+  String _genderPreference = ServiceConstants.genderPreferences.first;
+  final List<String> _preferredLanguages = ['Hindi'];
+  String _religionPreference = ServiceConstants.religionPreferences.first;
+  String _expectedJoining = ServiceConstants.expectedJoiningOptions.first;
   String _remarks = '';
 
   final List<String> _houseTypes = [
@@ -59,37 +72,71 @@ class _AddClientScreenState extends State<AddClientScreen> {
     'Duplex',
   ];
 
-  void _addClient() {
-    // Backend assigns VM00000001 format ID
-    final client = ClientModel(
-      id: '',
+  Future<void> _addClient() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
 
-      fullName: _fullName,
-      phone: _phone,
-      altPhone: _altPhone.isEmpty ? null : _altPhone,
-      email: _email.isEmpty ? '$_phone@placeholder.com' : _email,
-      address: _address,
-      city: _city,
-      locality: _locality,
-      houseType: _houseType,
-      familySize: _familySize,
-      hasPets: _hasPets,
-      petDetails: _hasPets ? _petDetails : null,
-      hasElderlyMembers: _hasElderly,
-      hasChildren: _hasChildren,
-      childrenCount: _hasChildren ? _childrenCount : null,
-      preferredCandidateCategory: _preferredCategory,
-      requiredSkills: const ['Standard Duty'], // default hidden skill
-      budgetRange: '₹${_budgetBase.toInt()} - ₹${_budgetEnd.toInt()}',
-      status: ClientStatus.followUp,
-      assignedEmployeeId: 'temp_user',
-      source: 'Direct Entry',
-      inquiryDate: DateTime.now(),
-      remarks: _remarks.isNotEmpty ? _remarks : null,
-    );
+    try {
+      final authState = context.read<AuthBloc>().state;
+      final currentUser = authState is AuthAuthenticated ? authState.user : null;
 
-    context.read<ClientBloc>().add(CreateClient(client));
-    _showSuccessDialog();
+      final client = ClientModel(
+        id: '',
+        fullName: _fullName,
+        phone: _phone,
+        altPhone: _altPhone.isEmpty ? null : _altPhone,
+        email: _email.isEmpty ? '$_phone@placeholder.com' : _email,
+        address: _address,
+        city: _city,
+        locality: _locality,
+        houseType: _houseType,
+        familySize: _familySize,
+        hasPets: _hasPets,
+        petDetails: _hasPets ? _petDetails : null,
+        hasElderlyMembers: _hasElderly,
+        hasChildren: _hasChildren,
+        childrenCount: _hasChildren ? _childrenCount : null,
+        preferredCandidateCategory: _preferredCategory,
+        requiredSkills: const ['Standard Duty'],
+        budgetRange: '₹${_budgetBase.toInt()} - ₹${_budgetEnd.toInt()}',
+        status: ClientStatus.followUp,
+        assignedEmployeeId: currentUser?.id ?? 'VMU0002',
+        assignedEmployeeName: currentUser?.name,
+        source: _source,
+        inquiryDate: DateTime.now(),
+        remarks: _remarks.isNotEmpty ? _remarks : null,
+        serviceType: _serviceType,
+        workTimings: _workTimings,
+        foodPreference: _foodPreference,
+        genderPreference: _genderPreference,
+        preferredLanguages: _preferredLanguages.isEmpty ? const ['Hindi'] : _preferredLanguages,
+        religionPreference: _religionPreference,
+        expectedJoining: _expectedJoining,
+      );
+
+      await context.read<ClientRepository>().createClient(client);
+      if (!mounted) return;
+      context.read<ClientBloc>().add(const LoadClients());
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to save client: $errorMsg',
+            style: GoogleFonts.poppins(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   void _showSuccessDialog() {
@@ -216,7 +263,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: details.onStepContinue,
+                        onPressed: _isSubmitting ? null : details.onStepContinue,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               isLast ? AppColors.successGreen : AppColors.gold,
@@ -224,13 +271,22 @@ class _AddClientScreenState extends State<AddClientScreen> {
                               isLast ? AppColors.white : AppColors.navyBlue,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: Text(isLast ? 'Save Client' : 'Continue'),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(isLast ? 'Save Client' : 'Continue'),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: details.onStepCancel,
+                        onPressed: _isSubmitting ? null : details.onStepCancel,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(
@@ -347,6 +403,14 @@ class _AddClientScreenState extends State<AddClientScreen> {
                         maxLines: 2,
                         isDark: isDark,
                         onSaved: (v) => _address = v ?? '',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdown<String>(
+                        label: 'Lead Source',
+                        value: _source,
+                        items: ServiceConstants.leadSources,
+                        onChanged: (v) => setState(() => _source = v ?? ServiceConstants.leadSources.first),
+                        isDark: isDark,
                       ),
                     ],
                   ),
@@ -472,7 +536,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Looking For',
+                        'Looking For (Category)',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -505,32 +569,205 @@ class _AddClientScreenState extends State<AddClientScreen> {
                               );
                             }).toList(),
                       ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Budget Range: ₹${_budgetBase.toInt()} - ₹${_budgetEnd.toInt()}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Service Type',
+                              value: _serviceType,
+                              items: ServiceConstants.serviceTypes,
+                              onChanged: (v) => setState(() => _serviceType = v ?? ServiceConstants.serviceTypes.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Work Timings',
+                              value: _workTimings,
+                              items: ServiceConstants.workTimingPresets,
+                              onChanged: (v) => setState(() => _workTimings = v ?? ServiceConstants.workTimingPresets.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey100,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Budget Range',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? AppColors.grey300 : AppColors.grey700,
+                              ),
+                            ),
+                            Text(
+                              '₹${_budgetBase.toInt()} – ₹${_budgetEnd.toInt()}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.gold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      RangeSlider(
-                        values: RangeValues(_budgetBase, _budgetEnd),
-                        min: 5000,
-                        max: 100000,
-                        divisions: 95, // Steps of 1000
-                        labels: RangeLabels(
-                          '₹${_budgetBase.toInt()}',
-                          '₹${_budgetEnd.toInt()}',
+                      const SizedBox(height: 8),
+                      SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: AppColors.gold,
+                          inactiveTrackColor:
+                              isDark
+                                  ? const Color(0xFF2A3448)
+                                  : AppColors.grey200,
+                          thumbColor: AppColors.gold,
+                          overlayColor: AppColors.gold.withValues(alpha: 0.2),
+                          valueIndicatorColor: AppColors.navyBlue,
+                          valueIndicatorTextStyle: GoogleFonts.poppins(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          showValueIndicator: ShowValueIndicator.onDrag,
+                          rangeThumbShape:
+                              const RoundRangeSliderThumbShape(
+                                enabledThumbRadius: 10,
+                              ),
                         ),
-                        activeColor: AppColors.gold,
-                        inactiveColor:
-                            isDark ? AppColors.dividerDark : AppColors.grey200,
-                        onChanged: (RangeValues values) {
-                          setState(() {
-                            _budgetBase = values.start;
-                            _budgetEnd = values.end;
-                          });
-                        },
+                        child: RangeSlider(
+                          values: RangeValues(_budgetBase, _budgetEnd),
+                          min: 5000,
+                          max: 100000,
+                          divisions: 95, // Steps of 1000
+                          labels: RangeLabels(
+                            '₹${_budgetBase.toInt()}',
+                            '₹${_budgetEnd.toInt()}',
+                          ),
+                          activeColor: AppColors.gold,
+                          inactiveColor:
+                              isDark ? AppColors.dividerDark : AppColors.grey200,
+                          onChanged: (RangeValues values) {
+                            setState(() {
+                              _budgetBase = values.start;
+                              _budgetEnd = values.end;
+                            });
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Min: ₹5,000',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? AppColors.grey400 : AppColors.grey600,
+                              ),
+                            ),
+                            Text(
+                              'Max: ₹1,00,000',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: isDark ? AppColors.grey400 : AppColors.grey600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Food Preference',
+                              value: _foodPreference,
+                              items: ServiceConstants.foodPreferences,
+                              onChanged: (v) => setState(() => _foodPreference = v ?? ServiceConstants.foodPreferences.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Gender Preference',
+                              value: _genderPreference,
+                              items: ServiceConstants.genderPreferences,
+                              onChanged: (v) => setState(() => _genderPreference = v ?? ServiceConstants.genderPreferences.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Preferred Language(s)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.grey300 : AppColors.grey700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ServiceConstants.commonLanguages.map((lang) {
+                          final selected = _preferredLanguages.contains(lang);
+                          return FilterChip(
+                            label: Text(lang),
+                            selected: selected,
+                            selectedColor: AppColors.gold.withValues(alpha: 0.3),
+                            checkmarkColor: AppColors.navyBlue,
+                            onSelected: (val) {
+                              setState(() {
+                                if (val) {
+                                  _preferredLanguages.add(lang);
+                                } else {
+                                  _preferredLanguages.remove(lang);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Religion Preference',
+                              value: _religionPreference,
+                              items: ServiceConstants.religionPreferences,
+                              onChanged: (v) => setState(() => _religionPreference = v ?? ServiceConstants.religionPreferences.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Expected Joining',
+                              value: _expectedJoining,
+                              items: ServiceConstants.expectedJoiningOptions,
+                              onChanged: (v) => setState(() => _expectedJoining = v ?? ServiceConstants.expectedJoiningOptions.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                       _buildTextField(
@@ -563,17 +800,28 @@ class _AddClientScreenState extends State<AddClientScreen> {
     void Function(String?)? onSaved,
   }) {
     final isPhone = keyboardType == TextInputType.phone;
-    return TextFormField(
-      initialValue: initialValue,
-      maxLength: isPhone ? 10 : maxLength,
-      inputFormatters: isPhone
-          ? [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ]
-          : null,
-      decoration: InputDecoration(
-        labelText: label,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          maxLength: isPhone ? 10 : maxLength,
+          inputFormatters: isPhone
+              ? [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ]
+              : null,
+          decoration: InputDecoration(
         prefixIcon: Icon(
           icon,
           size: 20,
@@ -599,6 +847,8 @@ class _AddClientScreenState extends State<AddClientScreen> {
       maxLines: maxLines,
       validator: validator,
       onSaved: onSaved,
+    ),
+      ],
     );
   }
 
@@ -609,10 +859,25 @@ class _AddClientScreenState extends State<AddClientScreen> {
     required void Function(T?) onChanged,
     required bool isDark,
   }) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: label,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.grey300 : AppColors.grey700,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T>(
+          initialValue: items.contains(value) ? value : items.first,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
@@ -628,11 +893,13 @@ class _AddClientScreenState extends State<AddClientScreen> {
         filled: true,
         fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
       ),
-      items:
-          items
-              .map((i) => DropdownMenuItem(value: i, child: Text(i.toString())))
-              .toList(),
+      dropdownColor: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
+      items: items.toSet().map((T val) {
+        return DropdownMenuItem<T>(value: val, child: Text(val.toString()));
+      }).toList(),
       onChanged: onChanged,
+    ),
+      ],
     );
   }
 }

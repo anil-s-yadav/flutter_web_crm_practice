@@ -26,11 +26,11 @@ const globalSearch = async (req, res) => {
       LIMIT 10
     `;
 
-    // 2. Search Clients by name, phone, alternate_phone, email, company_name, id
+    // 2. Search Clients by name, phone, alternate_phone, email, id
     const clientsQuery = `
-      SELECT id, name, phone, alternate_phone, email, company_name, status 
+      SELECT id, name, phone, alternate_phone, email, status 
       FROM clients 
-      WHERE name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR email LIKE ? OR company_name LIKE ? OR id LIKE ?
+      WHERE name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR email LIKE ? OR id LIKE ?
       LIMIT 10
     `;
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/blocs/auth/auth_bloc.dart';
 import 'package:practice_app/blocs/auth/auth_state.dart';
+import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:practice_app/widgets/audit_log_widget.dart';
@@ -44,11 +46,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     context.read<ClientBloc>().add(LoadClients());
     context.read<ContractBloc>().add(LoadContracts());
     context.read<CandidateBloc>().add(LoadCandidates());
+    context.read<AuditLogBloc>().add(const LoadAuditLogs());
   }
 
   @override
   Widget build(BuildContext context) {
-
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
@@ -57,9 +59,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           builder: (context, contractState) {
             return BlocBuilder<CandidateBloc, CandidateState>(
               builder: (context, candidateState) {
-                if (clientState is ClientLoading ||
-                    contractState is ContractLoading ||
-                    candidateState is CandidateLoading) {
+                return BlocBuilder<AuditLogBloc, AuditLogState>(
+                  builder: (context, auditLogState) {
+                    if (clientState is ClientLoading ||
+                        contractState is ContractLoading ||
+                        candidateState is CandidateLoading) {
                   return const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
                   );
@@ -118,7 +122,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   final candidate =
                       candidateList.isNotEmpty ? candidateList.first : null;
 
-                  final relevantLogs = <AuditLogModel>[];
+                  final relevantLogs = auditLogState is AuditLogLoaded
+                      ? auditLogState.auditLogs
+                          .where((l) => l.targetId == client.id)
+                          .toList()
+                      : <AuditLogModel>[];
 
                   final tabs = [
                     'Details',
@@ -188,7 +196,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                         ),
                         Expanded(
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(8),
                             child: _buildActiveTabContent(
                               client,
                               contract,
@@ -206,6 +214,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
                 return const Scaffold(
                   body: Center(child: Text('Unknown state')),
+                );
+                  },
                 );
               },
             );
@@ -238,7 +248,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ],
       );
     } else if (_activeTabIndex == 1) {
-
       final contractState = context.read<ContractBloc>().state;
       final allContracts =
           contractState is ContractLoaded
@@ -325,6 +334,21 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
           ),
         ),
+        // ElevatedButton.icon(
+        //   onPressed: () => _showAddNoteDialog(context, client),
+        //   icon: const Icon(Icons.phone_in_talk, size: 16),
+        //   label: Text(
+        //     'Log Call / Note',
+        //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        //   ),
+        //   style: ElevatedButton.styleFrom(
+        //     backgroundColor:
+        //         isDark ? const Color.fromARGB(255, 46, 48, 51) : AppColors.grey100,
+        //     foregroundColor: isDark ? AppColors.white : AppColors.navyBlue,
+        //     elevation: 0,
+        //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        //   ),
+        // ),
         if (client.status == ClientStatus.followUp) ...[
           ElevatedButton.icon(
             onPressed:
@@ -332,14 +356,14 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   context,
                   client,
                   ClientStatus.interested,
-                  'Client promoted to Interested',
+                  'Client moved to Interested',
                 ),
-            icon: const Icon(Icons.arrow_upward, size: 18),
-            label: const Text('Promote to Interested'),
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Move to Interested'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.gold,
               foregroundColor: AppColors.navyBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
           ),
           OutlinedButton.icon(
@@ -355,10 +379,20 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.criticalRed,
               side: const BorderSide(color: AppColors.criticalRed),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
           ),
-        ] else if (client.status == ClientStatus.interested)
+        ] else if (client.status == ClientStatus.interested) ...[
+          ElevatedButton.icon(
+            onPressed: () => _showAssignCandidateModal(context, client),
+            icon: const Icon(Icons.handshake, size: 18),
+            label: const Text('Assign Candidate'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ),
           OutlinedButton.icon(
             onPressed:
                 () => _showStatusChangeDialog(
@@ -372,10 +406,28 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.criticalRed,
               side: const BorderSide(color: AppColors.criticalRed),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
-          )
-        else if (client.status == ClientStatus.notInterested)
+          ),
+          OutlinedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.followUp,
+                  'Client moved back to Follow Up',
+                ),
+            icon: const Icon(Icons.undo, size: 18),
+            label: const Text('Back to Follow Up'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? AppColors.grey300 : AppColors.grey700,
+              side: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.grey300,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ),
+        ] else if (client.status == ClientStatus.notInterested) ...[
           ElevatedButton.icon(
             onPressed:
                 () => _showStatusChangeDialog(
@@ -385,13 +437,30 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   'Client reactivated to Follow Up',
                 ),
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Reactivate to Follow Up'),
+            label: const Text('Re-open to Follow Up'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.gold,
               foregroundColor: AppColors.navyBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
           ),
+          OutlinedButton.icon(
+            onPressed:
+                () => _showStatusChangeDialog(
+                  context,
+                  client,
+                  ClientStatus.interested,
+                  'Client moved to Interested',
+                ),
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Move to Interested'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.gold,
+              side: const BorderSide(color: AppColors.gold),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ),
+        ],
       ],
     );
 
@@ -537,69 +606,154 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     String successMessage,
   ) async {
     final TextEditingController noteController = TextEditingController();
+    final isNotInterested = nextStatus == ClientStatus.notInterested;
+
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
+        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
         return AlertDialog(
-          title: Text(
-            'Status Change Note',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          title: Row(
             children: [
-              Text(
-                'Please add a note explaining why this client is being moved to ${nextStatus.displayName}.',
-                style: GoogleFonts.poppins(fontSize: 14),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color:
+                      isNotInterested
+                          ? AppColors.criticalRed.withValues(alpha: 0.15)
+                          : AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isNotInterested
+                      ? Icons.warning_amber_rounded
+                      : Icons.swap_horiz,
+                  color:
+                      isNotInterested ? AppColors.criticalRed : AppColors.gold,
+                  size: 22,
+                ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Mandatory Note',
-                  border: OutlineInputBorder(),
+              const SizedBox(width: 12),
+              Text(
+                'Move to ${nextStatus.displayName}',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
                 ),
               ),
             ],
           ),
+          content: SizedBox(
+            width: 460,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isNotInterested
+                      ? 'Please provide a mandatory reason for marking this client as Not Interested (e.g. Budget mismatch, hired relative, service not needed):'
+                      : 'Add a note explaining the interaction or agreement to move this client to ${nextStatus.displayName}:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  autofocus: true,
+                  style: GoogleFonts.poppins(
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  decoration: InputDecoration(
+                    labelText:
+                        isNotInterested
+                            ? 'Mandatory Reason *'
+                            : 'Status Change Note *',
+                    hintText:
+                        isNotInterested
+                            ? 'e.g. Client decided not to hire maid now due to relocation.'
+                            : 'e.g. Client liked maid profiles, searching for matching staff.',
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isDark ? AppColors.grey500 : AppColors.grey400,
+                    ),
+                    filled: true,
+                    fillColor:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color:
+                            isDark ? AppColors.dividerDark : AppColors.grey300,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel', style: GoogleFonts.poppins()),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                ),
+              ),
               onPressed: () => Navigator.of(dialogContext).pop(),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.gold,
-                foregroundColor: AppColors.navyBlue,
+                backgroundColor:
+                    isNotInterested ? AppColors.criticalRed : AppColors.gold,
+                foregroundColor:
+                    isNotInterested ? AppColors.white : AppColors.navyBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
               ),
               child: Text(
-                'Update Status',
+                'Confirm Status Change',
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
               onPressed: () {
                 final note = noteController.text.trim();
                 if (note.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
-                        'A note is absolutely required to change status.',
+                        isNotInterested
+                            ? 'A reason is mandatory when marking a client Not Interested.'
+                            : 'Please provide a note for this status transition.',
                       ),
+                      backgroundColor: AppColors.criticalRed,
                     ),
                   );
                   return;
                 }
 
                 final timestamp = DateFormat(
-                  'dd MMM yyyy, HH:mm',
+                  'dd MMM yyyy, hh:mm a',
                 ).format(DateTime.now());
 
                 final newRemarks =
                     (client.remarks == null || client.remarks!.isEmpty)
                         ? '[$timestamp] Status changed to ${nextStatus.displayName}: $note'
-                        : '${client.remarks}\n\n[$timestamp] Status changed to ${nextStatus.displayName}: $note';
+                        : '[$timestamp] Status changed to ${nextStatus.displayName}: $note\n\n${client.remarks}';
 
                 context.read<ClientBloc>().add(
                   UpdateClient(
@@ -609,9 +763,166 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 );
 
                 Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(successMessage)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(successMessage),
+                    backgroundColor: AppColors.successGreen,
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showAddNoteDialog(
+    BuildContext context,
+    ClientModel client,
+  ) async {
+    final TextEditingController noteController = TextEditingController();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.edit_note,
+                  color: AppColors.gold,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Log Call / Add Note',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 480,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Record conversation details, client callbacks, preferences, or discussion notes for ${client.fullName}:',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: noteController,
+                  maxLines: 4,
+                  autofocus: true,
+                  style: GoogleFonts.poppins(
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        'e.g. Called client. Spoke with spouse, requested 2 maid profiles on WhatsApp. Follow up in 3 days.',
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: isDark ? AppColors.grey500 : AppColors.grey400,
+                    ),
+                    filled: true,
+                    fillColor:
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color:
+                            isDark ? AppColors.dividerDark : AppColors.grey300,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  color: isDark ? AppColors.grey400 : AppColors.grey600,
+                ),
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyBlue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+              ),
+              icon: const Icon(Icons.save, size: 18),
+              label: Text(
+                'Save Note',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+              onPressed: () {
+                final note = noteController.text.trim();
+                if (note.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a note before saving.'),
+                      backgroundColor: AppColors.criticalRed,
+                    ),
+                  );
+                  return;
+                }
+
+                final timestamp = DateFormat(
+                  'dd MMM yyyy, hh:mm a',
+                ).format(DateTime.now());
+                final newRemarks =
+                    (client.remarks == null || client.remarks!.isEmpty)
+                        ? '[$timestamp] Sales: $note'
+                        : '[$timestamp] Sales: $note\n\n${client.remarks}';
+
+                context.read<ClientBloc>().add(
+                  UpdateClient(
+                    client.copyWith(remarks: newRemarks),
+                    reason: 'Note logged: $note',
+                  ),
+                );
+
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Interaction note saved successfully!'),
+                    backgroundColor: AppColors.successGreen,
+                  ),
+                );
               },
             ),
           ],
@@ -766,15 +1077,39 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ),
         const SizedBox(height: 20),
         _infoRow('Looking For', client.preferredCandidateCategory, isDark),
+        if (client.serviceType.isNotEmpty)
+          _infoRow('Service Type', client.serviceType, isDark),
+        if (client.workTimings.isNotEmpty)
+          _infoRow('Work Timings', client.workTimings, isDark),
         _infoRow('Budget', client.budgetRange, isDark),
-        _infoRow('Source', client.source, isDark),
+        if (client.foodPreference.isNotEmpty)
+          _infoRow('Food Preference', client.foodPreference, isDark),
+        if (client.genderPreference.isNotEmpty)
+          _infoRow('Gender Preference', client.genderPreference, isDark),
+        if (client.preferredLanguages.isNotEmpty)
+          _infoRow('Language(s)', client.preferredLanguages.join(', '), isDark),
+        if (client.religionPreference.isNotEmpty)
+          _infoRow('Religion Pref', client.religionPreference, isDark),
+        if (client.expectedJoining.isNotEmpty)
+          _infoRow('Expected Joining', client.expectedJoining, isDark),
+        _infoRow('Lead Source', client.source, isDark),
         _infoRow(
           'Inquiry Date',
           DateFormat('dd MMM yyyy').format(client.inquiryDate),
           isDark,
         ),
-        if (client.assignedEmployeeId != null)
-          _infoRow('Sales Rep ID', client.assignedEmployeeId!, isDark),
+        if (client.assignedEmployeeId != null &&
+            client.assignedEmployeeId!.isNotEmpty)
+          _infoRow(
+            'Sales Rep',
+            (client.assignedEmployeeName != null &&
+                    client.assignedEmployeeName!.isNotEmpty)
+                ? '${client.assignedEmployeeId} (${client.assignedEmployeeName})'
+                : client.assignedEmployeeId!,
+            isDark,
+          ),
+        if (client.remarks != null && client.remarks!.isNotEmpty)
+          _infoRow('Remarks', client.remarks!, isDark),
       ],
     );
 
@@ -843,15 +1178,40 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           children: [
             // NOTES SECTION
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.notes, color: AppColors.gold, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Detailed Notes',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                Row(
+                  children: [
+                    const Icon(Icons.notes, color: AppColors.gold, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Detailed Notes & Call Logs',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _showAddNoteDialog(context, client),
+                  icon: const Icon(Icons.add_call, size: 16),
+                  label: Text(
+                    'Add Call Note',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyBlue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    elevation: 0,
                   ),
                 ),
               ],
@@ -859,7 +1219,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color:
                     isDark
@@ -875,13 +1235,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     ? 'No notes available.'
                     : client.remarks!,
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: isDark ? AppColors.grey300 : AppColors.grey700,
-                  height: 1.6,
+                  // height: 1.6,
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             Divider(
               height: 1,
               color: isDark ? AppColors.dividerDark : AppColors.grey200,
@@ -1014,7 +1374,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       IconButton(
                         icon: const Icon(Icons.open_in_new, size: 20),
                         onPressed: () {
-
                           final authState = context.read<AuthBloc>().state;
                           final routePrefix =
                               ((authState is AuthAuthenticated)
@@ -1187,48 +1546,446 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     ClientModel client,
     bool isDark,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.grey200,
-          style: BorderStyle.solid,
+    final candidateState = context.watch<CandidateBloc>().state;
+    final allCandidates =
+        candidateState is CandidateLoaded
+            ? candidateState.candidates
+            : <CandidateModel>[];
+
+    // Normalize category match (handling House Maid / House Candidate, Baby Care / Japa Maid, etc.)
+    final clientCat =
+        client.preferredCandidateCategory
+            .toLowerCase()
+            .replaceAll('candidate', 'maid')
+            .trim();
+    final matchingCandidates =
+        allCandidates.where((c) {
+          final candCat =
+              c.category.toLowerCase().replaceAll('candidate', 'maid').trim();
+          final matchesCategory =
+              candCat == clientCat ||
+              (clientCat.contains('house') && candCat.contains('house')) ||
+              (clientCat.contains('japa') && candCat.contains('japa')) ||
+              (clientCat.contains('baby') &&
+                  (candCat.contains('baby') || candCat.contains('japa')));
+          return matchesCategory && c.status == CandidateStatus.readyToPlace;
+        }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Requirement Summary & Matching Banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? AppColors.dividerDark : AppColors.grey200,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.person_search_outlined,
+                  color: AppColors.gold,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Target Service: ',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color:
+                                isDark ? AppColors.grey400 : AppColors.grey600,
+                          ),
+                        ),
+                        Text(
+                          client.preferredCandidateCategory,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildBadge(
+                          'Budget: ${client.budgetRange}',
+                          AppColors.gold,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Review matching candidates from the pool below. You can copy formatted candidate profiles to share with the customer on WhatsApp, or assign a candidate once the deal is ready.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark ? AppColors.grey400 : AppColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () => _showAssignCandidateModal(context, client),
+                icon: const Icon(Icons.manage_search, size: 18),
+                label: Text(
+                  'Browse All Pool (${allCandidates.length})',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.person_search, size: 48, color: AppColors.grey400),
-          const SizedBox(height: 16),
-          Text(
-            'No Candidate Assigned',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+        const SizedBox(height: 20),
+
+        // Matching candidates list
+        if (matchingCandidates.isNotEmpty) ...[
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, color: AppColors.gold, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Available Matches in Pool (${matchingCandidates.length})',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.white : AppColors.navyBlue,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Assign a verified candidate to generate a pending contract.',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: isDark ? AppColors.grey400 : AppColors.grey600,
-            ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: matchingCandidates.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final cand = matchingCandidates[index];
+              return _buildCandidateMatchCard(context, client, cand, isDark);
+            },
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => _showAssignCandidateModal(context, client),
-            icon: const Icon(Icons.handshake),
-            label: const Text('Assign Candidate'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gold,
-              foregroundColor: AppColors.navyBlue,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ] else ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? AppColors.dividerDark : AppColors.grey200,
+              ),
+            ),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.person_search_outlined,
+                  size: 44,
+                  color: AppColors.grey400,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No Direct Matches Ready in "${client.preferredCandidateCategory}"',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'You can browse candidates across all categories or assign an available candidate.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? AppColors.grey400 : AppColors.grey600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _showAssignCandidateModal(context, client),
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text('Search & Assign Candidate'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyBlue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildCandidateMatchCard(
+    BuildContext context,
+    ClientModel client,
+    CandidateModel candidate,
+    bool isDark,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.grey200,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: AppColors.gold.withValues(alpha: 0.15),
+            child: Text(
+              candidate.fullName.isNotEmpty ? candidate.fullName[0] : '?',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      candidate.fullName,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        candidate.id,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildBadge('Ready to Place', AppColors.successGreen),
+                    if (candidate.aadhaarDocUrl != null) ...[
+                      const SizedBox(width: 6),
+                      _buildBadge('Aadhaar ✓', AppColors.standardBlue),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      '💼 ${candidate.category} (${candidate.experienceYears}y exp)',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark ? AppColors.grey300 : AppColors.grey700,
+                      ),
+                    ),
+                    Text(
+                      '💰 ₹${candidate.expectedSalary}/mo (${candidate.workingHoursPerDay}h/day)',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                    Text(
+                      '🗣️ ${candidate.languages.join(', ')}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark ? AppColors.grey400 : AppColors.grey600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Actions: Share Profile & Assign
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _shareCandidateProfile(context, candidate),
+                icon: const Icon(Icons.share, size: 16),
+                label: Text(
+                  'Share Profile',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.gold,
+                  side: const BorderSide(color: AppColors.gold),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed:
+                    () => _assignCandidateToClient(context, client, candidate),
+                icon: const Icon(Icons.handshake, size: 16),
+                label: Text(
+                  'Assign Candidate',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navyBlue,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _shareCandidateProfile(BuildContext context, CandidateModel candidate) {
+    final verificationStatus = [
+      if (candidate.aadhaarDocUrl != null) 'Aadhaar Verified',
+      if (candidate.isPoliceVerified) 'Police Verified',
+      if (candidate.isMedicalCleared) 'Medical Cleared',
+    ].join(' • ');
+
+    final workTypeStr = candidate.preferredWorkType ?? candidate.category;
+    final languagesStr =
+        candidate.languages.isNotEmpty
+            ? candidate.languages.join(', ')
+            : 'Hindi';
+
+    final summary = '''
+🌟 *MaidMatch Candidate Profile*
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *Name*: ${candidate.fullName} (ID: ${candidate.id})
+💼 *Role / Category*: ${candidate.category}
+⏱️ *Experience*: ${candidate.experienceYears} Years
+🎂 *Age*: ${candidate.age} yrs | 🕊️ *Religion*: ${candidate.religion}
+🗣️ *Languages*: $languagesStr
+💰 *Expected Salary*: ₹${candidate.expectedSalary}/month (${candidate.workingHoursPerDay} hrs/day)
+🛡️ *Verification*: ${verificationStatus.isNotEmpty ? verificationStatus : 'Pending'}
+🎯 *Specialization*: $workTypeStr (Edu: ${candidate.education})
+━━━━━━━━━━━━━━━━━━━━━━
+📞 Contact Sales for immediate placement & trial!
+''';
+
+    Clipboard.setData(ClipboardData(text: summary));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.navyBlue,
+        behavior: SnackBarBehavior.floating,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.gold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '${candidate.fullName}\'s profile copied to clipboard! Ready to share via WhatsApp / SMS.',
+                style: GoogleFonts.poppins(
+                  color: AppColors.white,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _assignCandidateToClient(
+    BuildContext context,
+    ClientModel client,
+    CandidateModel candidate,
+  ) {
+    final newContract = ContractModel(
+      id: 'PENDING',
+      clientId: client.id,
+      clientName: client.fullName,
+      candidateId: candidate.id,
+      candidateName: candidate.fullName,
+      placementDate: DateTime.now(),
+      guaranteeEndDate: DateTime.now().add(const Duration(days: 90)),
+      contractStatus: ContractStatus.pending,
+      serviceFee: 15000,
+      amountPaid: 0,
+      balanceAmount: 15000,
+      paymentStatus: PaymentStatus.pending,
+      replacementsUsed: 0,
+      createdBy: 'System',
+    );
+    context.read<ContractBloc>().add(CreateContract(newContract));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Candidate ${candidate.fullName} assigned! Pending Contract Generated.',
+        ),
+        backgroundColor: AppColors.successGreen,
       ),
     );
   }
@@ -2231,56 +2988,126 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
               else
                 _smallBadge('No Medical', AppColors.urgentAmber),
               const SizedBox(height: 6),
-              SizedBox(
-                height: 28,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final newContract = ContractModel(
-                      id: 'PENDING',
-                      clientId: widget.client.id,
-                      clientName: widget.client.fullName,
-                      candidateId: candidate.id,
-                      candidateName: candidate.fullName,
-                      placementDate: DateTime.now(),
-                      guaranteeEndDate: DateTime.now().add(
-                        const Duration(days: 90),
-                      ),
-                      contractStatus: ContractStatus.pending,
-                      serviceFee: 15000,
-                      amountPaid: 0,
-                      balanceAmount: 15000,
-                      paymentStatus: PaymentStatus.pending,
-                      replacementsUsed: 0,
-                      createdBy: 'System',
-                    );
-                    context.read<ContractBloc>().add(
-                      CreateContract(newContract),
-                    );
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.share, size: 16),
+                    color: AppColors.gold,
+                    tooltip: 'Share Candidate Profile',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    onPressed: () => _shareCandidateProfile(context, candidate),
+                  ),
+                  const SizedBox(width: 4),
+                  SizedBox(
+                    height: 28,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final newContract = ContractModel(
+                          id: 'PENDING',
+                          clientId: widget.client.id,
+                          clientName: widget.client.fullName,
+                          candidateId: candidate.id,
+                          candidateName: candidate.fullName,
+                          placementDate: DateTime.now(),
+                          guaranteeEndDate: DateTime.now().add(
+                            const Duration(days: 90),
+                          ),
+                          contractStatus: ContractStatus.pending,
+                          serviceFee: 15000,
+                          amountPaid: 0,
+                          balanceAmount: 15000,
+                          paymentStatus: PaymentStatus.pending,
+                          replacementsUsed: 0,
+                          createdBy: 'System',
+                        );
+                        context.read<ContractBloc>().add(
+                          CreateContract(newContract),
+                        );
 
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Candidate assigned! Pending Contract Generated.',
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Candidate assigned! Pending Contract Generated.',
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyBlue,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: AppColors.navyBlue,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    textStyle: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      child: const Text('Assign'),
                     ),
                   ),
-                  child: const Text('Assign'),
-                ),
+                ],
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _shareCandidateProfile(BuildContext context, CandidateModel candidate) {
+    final verificationStatus = [
+      if (candidate.aadhaarDocUrl != null) 'Aadhaar Verified',
+      if (candidate.isPoliceVerified) 'Police Verified',
+      if (candidate.isMedicalCleared) 'Medical Cleared',
+    ].join(' • ');
+
+    final workTypeStr = candidate.preferredWorkType ?? candidate.category;
+    final languagesStr =
+        candidate.languages.isNotEmpty
+            ? candidate.languages.join(', ')
+            : 'Hindi';
+
+    final summary = '''
+🌟 *MaidMatch Candidate Profile*
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *Name*: ${candidate.fullName} (ID: ${candidate.id})
+💼 *Role / Category*: ${candidate.category}
+⏱️ *Experience*: ${candidate.experienceYears} Years
+🎂 *Age*: ${candidate.age} yrs | 🕊️ *Religion*: ${candidate.religion}
+🗣️ *Languages*: $languagesStr
+💰 *Expected Salary*: ₹${candidate.expectedSalary}/month (${candidate.workingHoursPerDay} hrs/day)
+🛡️ *Verification*: ${verificationStatus.isNotEmpty ? verificationStatus : 'Pending'}
+🎯 *Specialization*: $workTypeStr (Edu: ${candidate.education})
+━━━━━━━━━━━━━━━━━━━━━━
+📞 Contact Sales for immediate placement & trial!
+''';
+
+    Clipboard.setData(ClipboardData(text: summary));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.navyBlue,
+        behavior: SnackBarBehavior.floating,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.gold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '${candidate.fullName}\'s profile copied to clipboard! Ready to share via WhatsApp / SMS.',
+                style: GoogleFonts.poppins(
+                  color: AppColors.white,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }

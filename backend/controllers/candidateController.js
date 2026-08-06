@@ -14,16 +14,16 @@ const getCandidates = async (req, res) => {
     const params = [];
 
     if (status) {
-      whereClause += ' AND status = ?';
+      whereClause += ' AND c.status = ?';
       params.push(status);
     }
     if (category) {
-      whereClause += ' AND category = ?';
+      whereClause += ' AND c.category = ?';
       params.push(category);
     }
     const searchTerm = search || q;
     if (searchTerm) {
-      whereClause += ' AND (full_name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR id LIKE ?)';
+      whereClause += ' AND (c.full_name LIKE ? OR c.phone LIKE ? OR c.alternate_phone LIKE ? OR c.id LIKE ?)';
       const s = `%${searchTerm.trim()}%`;
       params.push(s, s, s, s);
     }
@@ -33,10 +33,10 @@ const getCandidates = async (req, res) => {
       const limitNum = parseInt(limit, 10) || 20;
       const offset = (pageNum - 1) * limitNum;
 
-      const countSql = `SELECT COUNT(*) as total FROM candidates${whereClause}`;
+      const countSql = `SELECT COUNT(*) as total FROM candidates c${whereClause}`;
       const [[{ total }]] = await pool.execute(countSql, params);
 
-      const dataSql = `SELECT * FROM candidates${whereClause} ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+      const dataSql = `SELECT c.*, u.name AS sourced_by_name, u.phone AS sourced_by_phone FROM candidates c LEFT JOIN users u ON c.sourced_by_id = u.id${whereClause} ORDER BY c.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
       const [candidates] = await pool.execute(dataSql, params);
 
       return res.json({
@@ -50,7 +50,10 @@ const getCandidates = async (req, res) => {
       });
     }
 
-    const [candidates] = await pool.execute(`SELECT * FROM candidates${whereClause} ORDER BY created_at DESC`, params);
+    const [candidates] = await pool.execute(
+      `SELECT c.*, u.name AS sourced_by_name, u.phone AS sourced_by_phone FROM candidates c LEFT JOIN users u ON c.sourced_by_id = u.id${whereClause} ORDER BY c.created_at DESC`,
+      params
+    );
     res.json(candidates);
   } catch (err) {
     console.error(err);
@@ -63,7 +66,10 @@ const getCandidates = async (req, res) => {
 // @access  Private
 const getCandidateById = async (req, res) => {
   try {
-    const [candidates] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [req.params.id]);
+    const [candidates] = await pool.execute(
+      'SELECT c.*, u.name AS sourced_by_name, u.phone AS sourced_by_phone FROM candidates c LEFT JOIN users u ON c.sourced_by_id = u.id WHERE c.id = ?',
+      [req.params.id]
+    );
     if (candidates.length === 0) {
       return res.status(404).json({ message: 'Candidate not found' });
     }
@@ -95,6 +101,7 @@ const createCandidate = async (req, res) => {
     const status = req.body.status || 'newlyAdded';
     const isPoliceVerified = req.body.isPoliceVerified || req.body.is_police_verified || false;
     const isMedicalCleared = req.body.isMedicalCleared || req.body.is_medical_cleared || false;
+    const source = req.body.source || 'Direct / Walk-in';
 
     if (!fullName || !phone) {
       return res.status(400).json({ message: 'Name and phone are required' });
@@ -133,13 +140,13 @@ const createCandidate = async (req, res) => {
          age, address, city, state, religion, education, experience_years, languages,
          status, is_police_verified, is_medical_cleared,
          aadhaar_doc_url, pan_doc_url, passport_doc_url, police_verification_doc_url, medical_clearance_doc_url,
-         sourced_by_id, profile_image_url) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         sourced_by_id, profile_image_url, source) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
          age, address, city, state, religion, education, experienceYears, languages,
          status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
          aadhaarDocUrl, panDocUrl, passportDocUrl, policeVerificationDocUrl, medicalClearanceDocUrl,
-         sourcedById, profileImageUrl]
+         sourcedById, profileImageUrl, source]
       );
     } catch (sqlErr) {
       console.warn('Full doc-enabled INSERT failed, trying standard INSERT:', sqlErr.message);
@@ -149,20 +156,20 @@ const createCandidate = async (req, res) => {
           (id, full_name, phone, alternate_phone, category, expected_salary, 
            age, address, city, state, religion, education, experience_years, languages,
            status, is_police_verified, is_medical_cleared,
-           sourced_by_id, profile_image_url) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           sourced_by_id, profile_image_url, source) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
            age, address, city, state, religion, education, experienceYears, languages,
            status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
-           sourcedById, profileImageUrl]
+           sourcedById, profileImageUrl, source]
         );
       } catch (fallbackErr) {
         console.warn('Standard INSERT failed, executing fallback core INSERT:', fallbackErr.message);
         await pool.execute(
           `INSERT INTO candidates 
-          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl]
+          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url, source) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl, source]
         );
       }
     }
@@ -198,14 +205,12 @@ const updateCandidateStatus = async (req, res) => {
     const medical = is_medical_cleared !== undefined ? is_medical_cleared : candidate.is_medical_cleared;
 
     // Pipeline Progression Validation:
-    // 1. Verification -> Medical or Ready to Place: Police verification certificate must be uploaded
     if (candidate.status === 'verificationPending' && (newStatus === 'medicalPending' || newStatus === 'readyToPlace')) {
       if (!hasDocValue(candidate.police_verification_doc_url)) {
         return res.status(400).json({ message: 'Police verification certificate must be uploaded before promoting from verification' });
       }
     }
 
-    // 2. Medical -> Ready to Place: Medical clearance certificate must be uploaded
     if (candidate.status === 'medicalPending' && newStatus === 'readyToPlace') {
       if (!hasDocValue(candidate.medical_clearance_doc_url)) {
         return res.status(400).json({ message: 'Medical clearance certificate must be uploaded before promoting to ready to place' });
@@ -268,21 +273,20 @@ const updateCandidate = async (req, res) => {
     const newMedicalCleared = req.body.is_medical_cleared !== undefined ? (req.body.is_medical_cleared ? 1 : 0) : (req.body.isMedicalCleared !== undefined ? (req.body.isMedicalCleared ? 1 : 0) : candidate.is_medical_cleared);
 
     const newAadhaarDocUrl = req.body.aadhaar_doc_url !== undefined ? req.body.aadhaar_doc_url : (req.body.aadhaarDocUrl !== undefined ? req.body.aadhaarDocUrl : candidate.aadhaar_doc_url);
-    const newPanDocUrl = req.body.pan_doc_url !== undefined ? req.body.pan_doc_url : (req.body.panDocUrl !== undefined ? req.body.panDocUrl : candidate.pan_doc_url);
+    const panDocUrl = req.body.pan_doc_url !== undefined ? req.body.pan_doc_url : (req.body.panDocUrl !== undefined ? req.body.panDocUrl : candidate.pan_doc_url);
     const newPassportDocUrl = req.body.passport_doc_url !== undefined ? req.body.passport_doc_url : (req.body.passportDocUrl !== undefined ? req.body.passportDocUrl : candidate.passport_doc_url);
     const newPoliceDocUrl = req.body.police_verification_doc_url !== undefined ? req.body.police_verification_doc_url : (req.body.policeVerificationDocUrl !== undefined ? req.body.policeVerificationDocUrl : candidate.police_verification_doc_url);
     const newMedicalDocUrl = req.body.medical_clearance_doc_url !== undefined ? req.body.medical_clearance_doc_url : (req.body.medicalClearanceDocUrl !== undefined ? req.body.medicalClearanceDocUrl : candidate.medical_clearance_doc_url);
     const newProfileImageUrl = req.body.photoUrl || req.body.profile_image_url || candidate.profile_image_url;
+    const newSource = req.body.source !== undefined ? req.body.source : (candidate.source || 'Direct / Walk-in');
 
     // Pipeline Progression Validation:
-    // 1. Verification -> Medical or Ready to Place: Police verification certificate must be uploaded
     if (candidate.status === 'verificationPending' && (newStatus === 'medicalPending' || newStatus === 'readyToPlace')) {
       if (!hasDocValue(newPoliceDocUrl)) {
         return res.status(400).json({ message: 'Police verification certificate must be uploaded before promoting from verification' });
       }
     }
 
-    // 2. Medical -> Ready to Place: Medical clearance certificate must be uploaded
     if (candidate.status === 'medicalPending' && newStatus === 'readyToPlace') {
       if (!hasDocValue(newMedicalDocUrl)) {
         return res.status(400).json({ message: 'Medical clearance certificate must be uploaded before promoting to ready to place' });
@@ -302,18 +306,21 @@ const updateCandidate = async (req, res) => {
         age = ?, address = ?, city = ?, state = ?, religion = ?, education = ?, experience_years = ?, languages = ?,
         status = ?, is_police_verified = ?, is_medical_cleared = ?,
         aadhaar_doc_url = ?, pan_doc_url = ?, passport_doc_url = ?, police_verification_doc_url = ?, medical_clearance_doc_url = ?,
-        profile_image_url = ? 
+        profile_image_url = ?, source = ? 
       WHERE id = ?`,
       [
         newName, newPhone, newAlternatePhone, newCategory, newSalary,
         newAge, newAddress, newCity, newState, newReligion, newEducation, newExp, newLanguages,
         newStatus, newPoliceVerified, newMedicalCleared,
-        newAadhaarDocUrl, newPanDocUrl, newPassportDocUrl, newPoliceDocUrl, newMedicalDocUrl,
-        newProfileImageUrl, id
+        newAadhaarDocUrl, panDocUrl, newPassportDocUrl, newPoliceDocUrl, newMedicalDocUrl,
+        newProfileImageUrl, newSource, id
       ]
     );
 
-    const [updated] = await pool.execute('SELECT * FROM candidates WHERE id = ?', [id]);
+    const [updated] = await pool.execute(
+      'SELECT c.*, u.name AS sourced_by_name, u.phone AS sourced_by_phone FROM candidates c LEFT JOIN users u ON c.sourced_by_id = u.id WHERE c.id = ?',
+      [id]
+    );
     res.json(updated[0]);
     
     if (newStatus && newStatus !== candidate.status) {

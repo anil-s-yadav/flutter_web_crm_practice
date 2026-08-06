@@ -216,7 +216,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                                     ),
                                     GridColumn(
                                       columnName: 'sr_no',
-                                      width: 100,
+                                      width: 145,
                                       label: Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,

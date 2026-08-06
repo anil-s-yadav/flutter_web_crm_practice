@@ -121,7 +121,7 @@ class _JobleftCandidatesState extends State<JobleftCandidates> {
                   columns: [
                     GridColumn(
                       columnName: 'sr_no',
-                      columnWidthMode: ColumnWidthMode.auto,
+                      width: 145,
                       label: columnTitle("ID", myColors),
                     ),
                     GridColumn(
