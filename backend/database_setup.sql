@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS candidates (
     languages VARCHAR(255),
     category VARCHAR(100),
     expected_salary VARCHAR(100),
-    status ENUM('newlyAdded', 'verificationPending', 'medicalPending', 'readyToPlace', 'placed', 'blacklisted') DEFAULT 'newlyAdded',
+    status ENUM('newlyAdded', 'verificationPending', 'medicalPending', 'readyToPlace', 'pendingDrop', 'placed', 'blacklisted') DEFAULT 'newlyAdded',
     is_police_verified BOOLEAN DEFAULT FALSE,
     is_medical_cleared BOOLEAN DEFAULT FALSE,
     aadhaar_doc_url TEXT,

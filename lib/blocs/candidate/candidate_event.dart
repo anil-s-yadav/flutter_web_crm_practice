@@ -34,3 +34,12 @@ class UpdateCandidate extends CandidateEvent {
   @override
   List<Object> get props => [candidate];
 }
+
+class UpdateCandidateLocally extends CandidateEvent {
+  final CandidateModel candidate;
+
+  const UpdateCandidateLocally(this.candidate);
+
+  @override
+  List<Object> get props => [candidate];
+}

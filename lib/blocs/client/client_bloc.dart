@@ -10,6 +10,7 @@ class ClientBloc extends Bloc<ClientEvent, ClientState> {
     on<LoadClients>(_onLoadClients);
     on<CreateClient>(_onCreateClient);
     on<UpdateClient>(_onUpdateClient);
+    on<UpdateClientLocally>(_onUpdateClientLocally);
   }
 
   Future<void> _onLoadClients(
@@ -48,6 +49,19 @@ class ClientBloc extends Bloc<ClientEvent, ClientState> {
       add(const LoadClients());
     } catch (e) {
       emit(ClientError(message: e.toString()));
+    }
+  }
+
+  void _onUpdateClientLocally(
+    UpdateClientLocally event,
+    Emitter<ClientState> emit,
+  ) {
+    if (state is ClientLoaded) {
+      final currentState = state as ClientLoaded;
+      final updatedClients = currentState.clients.map((c) {
+        return c.id == event.client.id ? event.client : c;
+      }).toList();
+      emit(ClientLoaded(clients: updatedClients));
     }
   }
 }

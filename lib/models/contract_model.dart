@@ -116,37 +116,44 @@ class ContractModel {
   }
 
   factory ContractModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
     return ContractModel(
       id: json['id'] as String,
-      clientId: json['clientId'] as String,
-      candidateId: json['candidateId'] as String,
-      clientName: json['clientName'] as String,
-      candidateName: json['candidateName'] as String,
-      placementDate: DateTime.parse(json['placementDate'] as String),
-      guaranteeEndDate: DateTime.parse(json['guaranteeEndDate'] as String),
-      serviceFee: (json['serviceFee'] as num).toDouble(),
-      amountPaid: (json['amountPaid'] as num).toDouble(),
-      balanceAmount: (json['balanceAmount'] as num).toDouble(),
+      clientId: (json['clientId'] ?? json['client_id'] ?? '').toString(),
+      candidateId: (json['candidateId'] ?? json['candidate_id'] ?? '').toString(),
+      clientName: (json['clientName'] ?? json['client_name'] ?? 'Unknown Client').toString(),
+      candidateName: (json['candidateName'] ?? json['candidate_name'] ?? 'Unknown Candidate').toString(),
+      placementDate: DateTime.parse((json['placementDate'] ?? json['start_date'] ?? DateTime.now().toIso8601String()).toString()),
+      guaranteeEndDate: DateTime.parse((json['guaranteeEndDate'] ?? json['guarantee_end_date'] ?? DateTime.now().toIso8601String()).toString()),
+      serviceFee: parseDouble(json['serviceFee'] ?? json['total_fee']),
+      amountPaid: parseDouble(json['amountPaid'] ?? json['amount_paid']),
+      balanceAmount: parseDouble(json['balanceAmount'] ?? json['balance_amount']),
       paymentStatus: PaymentStatusExtension.fromString(
-        json['paymentStatus'] as String,
+        (json['paymentStatus'] ?? json['payment_status'] ?? 'pending').toString(),
       ),
       contractStatus: ContractStatusExtension.fromString(
-        json['contractStatus'] as String,
+        (json['contractStatus'] ?? json['status'] ?? 'pending').toString(),
       ),
-      isReplacementUsed: (json['isReplacementUsed'] as bool?) ?? false,
+      isReplacementUsed: (json['isReplacementUsed'] ?? json['is_replacement_used'] ?? false) == true || json['is_replacement_used'] == 1,
       replacementDate:
-          json['replacementDate'] != null
-              ? DateTime.parse(json['replacementDate'] as String)
+          (json['replacementDate'] ?? json['replacement_date']) != null
+              ? DateTime.parse((json['replacementDate'] ?? json['replacement_date']).toString())
               : null,
-      replacementCandidateId: json['replacementCandidateId'] as String?,
+      replacementCandidateId: (json['replacementCandidateId'] ?? json['replacement_candidate_id'])?.toString(),
       renewedOn:
-          json['renewedOn'] != null
-              ? DateTime.parse(json['renewedOn'] as String)
+          (json['renewedOn'] ?? json['renewed_on']) != null
+              ? DateTime.parse((json['renewedOn'] ?? json['renewed_on']).toString())
               : null,
-      isRenewal: (json['isRenewal'] as bool?) ?? false,
-      replacementsUsed: (json['replacementsUsed'] as int?) ?? 0,
-      createdBy: json['createdBy'] as String,
-      remarks: json['remarks'] as String?,
+      isRenewal: (json['isRenewal'] ?? json['is_renewal'] ?? false) == true || json['is_renewal'] == 1,
+      replacementsUsed: ((json['replacementsUsed'] ?? json['replacements_used'] ?? 0) as num).toInt(),
+      createdBy: (json['createdBy'] ?? json['created_by'] ?? 'System').toString(),
+      remarks: (json['remarks'] ?? json['notes'])?.toString(),
     );
   }
 
@@ -154,12 +161,18 @@ class ContractModel {
     return {
       'id': id,
       'clientId': clientId,
+      'client_id': clientId,
       'candidateId': candidateId,
+      'candidate_id': candidateId,
       'clientName': clientName,
       'candidateName': candidateName,
       'placementDate': placementDate.toIso8601String(),
+      'start_date': placementDate.toIso8601String(),
       'guaranteeEndDate': guaranteeEndDate.toIso8601String(),
+      'guarantee_end_date': guaranteeEndDate.toIso8601String(),
+      'contract_end_date': contractExpiryDate.toIso8601String(),
       'serviceFee': serviceFee,
+      'total_fee': serviceFee,
       'amountPaid': amountPaid,
       'balanceAmount': balanceAmount,
       'paymentStatus': paymentStatus.name,

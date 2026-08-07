@@ -33,5 +33,14 @@ class UpdateClient extends ClientEvent {
   const UpdateClient(this.client, {this.reason});
 
   @override
-  List<Object> get props => reason != null ? [client, reason!] : [client];
+  List<Object> get props => [client, if (reason != null) reason!];
+}
+
+class UpdateClientLocally extends ClientEvent {
+  final ClientModel client;
+
+  const UpdateClientLocally(this.client);
+
+  @override
+  List<Object> get props => [client];
 }

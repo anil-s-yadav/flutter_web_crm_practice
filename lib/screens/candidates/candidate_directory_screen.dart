@@ -451,7 +451,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             case CandidateDirectoryType.placed:
               displayCandidates =
                   baseCandidates
-                      .where((m) => m.status == CandidateStatus.Placed)
+                      .where((m) => m.status == CandidateStatus.placed)
                       .toList();
               break;
             case CandidateDirectoryType.blacklisted:
@@ -1201,7 +1201,9 @@ class _CandidateGridView extends StatelessWidget {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.Placed:
+      case CandidateStatus.pendingDrop:
+        return AppColors.urgentAmber;
+      case CandidateStatus.placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
@@ -1369,7 +1371,7 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                         );
                       }
                       if (candidate.status != CandidateStatus.blacklisted &&
-                          candidate.status != CandidateStatus.Placed) {
+                          candidate.status != CandidateStatus.placed) {
                         items.add(
                           const PopupMenuItem(
                             value: 'blacklist',

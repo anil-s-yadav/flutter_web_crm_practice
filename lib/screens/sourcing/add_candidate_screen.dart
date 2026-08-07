@@ -481,10 +481,12 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Required';
-                            if (v.trim().length != 10)
+                            }
+                            if (v.trim().length != 10) {
                               return 'Enter exactly 10 digits';
+                            }
                             return null;
                           },
                         ),

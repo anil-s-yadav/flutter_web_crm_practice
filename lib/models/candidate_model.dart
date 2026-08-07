@@ -5,7 +5,8 @@ enum CandidateStatus {
   verificationPending,
   medicalPending,
   readyToPlace,
-  Placed,
+  pendingDrop,
+  placed,
   renewalPending,
   jobLeft,
   blacklisted,
@@ -22,7 +23,9 @@ extension CandidateStatusExtension on CandidateStatus {
         return 'Medical Pending';
       case CandidateStatus.readyToPlace:
         return 'Ready to Place';
-      case CandidateStatus.Placed:
+      case CandidateStatus.pendingDrop:
+        return 'Pending Drop';
+      case CandidateStatus.placed:
         return 'Placed';
       case CandidateStatus.renewalPending:
         return 'Renewal Pending';

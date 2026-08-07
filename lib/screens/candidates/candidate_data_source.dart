@@ -26,7 +26,7 @@ class CandidateDataSource extends DataGridSource {
   }
 
   String _getMostRelevantDate(CandidateModel candidate) {
-    if (candidate.status == CandidateStatus.Placed &&
+    if (candidate.status == CandidateStatus.placed &&
         candidate.datePlaced != null) {
       return DateFormat('MMM dd, yyyy').format(candidate.datePlaced!);
     } else if (candidate.status == CandidateStatus.readyToPlace &&
@@ -276,7 +276,7 @@ class CandidateDataSource extends DataGridSource {
                     }
 
                     if (candidate.status != CandidateStatus.blacklisted &&
-                        candidate.status != CandidateStatus.Placed) {
+                        candidate.status != CandidateStatus.placed) {
                       items.add(
                         const PopupMenuItem(
                           value: 'blacklist',
@@ -320,7 +320,9 @@ class CandidateDataSource extends DataGridSource {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.Placed:
+      case CandidateStatus.pendingDrop:
+        return AppColors.urgentAmber;
+      case CandidateStatus.placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;

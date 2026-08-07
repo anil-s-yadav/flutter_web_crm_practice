@@ -10,6 +10,7 @@ class CandidateBloc extends Bloc<CandidateEvent, CandidateState> {
     on<LoadCandidates>(_onLoadCandidates);
     on<CreateCandidate>(_onCreateCandidate);
     on<UpdateCandidate>(_onUpdateCandidate);
+    on<UpdateCandidateLocally>(_onUpdateCandidateLocally);
   }
 
   Future<void> _onLoadCandidates(
@@ -48,6 +49,19 @@ class CandidateBloc extends Bloc<CandidateEvent, CandidateState> {
       add(const LoadCandidates());
     } catch (e) {
       emit(CandidateError(message: e.toString()));
+    }
+  }
+
+  void _onUpdateCandidateLocally(
+    UpdateCandidateLocally event,
+    Emitter<CandidateState> emit,
+  ) {
+    if (state is CandidateLoaded) {
+      final currentState = state as CandidateLoaded;
+      final updatedCandidates = currentState.candidates.map((c) {
+        return c.id == event.candidate.id ? event.candidate : c;
+      }).toList();
+      emit(CandidateLoaded(candidates: updatedCandidates));
     }
   }
 }

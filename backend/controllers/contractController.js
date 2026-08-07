@@ -104,9 +104,9 @@ const createContract = async (req, res) => {
         [client_id]
       );
 
-      // 3. Update candidate status to placed
+      // 3. Update candidate status to pendingDrop
       await connection.execute(
-        `UPDATE candidates SET status = 'placed' WHERE id = ?`,
+        `UPDATE candidates SET status = 'pendingDrop' WHERE id = ?`,
         [candidate_id]
       );
 

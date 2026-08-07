@@ -23,6 +23,7 @@ import 'package:practice_app/blocs/contract/contract_bloc.dart';
 import 'package:practice_app/blocs/contract/contract_event.dart';
 import 'package:practice_app/blocs/contract/contract_state.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/utils/pdf_generator.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/blocs/replacement/replacement_bloc.dart';
@@ -273,7 +274,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           if (contract != null && candidate != null) ...[
             _buildActiveContractCard(context, contract, candidate, isDark),
             const SizedBox(height: 16),
-            _buildContractActions(context, contract, isDark),
+            _buildContractActions(context, contract, client, candidate, isDark),
           ] else ...[
             _buildEmptyContractState(context, client, isDark),
           ],
@@ -1646,7 +1647,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 onPressed: () => _showAssignCandidateModal(context, client),
                 icon: const Icon(Icons.manage_search, size: 18),
                 label: Text(
-                  'Browse All Pool (${allCandidates.length})',
+                  'Search & Assign (${matchingCandidates.length})',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -1813,9 +1814,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     _buildBadge('Ready to Place', AppColors.successGreen),
-                    if (candidate.aadhaarDocUrl != null) ...[
+                    if (candidate.isPoliceVerified) ...[
                       const SizedBox(width: 6),
-                      _buildBadge('Aadhaar ✓', AppColors.standardBlue),
+                      _buildBadge('Police ✓', AppColors.successGreen),
+                    ],
+                    if (candidate.isMedicalCleared) ...[
+                      const SizedBox(width: 6),
+                      _buildBadge('Medical ✓', AppColors.successGreen),
                     ],
                   ],
                 ),
@@ -1962,30 +1967,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     ClientModel client,
     CandidateModel candidate,
   ) {
-    final newContract = ContractModel(
-      id: 'PENDING',
-      clientId: client.id,
-      clientName: client.fullName,
-      candidateId: candidate.id,
-      candidateName: candidate.fullName,
-      placementDate: DateTime.now(),
-      guaranteeEndDate: DateTime.now().add(const Duration(days: 90)),
-      contractStatus: ContractStatus.pending,
-      serviceFee: 15000,
-      amountPaid: 0,
-      balanceAmount: 15000,
-      paymentStatus: PaymentStatus.pending,
-      replacementsUsed: 0,
-      createdBy: 'System',
-    );
-    context.read<ContractBloc>().add(CreateContract(newContract));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Candidate ${candidate.fullName} assigned! Pending Contract Generated.',
-        ),
-        backgroundColor: AppColors.successGreen,
+    showDialog(
+      context: context,
+      builder: (ctx) => _ContractFormDialog(
+        client: client,
+        candidate: candidate,
       ),
     );
   }
@@ -2000,6 +1986,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   Widget _buildContractActions(
     BuildContext context,
     ContractModel contract,
+    ClientModel client,
+    CandidateModel candidate,
     bool isDark,
   ) {
     final isPending = contract.contractStatus == ContractStatus.pending;
@@ -2018,6 +2006,18 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         spacing: 12,
         runSpacing: 12,
         children: [
+          _actionButton(
+            'Print / Download Contract',
+            Icons.print,
+            AppColors.navyBlue,
+            isDark,
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Generating contract PDF...')),
+              );
+              PdfGenerator.generateAndPrintContract(contract, client, candidate);
+            },
+          ),
           if (isPending) ...[
             _actionButton(
               'Mark Drop Complete & Paid',
@@ -3007,34 +3007,11 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
                     height: 28,
                     child: ElevatedButton(
                       onPressed: () {
-                        final newContract = ContractModel(
-                          id: 'PENDING',
-                          clientId: widget.client.id,
-                          clientName: widget.client.fullName,
-                          candidateId: candidate.id,
-                          candidateName: candidate.fullName,
-                          placementDate: DateTime.now(),
-                          guaranteeEndDate: DateTime.now().add(
-                            const Duration(days: 90),
-                          ),
-                          contractStatus: ContractStatus.pending,
-                          serviceFee: 15000,
-                          amountPaid: 0,
-                          balanceAmount: 15000,
-                          paymentStatus: PaymentStatus.pending,
-                          replacementsUsed: 0,
-                          createdBy: 'System',
-                        );
-                        context.read<ContractBloc>().add(
-                          CreateContract(newContract),
-                        );
-
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Candidate assigned! Pending Contract Generated.',
-                            ),
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => _ContractFormDialog(
+                            client: widget.client,
+                            candidate: candidate,
                           ),
                         );
                       },
@@ -3126,6 +3103,259 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
           fontWeight: FontWeight.bold,
           color: color,
         ),
+      ),
+    );
+  }
+}
+
+
+class _ContractFormDialog extends StatefulWidget {
+  final ClientModel client;
+  final CandidateModel candidate;
+
+  const _ContractFormDialog({
+    required this.client,
+    required this.candidate,
+  });
+
+  @override
+  State<_ContractFormDialog> createState() => _ContractFormDialogState();
+}
+
+class _ContractFormDialogState extends State<_ContractFormDialog> {
+  final _salaryController = TextEditingController();
+  final _feeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Parse candidate expected salary to digits
+    final matches = RegExp(r'\d+').allMatches(widget.candidate.expectedSalary.replaceAll(',', ''));
+    String initialSalary = '15000';
+    if (matches.isNotEmpty) {
+      initialSalary = matches.first.group(0) ?? '15000';
+    }
+    _salaryController.text = initialSalary;
+    _feeController.text = initialSalary;
+
+    _salaryController.addListener(() {
+      _feeController.text = _salaryController.text;
+    });
+  }
+
+  @override
+  void dispose() {
+    _salaryController.dispose();
+    _feeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Assign ${widget.candidate.fullName}',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Finalize the contract details to assign this candidate.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark ? AppColors.grey400 : AppColors.grey600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Verification Summary', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.navyBlue)),
+                  const SizedBox(height: 8),
+                  _infoRowDialog('Client:', '${widget.client.fullName} (${widget.client.phone})', isDark),
+                  _infoRowDialog('Service:', '${widget.client.serviceType} - ${widget.client.preferredCandidateCategory}', isDark),
+                  _infoRowDialog('Candidate:', '${widget.candidate.fullName} (${widget.candidate.category})', isDark),
+                  _infoRowDialog('Location:', '${widget.client.locality}, ${widget.client.city}', isDark),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Agreed Salary
+            Text(
+              'Agreed Monthly Salary (₹)',
+              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _salaryController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'e.g. 15000',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Service Fee
+            Text(
+              'Service Fee (₹)',
+              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _feeController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'e.g. 15000',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Guarantee
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.statusInterviewed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_user_outlined, color: AppColors.statusInterviewed, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Standard 6-Month Guarantee applies.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.statusInterviewed,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    final salary = int.tryParse(_salaryController.text) ?? 0;
+                    final fee = int.tryParse(_feeController.text) ?? 0;
+
+                    if (salary <= 0 || fee <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter valid salary and fee')),
+                      );
+                      return;
+                    }
+
+                    final newContract = ContractModel(
+                      id: 'PENDING',
+                      clientId: widget.client.id,
+                      clientName: widget.client.fullName,
+                      candidateId: widget.candidate.id,
+                      candidateName: widget.candidate.fullName,
+                      placementDate: DateTime.now(),
+                      guaranteeEndDate: DateTime.now().add(const Duration(days: 180)),
+                      contractStatus: ContractStatus.pending,
+                      serviceFee: fee.toDouble(),
+                      amountPaid: 0,
+                      balanceAmount: fee.toDouble(),
+                      paymentStatus: PaymentStatus.pending,
+                      replacementsUsed: 0,
+                      createdBy: 'System',
+                    );
+
+                    // Update contract
+                    context.read<ContractBloc>().add(CreateContract(newContract));
+
+                    // Update candidate locally
+                    final updatedCandidate = widget.candidate.copyWith(
+                      status: CandidateStatus.pendingDrop,
+                    );
+                    context.read<CandidateBloc>().add(UpdateCandidateLocally(updatedCandidate));
+
+                    // Update client locally
+                    final updatedClient = widget.client.copyWith(
+                      status: ClientStatus.converted,
+                    );
+                    context.read<ClientBloc>().add(UpdateClientLocally(updatedClient));
+
+                    // Audit log
+                    context.read<AuditLogBloc>().add(
+                          LogAuditEvent(
+                            entityType: 'client',
+                            targetId: widget.client.id,
+                            actionType: ActionType.statusChange.name,
+                            description:
+                                'Assigned ${widget.candidate.fullName} (Contract PENDING). Agreed Salary: ₹$salary, Fee: ₹$fee',
+                          ),
+                        );
+
+                    Navigator.pop(context); // Close the Contract Form
+                    Navigator.pop(context); // Close the Assign Candidate Sheet
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Candidate assigned! Pending Contract Generated.')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyBlue,
+                  ),
+                  child: const Text('Generate Contract'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRowDialog(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(fontSize: 11, color: isDark ? AppColors.grey400 : AppColors.grey600),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: isDark ? AppColors.white : AppColors.navyBlue),
+            ),
+          ),
+        ],
       ),
     );
   }

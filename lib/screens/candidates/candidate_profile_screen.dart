@@ -39,7 +39,9 @@ class CandidateProfileScreen extends StatelessWidget {
         return AppColors.stageMedicalCheck;
       case CandidateStatus.readyToPlace:
         return AppColors.statusVerified;
-      case CandidateStatus.Placed:
+      case CandidateStatus.pendingDrop:
+        return AppColors.urgentAmber;
+      case CandidateStatus.placed:
         return AppColors.statusPlaced;
       case CandidateStatus.blacklisted:
         return AppColors.statusBlacklisted;
@@ -61,15 +63,15 @@ class CandidateProfileScreen extends StatelessWidget {
       case CandidateStatus.medicalPending:
         return 3;
       case CandidateStatus.readyToPlace:
-      case CandidateStatus.Placed:
+      case CandidateStatus.pendingDrop:
         return 4;
+      case CandidateStatus.placed:
+        return 5;
       case CandidateStatus.blacklisted:
         return 0;
       case CandidateStatus.renewalPending:
-        // TODO: Handle this case.
         throw UnimplementedError();
       case CandidateStatus.jobLeft:
-        // TODO: Handle this case.
         throw UnimplementedError();
     }
   }
@@ -106,11 +108,12 @@ class CandidateProfileScreen extends StatelessWidget {
         final candidate = candidates[candidateIndex];
 
         final auditState = context.watch<AuditLogBloc>().state;
-        final relevantLogs = auditState is AuditLogLoaded
-            ? auditState.auditLogs
-                .where((l) => l.targetId == candidate.id)
-                .toList()
-            : <AuditLogModel>[];
+        final relevantLogs =
+            auditState is AuditLogLoaded
+                ? auditState.auditLogs
+                    .where((l) => l.targetId == candidate.id)
+                    .toList()
+                : <AuditLogModel>[];
 
         return Scaffold(
           body: SingleChildScrollView(
@@ -158,7 +161,7 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildTopActions(context, candidate),
         const SizedBox(height: 24),
-        if (candidate.status == CandidateStatus.Placed)
+        if (candidate.status == CandidateStatus.placed)
           _buildplacedDashboard(context, candidate, isDark)
         else
           _buildPipelineIndicator(candidate, isDark),
@@ -198,7 +201,7 @@ class CandidateProfileScreen extends StatelessWidget {
         const SizedBox(height: 16),
         _buildTopActions(context, candidate),
         const SizedBox(height: 24),
-        if (candidate.status == CandidateStatus.Placed)
+        if (candidate.status == CandidateStatus.placed)
           _buildplacedDashboard(context, candidate, isDark)
         else
           _buildPipelineIndicator(candidate, isDark),
@@ -260,7 +263,7 @@ class CandidateProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (candidate.status == CandidateStatus.Placed)
+              if (candidate.status == CandidateStatus.placed)
                 _buildplacedDashboard(context, candidate, isDark)
               else
                 _buildPipelineIndicator(candidate, isDark),
@@ -352,7 +355,9 @@ class CandidateProfileScreen extends StatelessWidget {
               backgroundColor: AppColors.white,
               foregroundColor: AppColors.navyBlue,
               elevation: 0,
-              side: BorderSide(color: AppColors.navyBlue.withValues(alpha: 0.2)),
+              side: BorderSide(
+                color: AppColors.navyBlue.withValues(alpha: 0.2),
+              ),
             ),
           ),
         if (candidate.status == CandidateStatus.verificationPending)
@@ -369,10 +374,12 @@ class CandidateProfileScreen extends StatelessWidget {
               backgroundColor: AppColors.white,
               foregroundColor: AppColors.urgentAmber,
               elevation: 0,
-              side: BorderSide(color: AppColors.urgentAmber.withValues(alpha: 0.4)),
+              side: BorderSide(
+                color: AppColors.urgentAmber.withValues(alpha: 0.4),
+              ),
             ),
           ),
-        if (candidate.status != CandidateStatus.Placed &&
+        if (candidate.status != CandidateStatus.placed &&
             candidate.status != CandidateStatus.blacklisted &&
             candidate.status != CandidateStatus.readyToPlace)
           PopupMenuButton<VoidCallback>(
@@ -433,7 +440,11 @@ class CandidateProfileScreen extends StatelessWidget {
                         ),
                     child: const Row(
                       children: [
-                        Icon(Icons.undo, size: 16, color: AppColors.urgentAmber),
+                        Icon(
+                          Icons.undo,
+                          size: 16,
+                          color: AppColors.urgentAmber,
+                        ),
                         SizedBox(width: 8),
                         Text('Rollback to Newly Added'),
                       ],
@@ -472,7 +483,7 @@ class CandidateProfileScreen extends StatelessWidget {
             },
           ),
         if (candidate.status != CandidateStatus.blacklisted &&
-            candidate.status != CandidateStatus.Placed)
+            candidate.status != CandidateStatus.placed)
           ElevatedButton.icon(
             onPressed: () {
               _showBlacklistDialog(context, candidate);
@@ -1028,7 +1039,8 @@ class CandidateProfileScreen extends StatelessWidget {
       if (candidate.sourcedById != null && candidate.sourcedById!.isNotEmpty)
         _infoRow(
           'Sourced By',
-          (candidate.sourcedByName != null && candidate.sourcedByName!.isNotEmpty)
+          (candidate.sourcedByName != null &&
+                  candidate.sourcedByName!.isNotEmpty)
               ? '${candidate.sourcedById} (${candidate.sourcedByName})'
               : candidate.sourcedById!,
           isDark,
@@ -1514,7 +1526,8 @@ class CandidateProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            if (!isPromotionOnly && candidate.status != CandidateStatus.blacklisted) ...[
+            if (!isPromotionOnly &&
+                candidate.status != CandidateStatus.blacklisted) ...[
               const SizedBox(width: 6),
               IconButton(
                 icon: const Icon(Icons.refresh, size: 16),
@@ -1526,7 +1539,8 @@ class CandidateProfileScreen extends StatelessWidget {
                     () => _handleUploadDocument(context, candidate, name),
               ),
             ],
-          ] else if (isPromotionOnly || candidate.status == CandidateStatus.blacklisted) ...[
+          ] else if (isPromotionOnly ||
+              candidate.status == CandidateStatus.blacklisted) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
