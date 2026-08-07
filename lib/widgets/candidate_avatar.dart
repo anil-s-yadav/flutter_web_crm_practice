@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:practice_app/theme/app_colors.dart';
 
-class CandidateAvatar extends StatelessWidget {
+class CandidateAvatar extends StatefulWidget {
   final String? photoUrl;
   final Uint8List? photoBytes;
   final String name;
@@ -21,67 +21,98 @@ class CandidateAvatar extends StatelessWidget {
   });
 
   @override
+  State<CandidateAvatar> createState() => _CandidateAvatarState();
+}
+
+class _CandidateAvatarState extends State<CandidateAvatar> {
+  Uint8List? _decodedBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _decodeImageIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant CandidateAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photoUrl != widget.photoUrl ||
+        oldWidget.photoBytes != widget.photoBytes) {
+      _decodeImageIfNeeded();
+    }
+  }
+
+  void _decodeImageIfNeeded() {
+    _decodedBytes = null;
+    if (widget.photoBytes != null && widget.photoBytes!.isNotEmpty) {
+      _decodedBytes = widget.photoBytes;
+    } else if (widget.photoUrl != null && widget.photoUrl!.trim().isNotEmpty) {
+      final url = widget.photoUrl!.trim();
+      if (url.startsWith('data:image/')) {
+        try {
+          final base64Str = url.split(',').last;
+          _decodedBytes = base64Decode(base64Str);
+        } catch (_) {
+          _decodedBytes = null;
+        }
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final initials = name.trim().isNotEmpty
-        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+    final initials = widget.name.trim().isNotEmpty
+        ? widget.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : 'C';
 
     Widget? imageContent;
 
-    if (photoBytes != null && photoBytes!.isNotEmpty) {
+    if (_decodedBytes != null && _decodedBytes!.isNotEmpty) {
       imageContent = Image.memory(
-        photoBytes!,
-        width: radius * 2,
-        height: radius * 2,
+        _decodedBytes!,
+        width: widget.radius * 2,
+        height: widget.radius * 2,
         fit: BoxFit.cover,
+        cacheWidth: (widget.radius * 2 * 2).toInt(), // 2x for retina
+        cacheHeight: (widget.radius * 2 * 2).toInt(),
         errorBuilder: (ctx, err, stack) => _buildInitials(isDark, initials),
       );
-    } else if (photoUrl != null && photoUrl!.trim().isNotEmpty) {
-      final url = photoUrl!.trim();
-      if (url.startsWith('data:image/')) {
-        try {
-          final base64Str = url.split(',').last;
-          final bytes = base64Decode(base64Str);
-          imageContent = Image.memory(
-            bytes,
-            width: radius * 2,
-            height: radius * 2,
-            fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) => _buildInitials(isDark, initials),
-          );
-        } catch (_) {
-          imageContent = _buildInitials(isDark, initials);
-        }
-      } else if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/uploads/')) {
+    } else if (widget.photoUrl != null && widget.photoUrl!.trim().isNotEmpty) {
+      final url = widget.photoUrl!.trim();
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/uploads/')) {
         final fullUrl = url.startsWith('/uploads/')
             ? 'http://localhost:5000$url'
             : url;
         imageContent = Image.network(
           fullUrl,
-          width: radius * 2,
-          height: radius * 2,
+          width: widget.radius * 2,
+          height: widget.radius * 2,
           fit: BoxFit.cover,
+          cacheWidth: (widget.radius * 2 * 2).toInt(),
+          cacheHeight: (widget.radius * 2 * 2).toInt(),
           errorBuilder: (ctx, err, stack) => _buildInitials(isDark, initials),
         );
       } else if (url.startsWith('assets/') || url.startsWith('lib/assets/')) {
         imageContent = Image.asset(
           url,
-          width: radius * 2,
-          height: radius * 2,
+          width: widget.radius * 2,
+          height: widget.radius * 2,
           fit: BoxFit.cover,
+          cacheWidth: (widget.radius * 2 * 2).toInt(),
+          cacheHeight: (widget.radius * 2 * 2).toInt(),
           errorBuilder: (ctx, err, stack) => _buildInitials(isDark, initials),
         );
       }
     }
 
-    final bg = backgroundColor ?? AppColors.gold.withValues(alpha: 0.15);
+    final bg = widget.backgroundColor ?? AppColors.gold.withValues(alpha: 0.15);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(widget.radius),
       child: Container(
-        width: radius * 2,
-        height: radius * 2,
+        width: widget.radius * 2,
+        height: widget.radius * 2,
         decoration: BoxDecoration(
           color: bg,
           shape: BoxShape.circle,
@@ -96,7 +127,7 @@ class CandidateAvatar extends StatelessWidget {
       child: Text(
         initials,
         style: GoogleFonts.poppins(
-          fontSize: radius * 0.7,
+          fontSize: widget.radius * 0.7,
           fontWeight: FontWeight.bold,
           color: isDark ? AppColors.gold : AppColors.navyBlue,
         ),

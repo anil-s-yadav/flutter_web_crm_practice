@@ -31,9 +31,13 @@ class ContractBloc extends Bloc<ContractEvent, ContractState> {
     Emitter<ContractState> emit,
   ) async {
     try {
-      await contractRepository.createContract(event.contract);
-      // Reload contracts after creating
-      add(const LoadContracts());
+      final created = await contractRepository.createContract(event.contract);
+      if (state is ContractLoaded) {
+        final current = (state as ContractLoaded).contracts;
+        emit(ContractLoaded(contracts: [created, ...current]));
+      } else {
+        add(const LoadContracts());
+      }
     } catch (e) {
       emit(ContractError(message: e.toString()));
     }
@@ -44,9 +48,14 @@ class ContractBloc extends Bloc<ContractEvent, ContractState> {
     Emitter<ContractState> emit,
   ) async {
     try {
-      await contractRepository.updateContract(event.contract);
-      // Reload contracts after updating
-      add(const LoadContracts());
+      final updated = await contractRepository.updateContract(event.contract);
+      if (state is ContractLoaded) {
+        final current = (state as ContractLoaded).contracts;
+        final newList = current.map((c) => c.id == updated.id ? updated : c).toList();
+        emit(ContractLoaded(contracts: newList));
+      } else {
+        add(const LoadContracts());
+      }
     } catch (e) {
       emit(ContractError(message: e.toString()));
     }
@@ -57,13 +66,17 @@ class ContractBloc extends Bloc<ContractEvent, ContractState> {
     Emitter<ContractState> emit,
   ) async {
     try {
-      await contractRepository.renewContract(
+      final renewed = await contractRepository.renewContract(
         event.contractId,
         newCandidateId: event.newCandidateId,
         newCandidateName: event.newCandidateName,
       );
-      // Reload contracts after renewing
-      add(const LoadContracts());
+      if (state is ContractLoaded) {
+        final current = (state as ContractLoaded).contracts;
+        emit(ContractLoaded(contracts: [renewed, ...current]));
+      } else {
+        add(const LoadContracts());
+      }
     } catch (e) {
       emit(ContractError(message: e.toString()));
     }

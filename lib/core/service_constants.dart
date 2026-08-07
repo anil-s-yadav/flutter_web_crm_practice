@@ -64,6 +64,12 @@ class ServiceConstants {
     'Specific Date',
   ];
 
+  static const List<String> contractDurations = [
+    '3 Months',
+    '6 Months',
+    '1 Year',
+  ];
+
   static const List<String> commonLanguages = [
     'Hindi',
     'Marathi',

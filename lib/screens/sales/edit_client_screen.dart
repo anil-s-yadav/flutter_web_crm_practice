@@ -55,6 +55,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
   List<String> _preferredLanguages = ['Hindi'];
   String _religionPreference = ServiceConstants.religionPreferences.first;
   String _expectedJoining = ServiceConstants.expectedJoiningOptions.first;
+  String _contractDuration = ServiceConstants.contractDurations.last;
   String _remarks = '';
 
   final List<String> _houseTypes = [
@@ -101,6 +102,7 @@ class _EditClientScreenState extends State<EditClientScreen> {
           _preferredLanguages = found.preferredLanguages.isNotEmpty ? List<String>.from(found.preferredLanguages) : ['Hindi'];
           _religionPreference = found.religionPreference.isNotEmpty ? found.religionPreference : ServiceConstants.religionPreferences.first;
           _expectedJoining = found.expectedJoining.isNotEmpty ? found.expectedJoining : ServiceConstants.expectedJoiningOptions.first;
+          _contractDuration = found.contractDuration.isNotEmpty ? found.contractDuration : ServiceConstants.contractDurations.last;
           _remarks = found.remarks ?? '';
           _isLoading = false;
         });
@@ -136,9 +138,10 @@ class _EditClientScreenState extends State<EditClientScreen> {
         budgetRange: _budgetRange,
         foodPreference: _foodPreference,
         genderPreference: _genderPreference,
-        preferredLanguages: _preferredLanguages,
+        preferredLanguages: _preferredLanguages.isEmpty ? const ['Hindi'] : _preferredLanguages,
         religionPreference: _religionPreference,
         expectedJoining: _expectedJoining,
+        contractDuration: _contractDuration,
         remarks: _remarks.isEmpty ? null : _remarks,
       );
 
@@ -257,8 +260,11 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Lead Source',
                               isDark: isDark,
                               value: _source,
-                              items: ServiceConstants.leadSources,
-                              onChanged: (val) => setState(() => _source = val ?? ServiceConstants.leadSources.first),
+                              items: ServiceConstants.leadSources.contains(_source)
+                                  ? ServiceConstants.leadSources
+                                  : [...ServiceConstants.leadSources, _source],
+                              onChanged:
+                                  (val) => setState(() => _source = val ?? ServiceConstants.leadSources.first),
                             ),
                           ),
                         ],
@@ -433,7 +439,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Service Type',
                               isDark: isDark,
                               value: _serviceType,
-                              items: ServiceConstants.serviceTypes,
+                              items: ServiceConstants.serviceTypes.contains(_serviceType)
+                                  ? ServiceConstants.serviceTypes
+                                  : [...ServiceConstants.serviceTypes, _serviceType],
                               onChanged:
                                   (val) => setState(() => _serviceType = val ?? ServiceConstants.serviceTypes.first),
                             ),
@@ -448,7 +456,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Work Timings',
                               isDark: isDark,
                               value: _workTimings,
-                              items: ServiceConstants.workTimingPresets,
+                              items: ServiceConstants.workTimingPresets.contains(_workTimings)
+                                  ? ServiceConstants.workTimingPresets
+                                  : [...ServiceConstants.workTimingPresets, _workTimings],
                               onChanged:
                                   (val) => setState(() => _workTimings = val ?? ServiceConstants.workTimingPresets.first),
                             ),
@@ -473,7 +483,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Food Preference',
                               isDark: isDark,
                               value: _foodPreference,
-                              items: ServiceConstants.foodPreferences,
+                              items: ServiceConstants.foodPreferences.contains(_foodPreference)
+                                  ? ServiceConstants.foodPreferences
+                                  : [...ServiceConstants.foodPreferences, _foodPreference],
                               onChanged:
                                   (val) => setState(() => _foodPreference = val ?? ServiceConstants.foodPreferences.first),
                             ),
@@ -484,7 +496,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Gender Preference',
                               isDark: isDark,
                               value: _genderPreference,
-                              items: ServiceConstants.genderPreferences,
+                              items: ServiceConstants.genderPreferences.contains(_genderPreference)
+                                  ? ServiceConstants.genderPreferences
+                                  : [...ServiceConstants.genderPreferences, _genderPreference],
                               onChanged:
                                   (val) => setState(() => _genderPreference = val ?? ServiceConstants.genderPreferences.first),
                             ),
@@ -531,7 +545,9 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Religion Preference',
                               isDark: isDark,
                               value: _religionPreference,
-                              items: ServiceConstants.religionPreferences,
+                              items: ServiceConstants.religionPreferences.contains(_religionPreference)
+                                  ? ServiceConstants.religionPreferences
+                                  : [...ServiceConstants.religionPreferences, _religionPreference],
                               onChanged:
                                   (val) => setState(() => _religionPreference = val ?? ServiceConstants.religionPreferences.first),
                             ),
@@ -542,11 +558,32 @@ class _EditClientScreenState extends State<EditClientScreen> {
                               label: 'Expected Joining',
                               isDark: isDark,
                               value: _expectedJoining,
-                              items: ServiceConstants.expectedJoiningOptions,
+                              items: ServiceConstants.expectedJoiningOptions.contains(_expectedJoining)
+                                  ? ServiceConstants.expectedJoiningOptions
+                                  : [...ServiceConstants.expectedJoiningOptions, _expectedJoining],
                               onChanged:
                                   (val) => setState(() => _expectedJoining = val ?? ServiceConstants.expectedJoiningOptions.first),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Contract Duration',
+                              isDark: isDark,
+                              value: _contractDuration,
+                              items: ServiceConstants.contractDurations.contains(_contractDuration)
+                                  ? ServiceConstants.contractDurations
+                                  : [...ServiceConstants.contractDurations, _contractDuration],
+                              onChanged:
+                                  (val) => setState(() => _contractDuration = val ?? ServiceConstants.contractDurations.last),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Spacer(),
                         ],
                       ),
                       const SizedBox(height: 16),

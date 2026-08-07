@@ -118,6 +118,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           return true;
         }).toList();
 
+    final isConverted = widget.initialStatus == ClientStatus.converted || _selectedStatus == ClientStatus.converted;
     if (_clientDataSource == null) {
       _clientDataSource = ClientDataSource(
         context: context,
@@ -134,10 +135,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
           context.push(path);
         },
         showStatus: widget.initialStatus == null,
+        isConvertedTab: isConverted,
       );
     } else {
       _clientDataSource!.isDark = isDark;
-      _clientDataSource!.updateData(_filteredClients);
+      _clientDataSource!.updateData(_filteredClients, isConverted: isConverted);
     }
   }
 
@@ -405,7 +407,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                           ),
                                           alignment: Alignment.centerLeft,
                                           child: Text(
-                                            'Budget',
+                                            (widget.initialStatus == ClientStatus.converted || _selectedStatus == ClientStatus.converted) ? 'Duration' : 'Budget',
                                             style: _headerStyle(isDark),
                                           ),
                                         ),
@@ -849,6 +851,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
           isDark: isDark,
           routePrefix: routePrefix,
           initialStatusName: widget.initialStatus?.name,
+          isConvertedTab: widget.initialStatus == ClientStatus.converted || _selectedStatus == ClientStatus.converted,
         );
       },
     );
@@ -867,6 +870,7 @@ class _MobileClientCard extends StatefulWidget {
   final bool isDark;
   final String routePrefix;
   final String? initialStatusName;
+  final bool isConvertedTab;
 
   const _MobileClientCard({
     required this.client,
@@ -874,6 +878,7 @@ class _MobileClientCard extends StatefulWidget {
     required this.isDark,
     required this.routePrefix,
     this.initialStatusName,
+    required this.isConvertedTab,
   });
 
   @override
@@ -1079,7 +1084,7 @@ class _MobileClientCardState extends State<_MobileClientCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Budget',
+                            widget.isConvertedTab ? 'Duration' : 'Budget',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color:
@@ -1090,7 +1095,7 @@ class _MobileClientCardState extends State<_MobileClientCard> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            client.budgetRange,
+                            widget.isConvertedTab ? client.contractDuration : client.budgetRange,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,

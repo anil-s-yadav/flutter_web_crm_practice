@@ -44,10 +44,17 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<ClientBloc>().add(LoadClients());
-    context.read<ContractBloc>().add(LoadContracts());
-    context.read<CandidateBloc>().add(LoadCandidates());
-    context.read<AuditLogBloc>().add(const LoadAuditLogs());
+    final clientBloc = context.read<ClientBloc>();
+    final contractBloc = context.read<ContractBloc>();
+    final candidateBloc = context.read<CandidateBloc>();
+    final auditLogBloc = context.read<AuditLogBloc>();
+    if (clientBloc.state is! ClientLoaded) clientBloc.add(LoadClients());
+    if (contractBloc.state is! ContractLoaded)
+      contractBloc.add(LoadContracts());
+    if (candidateBloc.state is! CandidateLoaded)
+      candidateBloc.add(LoadCandidates());
+    if (auditLogBloc.state is! AuditLogLoaded)
+      auditLogBloc.add(const LoadAuditLogs());
   }
 
   @override
@@ -55,167 +62,194 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
+      buildWhen:
+          (prev, curr) =>
+              prev.runtimeType != curr.runtimeType ||
+              (prev is ClientLoaded &&
+                  curr is ClientLoaded &&
+                  prev.clients != curr.clients),
       builder: (context, clientState) {
         return BlocBuilder<ContractBloc, ContractState>(
+          buildWhen:
+              (prev, curr) =>
+                  prev.runtimeType != curr.runtimeType ||
+                  (prev is ContractLoaded &&
+                      curr is ContractLoaded &&
+                      prev.contracts != curr.contracts),
           builder: (context, contractState) {
             return BlocBuilder<CandidateBloc, CandidateState>(
+              buildWhen:
+                  (prev, curr) =>
+                      prev.runtimeType != curr.runtimeType ||
+                      (prev is CandidateLoaded &&
+                          curr is CandidateLoaded &&
+                          prev.candidates != curr.candidates),
               builder: (context, candidateState) {
                 return BlocBuilder<AuditLogBloc, AuditLogState>(
+                  buildWhen:
+                      (prev, curr) => prev.runtimeType != curr.runtimeType,
                   builder: (context, auditLogState) {
                     if (clientState is ClientLoading ||
                         contractState is ContractLoading ||
                         candidateState is CandidateLoading) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                if (clientState is ClientError) {
-                  return Scaffold(
-                    body: Center(child: Text('Error: ${clientState.message}')),
-                  );
-                }
-                if (contractState is ContractError) {
-                  return Scaffold(
-                    body: Center(
-                      child: Text('Error: ${contractState.message}'),
-                    ),
-                  );
-                }
-                if (candidateState is CandidateError) {
-                  return Scaffold(
-                    body: Center(
-                      child: Text('Error: ${candidateState.message}'),
-                    ),
-                  );
-                }
+                    if (clientState is ClientError) {
+                      return Scaffold(
+                        body: Center(
+                          child: Text('Error: ${clientState.message}'),
+                        ),
+                      );
+                    }
+                    if (contractState is ContractError) {
+                      return Scaffold(
+                        body: Center(
+                          child: Text('Error: ${contractState.message}'),
+                        ),
+                      );
+                    }
+                    if (candidateState is CandidateError) {
+                      return Scaffold(
+                        body: Center(
+                          child: Text('Error: ${candidateState.message}'),
+                        ),
+                      );
+                    }
 
-                if (clientState is ClientLoaded &&
-                    contractState is ContractLoaded &&
-                    candidateState is CandidateLoaded) {
-                  final clientList =
-                      clientState.clients
-                          .where((c) => c.id == widget.clientId)
-                          .toList();
-                  if (clientList.isEmpty) {
-                    return const Scaffold(
-                      body: Center(child: Text('Client not found')),
-                    );
-                  }
-                  final client = clientList.first;
+                    if (clientState is ClientLoaded &&
+                        contractState is ContractLoaded &&
+                        candidateState is CandidateLoaded) {
+                      final clientList =
+                          clientState.clients
+                              .where((c) => c.id == widget.clientId)
+                              .toList();
+                      if (clientList.isEmpty) {
+                        return const Scaffold(
+                          body: Center(child: Text('Client not found')),
+                        );
+                      }
+                      final client = clientList.first;
 
-                  final contractList =
-                      contractState.contracts
-                          .where((c) => c.clientId == client.id)
-                          .toList();
-                  contractList.sort(
-                    (a, b) => b.placementDate.compareTo(a.placementDate),
-                  );
-                  final contract =
-                      contractList.isNotEmpty ? contractList.first : null;
+                      final contractList =
+                          contractState.contracts
+                              .where((c) => c.clientId == client.id)
+                              .toList();
+                      contractList.sort(
+                        (a, b) => b.placementDate.compareTo(a.placementDate),
+                      );
+                      final contract =
+                          contractList.isNotEmpty ? contractList.first : null;
 
-                  final candidateList =
-                      contract != null
-                          ? candidateState.candidates
-                              .where((c) => c.id == contract.candidateId)
-                              .toList()
-                          : [];
-                  final candidate =
-                      candidateList.isNotEmpty ? candidateList.first : null;
+                      final candidateList =
+                          contract != null
+                              ? candidateState.candidates
+                                  .where((c) => c.id == contract.candidateId)
+                                  .toList()
+                              : [];
+                      final candidate =
+                          candidateList.isNotEmpty ? candidateList.first : null;
 
-                  final relevantLogs = auditLogState is AuditLogLoaded
-                      ? auditLogState.auditLogs
-                          .where((l) => l.targetId == client.id)
-                          .toList()
-                      : <AuditLogModel>[];
+                      final relevantLogs =
+                          auditLogState is AuditLogLoaded
+                              ? auditLogState.auditLogs
+                                  .where((l) => l.targetId == client.id)
+                                  .toList()
+                              : <AuditLogModel>[];
 
-                  final tabs = [
-                    'Details',
-                    'Candidates & Contracts',
-                    'Documents',
-                  ];
+                      final tabs = [
+                        'Details',
+                        'Candidates & Contracts',
+                        'Documents',
+                      ];
 
-                  return Scaffold(
-                    body: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          color:
-                              isDark
-                                  ? AppColors.darkSurface
-                                  : AppColors.surfaceLight,
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(tabs.length, (index) {
-                                final isSelected = _activeTabIndex == index;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: ChoiceChip(
-                                    label: Text(
-                                      tabs[index],
-                                      style: GoogleFonts.poppins(
-                                        color:
-                                            isSelected
-                                                ? AppColors.navyBlue
-                                                : (isDark
-                                                    ? AppColors
-                                                        .textSecondaryDark
-                                                    : AppColors
-                                                        .textSecondaryLight),
-                                        fontWeight:
-                                            isSelected
-                                                ? FontWeight.w600
-                                                : FontWeight.normal,
+                      return Scaffold(
+                        body: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              color:
+                                  isDark
+                                      ? AppColors.darkSurface
+                                      : AppColors.surfaceLight,
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: List.generate(tabs.length, (index) {
+                                    final isSelected = _activeTabIndex == index;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 8.0,
                                       ),
-                                    ),
-                                    selected: isSelected,
-                                    selectedColor: AppColors.gold,
-                                    backgroundColor:
-                                        isDark
-                                            ? AppColors.darkSurfaceVariant
-                                            : AppColors.white,
-                                    side: BorderSide.none,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        _activeTabIndex = index;
-                                      });
-                                    },
-                                  ),
-                                );
-                              }),
+                                      child: ChoiceChip(
+                                        label: Text(
+                                          tabs[index],
+                                          style: GoogleFonts.poppins(
+                                            color:
+                                                isSelected
+                                                    ? AppColors.navyBlue
+                                                    : (isDark
+                                                        ? AppColors
+                                                            .textSecondaryDark
+                                                        : AppColors
+                                                            .textSecondaryLight),
+                                            fontWeight:
+                                                isSelected
+                                                    ? FontWeight.w600
+                                                    : FontWeight.normal,
+                                          ),
+                                        ),
+                                        selected: isSelected,
+                                        selectedColor: AppColors.gold,
+                                        backgroundColor:
+                                            isDark
+                                                ? AppColors.darkSurfaceVariant
+                                                : AppColors.white,
+                                        side: BorderSide.none,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        onSelected: (selected) {
+                                          setState(() {
+                                            _activeTabIndex = index;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(8),
-                            child: _buildActiveTabContent(
-                              client,
-                              contract,
-                              candidate,
-                              relevantLogs,
-                              isDark,
-                              context,
+                            Expanded(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(8),
+                                child: _buildActiveTabContent(
+                                  client,
+                                  contract,
+                                  candidate,
+                                  relevantLogs,
+                                  isDark,
+                                  context,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }
+                      );
+                    }
 
-                return const Scaffold(
-                  body: Center(child: Text('Unknown state')),
-                );
+                    return const Scaffold(
+                      body: Center(child: Text('Unknown state')),
+                    );
                   },
                 );
               },
@@ -1093,6 +1127,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           _infoRow('Religion Pref', client.religionPreference, isDark),
         if (client.expectedJoining.isNotEmpty)
           _infoRow('Expected Joining', client.expectedJoining, isDark),
+        if (client.contractDuration.isNotEmpty)
+          _infoRow('Contract Duration', client.contractDuration, isDark),
         _infoRow('Lead Source', client.source, isDark),
         _infoRow(
           'Inquiry Date',
@@ -1109,8 +1145,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 : client.assignedEmployeeId!,
             isDark,
           ),
-        if (client.remarks != null && client.remarks!.isNotEmpty)
-          _infoRow('Remarks', client.remarks!, isDark),
+        // if (client.remarks != null && client.remarks!.isNotEmpty)
+        //   _infoRow('Remarks', client.remarks!, isDark),
       ],
     );
 
@@ -1682,16 +1718,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: matchingCandidates.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final cand = matchingCandidates[index];
-              return _buildCandidateMatchCard(context, client, cand, isDark);
-            },
-          ),
+          ...matchingCandidates.take(10).map((cand) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildCandidateMatchCard(context, client, cand, isDark),
+            );
+          }),
         ] else ...[
           Container(
             width: double.infinity,
@@ -1969,10 +2001,8 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   ) {
     showDialog(
       context: context,
-      builder: (ctx) => _ContractFormDialog(
-        client: client,
-        candidate: candidate,
-      ),
+      builder:
+          (ctx) => _ContractFormDialog(client: client, candidate: candidate),
     );
   }
 
@@ -2015,7 +2045,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Generating contract PDF...')),
               );
-              PdfGenerator.generateAndPrintContract(contract, client, candidate);
+              PdfGenerator.generateAndPrintContract(
+                contract,
+                client,
+                candidate,
+              );
             },
           ),
           if (isPending) ...[
@@ -2229,6 +2263,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     bool isDark,
     VoidCallback onPressed,
   ) {
+    Color effectiveFgColor = color;
+    if (isDark) {
+      if (color == AppColors.navyBlue || color == AppColors.grey600) {
+        effectiveFgColor = Colors.white;
+      }
+    }
+
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 16),
@@ -2237,8 +2278,11 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.1),
-        foregroundColor: color,
+        backgroundColor:
+            (isDark && color == AppColors.navyBlue)
+                ? Colors.white.withValues(alpha: 0.1)
+                : color.withValues(alpha: 0.1),
+        foregroundColor: effectiveFgColor,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2538,15 +2582,36 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            'Candidate: ${c.candidateName}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color:
-                                  isDark
-                                      ? AppColors.grey400
-                                      : AppColors.grey600,
-                            ),
+                          Builder(
+                            builder: (ctx) {
+                              String displayCandidateName = c.candidateName;
+                              if (displayCandidateName == 'Unknown Candidate') {
+                                final candidateState =
+                                    ctx.read<CandidateBloc>().state;
+                                if (candidateState is CandidateLoaded) {
+                                  final matchingCand =
+                                      candidateState.candidates
+                                          .where(
+                                            (cand) => cand.id == c.candidateId,
+                                          )
+                                          .firstOrNull;
+                                  if (matchingCand != null) {
+                                    displayCandidateName =
+                                        matchingCand.fullName;
+                                  }
+                                }
+                              }
+                              return Text(
+                                'Candidate: $displayCandidateName',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color:
+                                      isDark
+                                          ? AppColors.grey400
+                                          : AppColors.grey600,
+                                ),
+                              );
+                            },
                           ),
                           Text(
                             'Placed: ${dateFormat.format(c.placementDate)} • Warranty: ${c.replacementsUsed}/3',
@@ -3009,10 +3074,11 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
                       onPressed: () {
                         showDialog(
                           context: context,
-                          builder: (ctx) => _ContractFormDialog(
-                            client: widget.client,
-                            candidate: candidate,
-                          ),
+                          builder:
+                              (ctx) => _ContractFormDialog(
+                                client: widget.client,
+                                candidate: candidate,
+                              ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -3108,15 +3174,11 @@ class _AssignCandidateSheetState extends State<_AssignCandidateSheet> {
   }
 }
 
-
 class _ContractFormDialog extends StatefulWidget {
   final ClientModel client;
   final CandidateModel candidate;
 
-  const _ContractFormDialog({
-    required this.client,
-    required this.candidate,
-  });
+  const _ContractFormDialog({required this.client, required this.candidate});
 
   @override
   State<_ContractFormDialog> createState() => _ContractFormDialogState();
@@ -3130,7 +3192,9 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
   void initState() {
     super.initState();
     // Parse candidate expected salary to digits
-    final matches = RegExp(r'\d+').allMatches(widget.candidate.expectedSalary.replaceAll(',', ''));
+    final matches = RegExp(
+      r'\d+',
+    ).allMatches(widget.candidate.expectedSalary.replaceAll(',', ''));
     String initialSalary = '15000';
     if (matches.isNotEmpty) {
       initialSalary = matches.first.group(0) ?? '15000';
@@ -3140,6 +3204,9 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
 
     _salaryController.addListener(() {
       _feeController.text = _salaryController.text;
+    });
+    _feeController.addListener(() {
+      setState(() {});
     });
   }
 
@@ -3153,6 +3220,17 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final fee = double.tryParse(_feeController.text) ?? 0.0;
+    final gst = fee * 0.18;
+    final totalAmount = fee + gst;
+
+    String guaranteeText = 'Standard 6-Month Guarantee applies.';
+    if (widget.client.contractDuration == '3 Months') {
+      guaranteeText = 'Standard 45-Day Guarantee applies.';
+    } else if (widget.client.contractDuration == '6 Months') {
+      guaranteeText = 'Standard 3-Month Guarantee applies.';
+    }
 
     return Dialog(
       backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
@@ -3185,40 +3263,88 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: isDark ? AppColors.dividerDark : AppColors.grey200),
+                border: Border.all(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Verification Summary', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? AppColors.white : AppColors.navyBlue)),
+                  Text(
+                    'Verification Summary',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.navyBlue,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  _infoRowDialog('Client:', '${widget.client.fullName} (${widget.client.phone})', isDark),
-                  _infoRowDialog('Service:', '${widget.client.serviceType} - ${widget.client.preferredCandidateCategory}', isDark),
-                  _infoRowDialog('Candidate:', '${widget.candidate.fullName} (${widget.candidate.category})', isDark),
-                  _infoRowDialog('Location:', '${widget.client.locality}, ${widget.client.city}', isDark),
+                  _infoRowDialog(
+                    'Client:',
+                    '${widget.client.fullName} (${widget.client.phone})',
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Duration:',
+                    widget.client.contractDuration,
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Service:',
+                    '${widget.client.serviceType} - ${widget.client.preferredCandidateCategory}',
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Candidate:',
+                    '${widget.candidate.fullName} (${widget.candidate.category})',
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Experience:',
+                    '${widget.candidate.experienceYears} Years',
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Verification:',
+                    'Police: ${widget.candidate.isPoliceVerified ? 'Yes' : 'No'} | Medical: ${widget.candidate.isMedicalCleared ? 'Yes' : 'No'}',
+                    isDark,
+                  ),
+                  _infoRowDialog(
+                    'Location:',
+                    '${widget.client.locality}, ${widget.client.city}',
+                    isDark,
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             // Agreed Salary
-            Text(
-              'Agreed Monthly Salary (₹)',
-              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _salaryController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'e.g. 15000',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-            const SizedBox(height: 16),
+            // Text(
+            //   'Agreed Monthly Salary (₹)',
+            //   style: GoogleFonts.poppins(
+            //     fontSize: 12,
+            //     fontWeight: FontWeight.w600,
+            //   ),
+            // ),
+            // const SizedBox(height: 8),
+            // TextFormField(
+            //   controller: _salaryController,
+            //   keyboardType: TextInputType.number,
+            //   decoration: InputDecoration(
+            //     hintText: 'e.g. 15000',
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 16),
             // Service Fee
             Text(
               'Service Fee (₹)',
-              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             TextFormField(
@@ -3226,7 +3352,65 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 hintText: 'e.g. 15000',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // GST & Total
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '+ 18% GST',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: isDark ? AppColors.grey400 : AppColors.grey600,
+                        ),
+                      ),
+                      Text(
+                        '₹${gst.toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Amount',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '₹${totalAmount.toStringAsFixed(0)}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -3239,10 +3423,14 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_user_outlined, color: AppColors.statusInterviewed, size: 18),
+                  const Icon(
+                    Icons.verified_user_outlined,
+                    color: AppColors.statusInterviewed,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    'Standard 6-Month Guarantee applies.',
+                    guaranteeText,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -3268,9 +3456,31 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
 
                     if (salary <= 0 || fee <= 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter valid salary and fee')),
+                        const SnackBar(
+                          content: Text('Please enter valid salary and fee'),
+                        ),
                       );
                       return;
+                    }
+
+                    final totalAmount = fee + (fee * 0.18);
+
+                    DateTime calcEndDate(String duration) {
+                      final now = DateTime.now();
+                      if (duration == '3 Months')
+                        return DateTime(now.year, now.month + 3, now.day);
+                      if (duration == '6 Months')
+                        return DateTime(now.year, now.month + 6, now.day);
+                      return DateTime(now.year + 1, now.month, now.day);
+                    }
+
+                    DateTime calcGuaranteeEndDate(String duration) {
+                      final now = DateTime.now();
+                      if (duration == '3 Months')
+                        return now.add(const Duration(days: 45));
+                      if (duration == '6 Months')
+                        return now.add(const Duration(days: 90));
+                      return now.add(const Duration(days: 180));
                     }
 
                     final newContract = ContractModel(
@@ -3280,46 +3490,62 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
                       candidateId: widget.candidate.id,
                       candidateName: widget.candidate.fullName,
                       placementDate: DateTime.now(),
-                      guaranteeEndDate: DateTime.now().add(const Duration(days: 180)),
+                      contractEndDate: calcEndDate(
+                        widget.client.contractDuration,
+                      ),
+                      guaranteeEndDate: calcGuaranteeEndDate(
+                        widget.client.contractDuration,
+                      ),
                       contractStatus: ContractStatus.pending,
-                      serviceFee: fee.toDouble(),
+                      serviceFee: totalAmount,
                       amountPaid: 0,
-                      balanceAmount: fee.toDouble(),
+                      balanceAmount: totalAmount,
                       paymentStatus: PaymentStatus.pending,
                       replacementsUsed: 0,
                       createdBy: 'System',
                     );
 
                     // Update contract
-                    context.read<ContractBloc>().add(CreateContract(newContract));
+                    context.read<ContractBloc>().add(
+                      CreateContract(newContract),
+                    );
 
                     // Update candidate locally
                     final updatedCandidate = widget.candidate.copyWith(
                       status: CandidateStatus.pendingDrop,
+                      expectedSalary: '₹$salary',
                     );
-                    context.read<CandidateBloc>().add(UpdateCandidateLocally(updatedCandidate));
+                    context.read<CandidateBloc>().add(
+                      UpdateCandidateLocally(updatedCandidate),
+                    );
 
                     // Update client locally
                     final updatedClient = widget.client.copyWith(
                       status: ClientStatus.converted,
                     );
-                    context.read<ClientBloc>().add(UpdateClientLocally(updatedClient));
+                    context.read<ClientBloc>().add(
+                      UpdateClientLocally(updatedClient),
+                    );
 
                     // Audit log
                     context.read<AuditLogBloc>().add(
-                          LogAuditEvent(
-                            entityType: 'client',
-                            targetId: widget.client.id,
-                            actionType: ActionType.statusChange.name,
-                            description:
-                                'Assigned ${widget.candidate.fullName} (Contract PENDING). Agreed Salary: ₹$salary, Fee: ₹$fee',
-                          ),
-                        );
+                      LogAuditEvent(
+                        entityType: 'client',
+                        targetId: widget.client.id,
+                        actionType: ActionType.statusChange.name,
+                        description:
+                            'Assigned ${widget.candidate.fullName} (Contract PENDING). Agreed Salary: ₹$salary, Fee: ₹$fee',
+                      ),
+                    );
 
                     Navigator.pop(context); // Close the Contract Form
                     Navigator.pop(context); // Close the Assign Candidate Sheet
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Candidate assigned! Pending Contract Generated.')),
+                      const SnackBar(
+                        content: Text(
+                          'Candidate assigned! Pending Contract Generated.',
+                        ),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -3346,13 +3572,20 @@ class _ContractFormDialogState extends State<_ContractFormDialog> {
             width: 80,
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: 11, color: isDark ? AppColors.grey400 : AppColors.grey600),
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                color: isDark ? AppColors.grey400 : AppColors.grey600,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: isDark ? AppColors.white : AppColors.navyBlue),
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
             ),
           ),
         ],

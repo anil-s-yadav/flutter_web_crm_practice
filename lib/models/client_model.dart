@@ -77,6 +77,7 @@ class ClientModel {
   final List<String> preferredLanguages;
   final String religionPreference;
   final String expectedJoining;
+  final String contractDuration;
 
   const ClientModel({
     required this.id,
@@ -111,6 +112,7 @@ class ClientModel {
     this.preferredLanguages = const ['Hindi'],
     this.religionPreference = 'Any / No Preference',
     this.expectedJoining = 'Immediate (Within 1-2 Days)',
+    this.contractDuration = '1 Year',
   });
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
@@ -195,6 +197,7 @@ class ClientModel {
       preferredLanguages: parseLanguages(json['preferredLanguages'] ?? json['preferred_languages']),
       religionPreference: (json['religionPreference'] ?? json['religion_preference'] ?? 'Any / No Preference').toString(),
       expectedJoining: (json['expectedJoining'] ?? json['expected_joining'] ?? 'Immediate (Within 1-2 Days)').toString(),
+      contractDuration: (json['contractDuration'] ?? json['contract_duration'] ?? '1 Year').toString(),
     );
   }
 
@@ -253,6 +256,8 @@ class ClientModel {
       'religion_preference': religionPreference,
       'expectedJoining': expectedJoining,
       'expected_joining': expectedJoining,
+      'contractDuration': contractDuration,
+      'contract_duration': contractDuration,
     };
   }
 
@@ -291,6 +296,7 @@ class ClientModel {
     List<String>? preferredLanguages,
     String? religionPreference,
     String? expectedJoining,
+    String? contractDuration,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -325,6 +331,7 @@ class ClientModel {
       preferredLanguages: preferredLanguages ?? this.preferredLanguages,
       religionPreference: religionPreference ?? this.religionPreference,
       expectedJoining: expectedJoining ?? this.expectedJoining,
+      contractDuration: contractDuration ?? this.contractDuration,
     );
   }
 

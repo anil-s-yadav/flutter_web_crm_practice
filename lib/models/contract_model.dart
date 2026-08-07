@@ -57,6 +57,7 @@ class ContractModel {
   final String clientName;
   final String candidateName;
   final DateTime placementDate;
+  final DateTime contractEndDate;
   final DateTime guaranteeEndDate;
   final double serviceFee;
   final double amountPaid;
@@ -79,6 +80,7 @@ class ContractModel {
     required this.clientName,
     required this.candidateName,
     required this.placementDate,
+    required this.contractEndDate,
     required this.guaranteeEndDate,
     required this.serviceFee,
     required this.amountPaid,
@@ -101,14 +103,10 @@ class ContractModel {
     return guaranteeEndDate.difference(now).inDays;
   }
 
-  DateTime get contractExpiryDate {
-    return DateTime(placementDate.year + 1, placementDate.month, placementDate.day);
-  }
-
   int get daysRemainingInContract {
     final now = DateTime.now();
-    if (now.isAfter(contractExpiryDate)) return 0;
-    return contractExpiryDate.difference(now).inDays;
+    if (now.isAfter(contractEndDate)) return 0;
+    return contractEndDate.difference(now).inDays;
   }
 
   bool get isGuaranteeActive {
@@ -124,12 +122,13 @@ class ContractModel {
     }
 
     return ContractModel(
-      id: json['id'] as String,
+      id: (json['id'] ?? '').toString(),
       clientId: (json['clientId'] ?? json['client_id'] ?? '').toString(),
       candidateId: (json['candidateId'] ?? json['candidate_id'] ?? '').toString(),
       clientName: (json['clientName'] ?? json['client_name'] ?? 'Unknown Client').toString(),
       candidateName: (json['candidateName'] ?? json['candidate_name'] ?? 'Unknown Candidate').toString(),
       placementDate: DateTime.parse((json['placementDate'] ?? json['start_date'] ?? DateTime.now().toIso8601String()).toString()),
+      contractEndDate: DateTime.parse((json['contractEndDate'] ?? json['contract_end_date'] ?? DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day).toIso8601String()).toString()),
       guaranteeEndDate: DateTime.parse((json['guaranteeEndDate'] ?? json['guarantee_end_date'] ?? DateTime.now().toIso8601String()).toString()),
       serviceFee: parseDouble(json['serviceFee'] ?? json['total_fee']),
       amountPaid: parseDouble(json['amountPaid'] ?? json['amount_paid']),
@@ -170,7 +169,8 @@ class ContractModel {
       'start_date': placementDate.toIso8601String(),
       'guaranteeEndDate': guaranteeEndDate.toIso8601String(),
       'guarantee_end_date': guaranteeEndDate.toIso8601String(),
-      'contract_end_date': contractExpiryDate.toIso8601String(),
+      'contractEndDate': contractEndDate.toIso8601String(),
+      'contract_end_date': contractEndDate.toIso8601String(),
       'serviceFee': serviceFee,
       'total_fee': serviceFee,
       'amountPaid': amountPaid,
@@ -197,6 +197,7 @@ class ContractModel {
     String? clientName,
     String? candidateName,
     DateTime? placementDate,
+    DateTime? contractEndDate,
     DateTime? guaranteeEndDate,
     double? serviceFee,
     double? amountPaid,
@@ -219,6 +220,7 @@ class ContractModel {
       clientName: clientName ?? this.clientName,
       candidateName: candidateName ?? this.candidateName,
       placementDate: placementDate ?? this.placementDate,
+      contractEndDate: contractEndDate ?? this.contractEndDate,
       guaranteeEndDate: guaranteeEndDate ?? this.guaranteeEndDate,
       serviceFee: serviceFee ?? this.serviceFee,
       amountPaid: amountPaid ?? this.amountPaid,

@@ -31,9 +31,13 @@ class ClientBloc extends Bloc<ClientEvent, ClientState> {
     Emitter<ClientState> emit,
   ) async {
     try {
-      await clientRepository.createClient(event.client);
-      // Reload clients after creating
-      add(const LoadClients());
+      final created = await clientRepository.createClient(event.client);
+      if (state is ClientLoaded) {
+        final current = (state as ClientLoaded).clients;
+        emit(ClientLoaded(clients: [created, ...current]));
+      } else {
+        add(const LoadClients());
+      }
     } catch (e) {
       emit(ClientError(message: e.toString()));
     }
@@ -44,9 +48,14 @@ class ClientBloc extends Bloc<ClientEvent, ClientState> {
     Emitter<ClientState> emit,
   ) async {
     try {
-      await clientRepository.updateClient(event.client, reason: event.reason);
-      // Reload clients after updating
-      add(const LoadClients());
+      final updated = await clientRepository.updateClient(event.client, reason: event.reason);
+      if (state is ClientLoaded) {
+        final current = (state as ClientLoaded).clients;
+        final newList = current.map((c) => c.id == updated.id ? updated : c).toList();
+        emit(ClientLoaded(clients: newList));
+      } else {
+        add(const LoadClients());
+      }
     } catch (e) {
       emit(ClientError(message: e.toString()));
     }

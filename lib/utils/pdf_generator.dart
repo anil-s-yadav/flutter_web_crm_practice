@@ -62,7 +62,7 @@ class PdfGenerator {
               pw.SizedBox(height: 10),
               pw.Bullet(text: 'Total Service Fee: ${contract.serviceFee}'),
               pw.Bullet(text: 'Guarantee Valid Until: ${dateFormat.format(contract.guaranteeEndDate)}'),
-              pw.Bullet(text: 'Contract Ends On: ${dateFormat.format(contract.contractExpiryDate)}'),
+              pw.Bullet(text: 'Contract Ends On: ${dateFormat.format(contract.contractEndDate)}'),
               pw.SizedBox(height: 40),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,

@@ -3,9 +3,42 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:practice_app/utils/shared_preferences.dart';
 
+class _CacheEntry {
+  final dynamic data;
+  final DateTime timestamp;
+
+  _CacheEntry(this.data, this.timestamp);
+}
+
 class ApiClient {
   // Use 10.0.2.2 for Android Emulator, localhost for Web/Desktop
   static const String baseUrl = 'http://localhost:5000/api';
+
+  static final http.Client _client = http.Client();
+  static final Map<String, _CacheEntry> _cache = {};
+  static const Duration _cacheTtl = Duration(seconds: 30);
+
+  static void invalidateAll() {
+    _cache.clear();
+  }
+
+  static void invalidateCache(String endpoint) {
+    String cleanEndpoint = endpoint;
+    if (cleanEndpoint.startsWith('/api/')) {
+      cleanEndpoint = cleanEndpoint.substring(4);
+    } else if (!cleanEndpoint.startsWith('/')) {
+      cleanEndpoint = '/$cleanEndpoint';
+    }
+    
+    final segments = cleanEndpoint.split('/');
+    String prefix = '';
+    if (segments.length > 1) {
+      prefix = '/${segments[1]}';
+    }
+    
+    final prefixUrl = '$baseUrl$prefix';
+    _cache.removeWhere((key, value) => key.startsWith(prefixUrl));
+  }
 
   static String _buildUrl(String endpoint) {
     String cleanEndpoint = endpoint;
@@ -28,47 +61,66 @@ class ApiClient {
 
   static Future<dynamic> get(String endpoint) async {
     final urlStr = _buildUrl(endpoint);
+    
+    if (_cache.containsKey(urlStr)) {
+      final entry = _cache[urlStr]!;
+      if (DateTime.now().difference(entry.timestamp) < _cacheTtl) {
+        debugPrint('[API Debug] GET (Cached) -> $urlStr');
+        return entry.data;
+      } else {
+        _cache.remove(urlStr);
+      }
+    }
+
     debugPrint('[API Debug] GET -> $urlStr');
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse(urlStr),
       headers: await _getHeaders(),
     );
     debugPrint('[API Debug] GET -> $urlStr (${response.statusCode})');
-    return _handleResponse(response, urlStr);
+    
+    final data = _handleResponse(response, urlStr);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      _cache[urlStr] = _CacheEntry(data, DateTime.now());
+    }
+    return data;
   }
 
   static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     final urlStr = _buildUrl(endpoint);
     debugPrint('[API Debug] POST -> $urlStr');
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse(urlStr),
       headers: await _getHeaders(),
       body: jsonEncode(body),
     );
     debugPrint('[API Debug] POST -> $urlStr (${response.statusCode})');
+    invalidateCache(endpoint);
     return _handleResponse(response, urlStr);
   }
 
   static Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     final urlStr = _buildUrl(endpoint);
     debugPrint('[API Debug] PUT -> $urlStr');
-    final response = await http.put(
+    final response = await _client.put(
       Uri.parse(urlStr),
       headers: await _getHeaders(),
       body: jsonEncode(body),
     );
     debugPrint('[API Debug] PUT -> $urlStr (${response.statusCode})');
+    invalidateCache(endpoint);
     return _handleResponse(response, urlStr);
   }
 
   static Future<dynamic> delete(String endpoint) async {
     final urlStr = _buildUrl(endpoint);
     debugPrint('[API Debug] DELETE -> $urlStr');
-    final response = await http.delete(
+    final response = await _client.delete(
       Uri.parse(urlStr),
       headers: await _getHeaders(),
     );
     debugPrint('[API Debug] DELETE -> $urlStr (${response.statusCode})');
+    invalidateCache(endpoint);
     return _handleResponse(response, urlStr);
   }
 

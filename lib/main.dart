@@ -97,8 +97,7 @@ void main() async {
           BlocProvider(
             create:
                 (context) =>
-                    UserBloc(userRepository: context.read<UserRepository>())
-                      ..add(const LoadUsers()),
+                    UserBloc(userRepository: context.read<UserRepository>()),
           ),
           BlocProvider(
             create:
@@ -144,8 +143,7 @@ void main() async {
           BlocProvider(
             create:
                 (context) =>
-                    AuditLogBloc(auditLogRepository: AuditLogRepository())
-                      ..add(const LoadAuditLogs()),
+                    AuditLogBloc(auditLogRepository: AuditLogRepository()),
           ),
           BlocProvider(
             create:

@@ -13,6 +13,7 @@ class ClientDataSource extends DataGridSource {
   List<ClientModel> _clients = [];
 
   final bool showStatus;
+  bool isConvertedTab;
 
   ClientDataSource({
     required this.context,
@@ -20,6 +21,7 @@ class ClientDataSource extends DataGridSource {
     required List<ClientModel> clients,
     required this.onRowTap,
     this.showStatus = true,
+    this.isConvertedTab = false,
   }) {
     _clients = clients;
     _buildDataGridRows();
@@ -51,7 +53,7 @@ class ClientDataSource extends DataGridSource {
               ),
               DataGridCell<String>(
                 columnName: 'budget',
-                value: client.budgetRange,
+                value: isConvertedTab ? client.contractDuration : client.budgetRange,
               ),
               if (showStatus)
                 DataGridCell<ClientStatus>(
@@ -67,7 +69,8 @@ class ClientDataSource extends DataGridSource {
         }).toList();
   }
 
-  void updateData(List<ClientModel> newClients) {
+  void updateData(List<ClientModel> newClients, {bool? isConverted}) {
+    if (isConverted != null) isConvertedTab = isConverted;
     _clients = newClients;
     _buildDataGridRows();
     notifyListeners();

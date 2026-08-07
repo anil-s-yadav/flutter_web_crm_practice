@@ -31,9 +31,13 @@ class CandidateBloc extends Bloc<CandidateEvent, CandidateState> {
     Emitter<CandidateState> emit,
   ) async {
     try {
-      await candidateRepository.createCandidate(event.candidate);
-      // Reload candidates after creating
-      add(const LoadCandidates());
+      final created = await candidateRepository.createCandidate(event.candidate);
+      if (state is CandidateLoaded) {
+        final current = (state as CandidateLoaded).candidates;
+        emit(CandidateLoaded(candidates: [created, ...current]));
+      } else {
+        add(const LoadCandidates());
+      }
     } catch (e) {
       emit(CandidateError(message: e.toString()));
     }
@@ -44,9 +48,14 @@ class CandidateBloc extends Bloc<CandidateEvent, CandidateState> {
     Emitter<CandidateState> emit,
   ) async {
     try {
-      await candidateRepository.updateCandidate(event.candidate);
-      // Reload candidates after updating
-      add(const LoadCandidates());
+      final updated = await candidateRepository.updateCandidate(event.candidate);
+      if (state is CandidateLoaded) {
+        final current = (state as CandidateLoaded).candidates;
+        final newList = current.map((c) => c.id == updated.id ? updated : c).toList();
+        emit(CandidateLoaded(candidates: newList));
+      } else {
+        add(const LoadCandidates());
+      }
     } catch (e) {
       emit(CandidateError(message: e.toString()));
     }

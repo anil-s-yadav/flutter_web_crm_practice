@@ -46,7 +46,6 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     final isDark = context.themeRef.brightness == Brightness.dark;
     final isMobile = context.media.width < 800;
 
@@ -95,11 +94,27 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                   );
                   final dateFormat = DateFormat('dd MMM yyyy');
 
+                  final actualClientName =
+                      (clientState is ClientLoaded)
+                          ? clientState.clients
+                                  .where((c) => c.id == contract.clientId)
+                                  .firstOrNull
+                                  ?.fullName ??
+                              contract.clientName
+                          : contract.clientName;
+
+                  final actualCandidateName =
+                      (candidateState is CandidateLoaded)
+                          ? candidateState.candidates
+                                  .where((c) => c.id == contract.candidateId)
+                                  .firstOrNull
+                                  ?.fullName ??
+                              contract.candidateName
+                          : contract.candidateName;
+
                   return Scaffold(
                     backgroundColor:
-                        isDark
-                            ? AppColors.darkSurfaceVariant
-                            : AppColors.surfaceLight,
+                        isDark ? AppColors.darkSurface : AppColors.surfaceLight,
                     body: SingleChildScrollView(
                       padding: EdgeInsets.all(isMobile ? 16 : 24),
                       child: Column(
@@ -150,7 +165,12 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                           const SizedBox(height: 16),
 
                           // Header Card
-                          _buildHeaderCard(contract, isDark),
+                          _buildHeaderCard(
+                            contract,
+                            isDark,
+                            actualClientName,
+                            actualCandidateName,
+                          ),
                           const SizedBox(height: 20),
 
                           // Info Grid
@@ -178,12 +198,20 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                               clientContracts,
                               dateFormat,
                               isDark,
+                              candidateState,
                             ),
                           ),
                           const SizedBox(height: 24),
 
                           // Action Buttons
-                          _buildActionButtons(context, contract, context.read<AuthBloc>().state, isDark),
+                          _buildActionButtons(
+                            context,
+                            contract,
+                            context.read<AuthBloc>().state,
+                            isDark,
+                            actualCandidateName,
+                            actualClientName,
+                          ),
                         ],
                       ),
                     ),
@@ -198,11 +226,16 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     );
   }
 
-  Widget _buildHeaderCard(ContractModel contract, bool isDark) {
+  Widget _buildHeaderCard(
+    ContractModel contract,
+    bool isDark,
+    String actualClientName,
+    String actualCandidateName,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? AppColors.dividerDark : AppColors.grey200,
@@ -230,7 +263,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            contract.clientName,
+            actualClientName,
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -239,7 +272,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            contract.candidateName,
+            actualCandidateName,
             style: GoogleFonts.poppins(
               fontSize: 16,
               color: isDark ? AppColors.grey300 : AppColors.grey600,
@@ -259,7 +292,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? AppColors.dividerDark : AppColors.grey200,
@@ -284,7 +317,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
           _buildInfoItem(
             'Contract Expiry',
-            dateFormat.format(contract.contractExpiryDate),
+            dateFormat.format(contract.contractEndDate),
             Icons.event_busy,
             isDark,
           ),
@@ -337,7 +370,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.white,
+        color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? AppColors.dividerDark : AppColors.grey200,
@@ -394,15 +427,25 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     List<ContractModel> clientContracts,
     DateFormat dateFormat,
     bool isDark,
+    CandidateState candidateState,
   ) {
     return Column(
       children:
           clientContracts.map((c) {
+            final actualCandidateName =
+                (candidateState is CandidateLoaded)
+                    ? candidateState.candidates
+                            .where((cand) => cand.id == c.candidateId)
+                            .firstOrNull
+                            ?.fullName ??
+                        c.candidateName
+                    : c.candidateName;
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                color: isDark ? AppColors.darkSurface : AppColors.grey50,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isDark ? AppColors.dividerDark : AppColors.grey200,
@@ -424,7 +467,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          c.candidateName,
+                          actualCandidateName,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -460,13 +503,21 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     ContractModel contract,
     dynamic state,
     bool isDark,
+    String actualCandidateName,
+    String actualClientName,
   ) {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
       children: [
         ElevatedButton.icon(
-          onPressed: () => _handleRenewSameStaff(context, contract, state),
+          onPressed:
+              () => _handleRenewSameStaff(
+                context,
+                contract,
+                state,
+                actualCandidateName,
+              ),
           icon: const Icon(Icons.autorenew),
           label: Text(
             'Renew Same Staff',
@@ -500,8 +551,13 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             onPressed:
                 contract.replacementsUsed >= 3
                     ? null
-                    : () =>
-                        _handleInitiateReplacement(context, contract, state),
+                    : () => _handleInitiateReplacement(
+                      context,
+                      contract,
+                      state,
+                      actualCandidateName,
+                      actualClientName,
+                    ),
             icon: const Icon(Icons.find_replace),
             label: Text(
               'Initiate Replacement',
@@ -535,6 +591,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     BuildContext context,
     ContractModel contract,
     dynamic state,
+    String actualCandidateName,
   ) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -545,7 +602,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             content: Text(
-              'Are you sure you want to renew this contract with ${contract.candidateName}?',
+              'Are you sure you want to renew this contract with $actualCandidateName?',
               style: GoogleFonts.poppins(),
             ),
             actions: [
@@ -608,6 +665,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     BuildContext context,
     ContractModel contract,
     dynamic state,
+    String actualCandidateName,
+    String actualClientName,
   ) async {
     final reasonController = TextEditingController();
     final reason = await showDialog<String>(
@@ -650,13 +709,12 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     if (reason != null && reason.isNotEmpty) {
       final now = DateTime.now();
       final request = ReplacementRequestModel(
-        id: '',
-
+        id: 'REP${DateTime.now().millisecondsSinceEpoch}',
         contractId: contract.id,
         clientId: contract.clientId,
-        clientName: contract.clientName,
+        clientName: actualClientName,
         oldCandidateId: contract.candidateId,
-        oldCandidateName: contract.candidateName,
+        oldCandidateName: actualCandidateName,
         reason: reason,
         requestDate: now,
         status: ReplacementStatus.pending,
@@ -876,8 +934,10 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
       child: Container(
         width: 500,
         padding: const EdgeInsets.all(24),
@@ -990,7 +1050,6 @@ class _DispatchExecutiveSheetState extends State<_DispatchExecutiveSheet> {
 
   void _dispatch() {
     _formKey.currentState!.save();
-
 
     final taskTypeEnum = TaskTypeExtension.fromString(_selectedTaskType);
 

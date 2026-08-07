@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:practice_app/models/contract_model.dart';
+import 'package:practice_app/blocs/client/client_bloc.dart';
+import 'package:practice_app/blocs/client/client_state.dart';
+import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
+import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -33,24 +38,49 @@ class ContractDataSource extends DataGridSource {
 
   String _getDurationText(ContractModel contract) {
     final days =
-        contract.guaranteeEndDate.difference(contract.placementDate).inDays;
-    if (days <= 30) return '1 Month';
-    if (days <= 95) return '3 Months';
-    if (days <= 185) return '6 Months';
+        contract.contractEndDate.difference(contract.placementDate).inDays;
+    if (days <= 100) return '3 Months';
+    if (days <= 200) return '6 Months';
     if (days <= 366) return '1 Year';
     return '${(days / 365).toStringAsFixed(1)} Years';
   }
 
   void _buildDataGridRows() {
+    ClientState? clientState;
+    CandidateState? candidateState;
+    try {
+      clientState = BlocProvider.of<ClientBloc>(context, listen: false).state;
+      candidateState = BlocProvider.of<CandidateBloc>(context, listen: false).state;
+    } catch (_) {}
+
+    final clientsMap = clientState is ClientLoaded
+        ? {for (var c in clientState.clients) c.id: c.fullName}
+        : <String, String>{};
+    final candidatesMap = candidateState is CandidateLoaded
+        ? {for (var c in candidateState.candidates) c.id: c.fullName}
+        : <String, String>{};
+
     _dataGridRows =
         _contracts.map<DataGridRow>((contract) {
+          final resolvedClientName = clientsMap[contract.clientId] ??
+              (contract.clientName != 'Unknown Client' ? contract.clientName : (contract.clientId.isNotEmpty ? contract.clientId : 'N/A'));
+          final resolvedCandidateName = candidatesMap[contract.candidateId] ??
+              (contract.candidateName != 'Unknown Candidate' ? contract.candidateName : (contract.candidateId.isNotEmpty ? contract.candidateId : 'N/A'));
+
           final cells = <DataGridCell>[
             DataGridCell<String>(columnName: 'id', value: contract.id),
             DataGridCell<String>(
               columnName: 'sr_no',
               value: contract.id, // e.g. CTX3001
             ),
-            DataGridCell<ContractModel>(columnName: 'details', value: contract),
+            DataGridCell<String>(
+              columnName: 'client_name',
+              value: resolvedClientName,
+            ),
+            DataGridCell<String>(
+              columnName: 'candidate_name',
+              value: resolvedCandidateName,
+            ),
           ];
 
           if (viewMode == 'renewals') {
@@ -190,7 +220,7 @@ class ContractDataSource extends DataGridSource {
   @override
   DataGridRowAdapter? buildRow(DataGridRow row) {
     final contract =
-        row.getCells().firstWhere((c) => c.columnName == 'details').value
+        row.getCells().firstWhere((c) => c.columnName == 'actions').value
             as ContractModel;
     final isEven = _dataGridRows.indexOf(row) % 2 == 0;
 
@@ -207,40 +237,43 @@ class ContractDataSource extends DataGridSource {
               return const SizedBox.shrink(); // Hidden column
             }
 
-            if (dataGridCell.columnName == 'details') {
+            if (dataGridCell.columnName == 'client_name') {
               return InkWell(
                 onTap: () => onRowTap(contract),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   alignment: Alignment.centerLeft,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Client: ${contract.clientName}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              isDark
-                                  ? AppColors.white
-                                  : AppColors.textPrimaryLight,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Candidate: ${contract.candidateName}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: isDark ? AppColors.grey400 : AppColors.grey600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  child: Text(
+                    dataGridCell.value.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isDark
+                              ? AppColors.white
+                              : AppColors.textPrimaryLight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              );
+            }
+
+            if (dataGridCell.columnName == 'candidate_name') {
+              return InkWell(
+                onTap: () => onRowTap(contract),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    dataGridCell.value.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isDark ? AppColors.grey300 : AppColors.grey700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               );
@@ -318,9 +351,9 @@ class ContractDataSource extends DataGridSource {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      DateFormat('MMM dd, yyyy').format(wContract.contractExpiryDate),
+                      'Expires: ${DateFormat('dd MMM yy').format(wContract.contractEndDate)}',
                       style: GoogleFonts.poppins(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: isDark ? AppColors.white : AppColors.textPrimaryLight,
                       ),
                       maxLines: 1,

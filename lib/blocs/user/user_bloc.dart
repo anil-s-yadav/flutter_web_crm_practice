@@ -30,8 +30,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     Emitter<UserState> emit,
   ) async {
     try {
-      await userRepository.createUser(event.userData);
-      add(const LoadUsers());
+      final created = await userRepository.createUser(event.userData);
+      if (state is UserLoaded) {
+        final current = (state as UserLoaded).users;
+        emit(UserLoaded(users: [created, ...current]));
+      } else {
+        add(const LoadUsers());
+      }
     } catch (e) {
       emit(UserError(message: e.toString()));
     }
@@ -42,8 +47,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     Emitter<UserState> emit,
   ) async {
     try {
-      await userRepository.updateUser(event.id, event.userData);
-      add(const LoadUsers());
+      final updated = await userRepository.updateUser(event.id, event.userData);
+      if (state is UserLoaded) {
+        final current = (state as UserLoaded).users;
+        final newList = current.map((u) => u.id == updated.id ? updated : u).toList();
+        emit(UserLoaded(users: newList));
+      } else {
+        add(const LoadUsers());
+      }
     } catch (e) {
       emit(UserError(message: e.toString()));
     }

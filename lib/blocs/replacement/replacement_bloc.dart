@@ -33,9 +33,13 @@ class ReplacementBloc extends Bloc<ReplacementEvent, ReplacementState> {
     Emitter<ReplacementState> emit,
   ) async {
     try {
-      await replacementRepository.createReplacement(event.replacement);
-      // Reload replacements after creating
-      add(const LoadReplacements());
+      final created = await replacementRepository.createReplacement(event.replacement);
+      if (state is ReplacementLoaded) {
+        final current = (state as ReplacementLoaded).replacements;
+        emit(ReplacementLoaded(replacements: [created, ...current]));
+      } else {
+        add(const LoadReplacements());
+      }
     } catch (e) {
       emit(ReplacementError(message: e.toString()));
     }
@@ -46,9 +50,14 @@ class ReplacementBloc extends Bloc<ReplacementEvent, ReplacementState> {
     Emitter<ReplacementState> emit,
   ) async {
     try {
-      await replacementRepository.updateReplacement(event.replacement);
-      // Reload replacements after updating
-      add(const LoadReplacements());
+      final updated = await replacementRepository.updateReplacement(event.replacement);
+      if (state is ReplacementLoaded) {
+        final current = (state as ReplacementLoaded).replacements;
+        final newList = current.map((r) => r.id == updated.id ? updated : r).toList();
+        emit(ReplacementLoaded(replacements: newList));
+      } else {
+        add(const LoadReplacements());
+      }
     } catch (e) {
       emit(ReplacementError(message: e.toString()));
     }
@@ -59,13 +68,18 @@ class ReplacementBloc extends Bloc<ReplacementEvent, ReplacementState> {
     Emitter<ReplacementState> emit,
   ) async {
     try {
-      await replacementRepository.assignReplacementStaff(
+      final assigned = await replacementRepository.assignReplacementStaff(
         event.requestId,
         event.newCandidateId,
         event.newCandidateName,
       );
-      // Reload replacements after assigning
-      add(const LoadReplacements());
+      if (state is ReplacementLoaded) {
+        final current = (state as ReplacementLoaded).replacements;
+        final newList = current.map((r) => r.id == assigned.id ? assigned : r).toList();
+        emit(ReplacementLoaded(replacements: newList));
+      } else {
+        add(const LoadReplacements());
+      }
     } catch (e) {
       emit(ReplacementError(message: e.toString()));
     }

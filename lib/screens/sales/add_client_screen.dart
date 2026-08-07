@@ -59,6 +59,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
   final List<String> _preferredLanguages = ['Hindi'];
   String _religionPreference = ServiceConstants.religionPreferences.first;
   String _expectedJoining = ServiceConstants.expectedJoiningOptions.first;
+  String _contractDuration = ServiceConstants.contractDurations.last;
   String _remarks = '';
 
   final List<String> _houseTypes = [
@@ -112,6 +113,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
         preferredLanguages: _preferredLanguages.isEmpty ? const ['Hindi'] : _preferredLanguages,
         religionPreference: _religionPreference,
         expectedJoining: _expectedJoining,
+        contractDuration: _contractDuration,
       );
 
       await context.read<ClientRepository>().createClient(client);
@@ -588,6 +590,30 @@ class _AddClientScreenState extends State<AddClientScreen> {
                               value: _workTimings,
                               items: ServiceConstants.workTimingPresets,
                               onChanged: (v) => setState(() => _workTimings = v ?? ServiceConstants.workTimingPresets.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Expected Joining',
+                              value: _expectedJoining,
+                              items: ServiceConstants.expectedJoiningOptions,
+                              onChanged: (v) => setState(() => _expectedJoining = v ?? ServiceConstants.expectedJoiningOptions.first),
+                              isDark: isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildDropdown<String>(
+                              label: 'Contract Duration',
+                              value: _contractDuration,
+                              items: ServiceConstants.contractDurations,
+                              onChanged: (v) => setState(() => _contractDuration = v ?? ServiceConstants.contractDurations.last),
                               isDark: isDark,
                             ),
                           ),
