@@ -353,6 +353,9 @@ const getSourcingAnalytics = async (req, res) => {
     const [readyMedicalRes] = await pool.execute(
       `SELECT COUNT(*) as count FROM candidates WHERE status = 'readyToPlace' AND is_medical_cleared = TRUE${ownerFilterAnd}`, ownerParams
     );
+    const [readyNoMedicalRes] = await pool.execute(
+      `SELECT COUNT(*) as count FROM candidates WHERE status = 'readyToPlace' AND (is_medical_cleared = FALSE OR is_medical_cleared IS NULL)${ownerFilterAnd}`, ownerParams
+    );
     // Urgent Hires from Sales
     const [urgentHiresRes] = await pool.execute(
       "SELECT COUNT(*) as count FROM urgent_hires WHERE status = 'pending'"
