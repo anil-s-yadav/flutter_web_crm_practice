@@ -14,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/user/user_bloc.dart';
 import 'package:practice_app/blocs/user/user_event.dart';
 import 'package:practice_app/blocs/user/user_state.dart';
+import 'package:practice_app/widgets/user_avatar.dart';
 
 class TeamListScreen extends StatefulWidget {
   final UserRole? filterRole;
@@ -276,9 +277,20 @@ class _TeamListScreenState extends State<TeamListScreen> {
           // 3. Grid / Mobile List
           Expanded(
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 10),
+              margin: const EdgeInsets.all(5),
+              decoration: isMobile
+                  ? null
+                  : BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : AppColors.white,
+                      border: Border.all(
+                        color:
+                            isDark ? const Color(0xFF475569) : AppColors.grey300,
+                        width: 1.2,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(isMobile ? 0 : 7),
                 child:
                     isMobile
                         ? _buildMobileList(
@@ -515,102 +527,100 @@ class _TeamListScreenState extends State<TeamListScreen> {
       );
     }
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SfDataGridTheme(
-          data: SfDataGridThemeData(
-            headerColor: isDark ? AppColors.darkSurface : AppColors.grey50,
-            gridLineColor: isDark ? AppColors.dividerDark : AppColors.grey200,
-            gridLineStrokeWidth: 1,
-            rowHoverColor:
-                isDark
-                    ? AppColors.navyBlue.withValues(alpha: 0.1)
-                    : AppColors.navyBlue.withValues(alpha: 0.04),
-            sortIconColor: AppColors.gold,
+    return SfDataGridTheme(
+      data: SfDataGridThemeData(
+        headerColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+        gridLineColor: isDark ? const Color(0xFF475569) : AppColors.grey200,
+        gridLineStrokeWidth: 1,
+        rowHoverColor:
+            isDark
+                ? AppColors.navyBlue.withValues(alpha: 0.1)
+                : AppColors.navyBlue.withValues(alpha: 0.04),
+        sortIconColor: AppColors.gold,
+      ),
+      child: SfDataGrid(
+        source: _teamDataSource!,
+        allowSorting: true,
+        allowMultiColumnSorting: false,
+        columnWidthMode: ColumnWidthMode.fill,
+        headerRowHeight: 48,
+        rowHeight: 56,
+        gridLinesVisibility: GridLinesVisibility.both,
+        headerGridLinesVisibility: GridLinesVisibility.both,
+        columns: <GridColumn>[
+          GridColumn(
+            columnName: 'user',
+            minimumWidth: 200,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Member Name', style: _headerStyle(isDark)),
+            ),
           ),
-          child: SfDataGrid(
-            source: _teamDataSource!,
-            allowSorting: true,
-            allowMultiColumnSorting: false,
-            columnWidthMode: ColumnWidthMode.auto,
-            headerRowHeight: 48,
-            rowHeight: 56,
-            gridLinesVisibility: GridLinesVisibility.both,
-            headerGridLinesVisibility: GridLinesVisibility.both,
-            columns: <GridColumn>[
-              GridColumn(
-                columnName: 'user',
-                columnWidthMode: ColumnWidthMode.auto,
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Member Name', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'email',
-                columnWidthMode: ColumnWidthMode.auto,
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Email', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'role',
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Role', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'status',
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Status', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'joined',
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Joined', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'lastLogin',
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Last Login', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'performance',
-                width: 160,
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Performance', style: _headerStyle(isDark)),
-                ),
-              ),
-              GridColumn(
-                columnName: 'actions',
-                width: 140,
-                label: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  alignment: Alignment.centerLeft,
-                  child: Text('Actions', style: _headerStyle(isDark)),
-                ),
-              ),
-            ],
+          GridColumn(
+            columnName: 'email',
+            minimumWidth: 220,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Email', style: _headerStyle(isDark)),
+            ),
           ),
-        ),
+          GridColumn(
+            columnName: 'role',
+            minimumWidth: 120,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Role', style: _headerStyle(isDark)),
+            ),
+          ),
+          GridColumn(
+            columnName: 'status',
+            minimumWidth: 120,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Status', style: _headerStyle(isDark)),
+            ),
+          ),
+          GridColumn(
+            columnName: 'joined',
+            minimumWidth: 130,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Joined', style: _headerStyle(isDark)),
+            ),
+          ),
+          GridColumn(
+            columnName: 'lastLogin',
+            minimumWidth: 130,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Last Login', style: _headerStyle(isDark)),
+            ),
+          ),
+          GridColumn(
+            columnName: 'performance',
+            minimumWidth: 160,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Performance', style: _headerStyle(isDark)),
+            ),
+          ),
+          GridColumn(
+            columnName: 'actions',
+            minimumWidth: 120,
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
+              child: Text('Actions', style: _headerStyle(isDark)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -718,17 +728,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
+                      UserAvatar(
                         radius: 24,
+                        photoUrl: user.profileImageUrl,
+                        name: user.name,
                         backgroundColor: AppColors.gold.withValues(alpha: 0.15),
-                        child: Text(
-                          user.name.split(' ').map((n) => n[0]).take(2).join(),
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.gold,
-                          ),
-                        ),
+                        textColor: AppColors.gold,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -1052,17 +1057,12 @@ class _MobileTeamCardState extends State<_MobileTeamCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
+                  UserAvatar(
                     radius: 20,
+                    photoUrl: user.profileImageUrl,
+                    name: user.name,
                     backgroundColor: roleColor.withValues(alpha: 0.15),
-                    child: Text(
-                      user.name.split(' ').map((n) => n[0]).take(2).join(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: roleColor,
-                      ),
-                    ),
+                    textColor: roleColor,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

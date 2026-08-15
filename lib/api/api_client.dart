@@ -59,10 +59,11 @@ class ApiClient {
     };
   }
 
-  static Future<dynamic> get(String endpoint) async {
+  static Future<dynamic> get(String endpoint, {bool noCache = false}) async {
     final urlStr = _buildUrl(endpoint);
     
-    if (_cache.containsKey(urlStr)) {
+    final isAuthEndpoint = endpoint.contains('/profile') || endpoint.contains('/auth');
+    if (!noCache && !isAuthEndpoint && _cache.containsKey(urlStr)) {
       final entry = _cache[urlStr]!;
       if (DateTime.now().difference(entry.timestamp) < _cacheTtl) {
         debugPrint('[API Debug] GET (Cached) -> $urlStr');
@@ -80,7 +81,7 @@ class ApiClient {
     debugPrint('[API Debug] GET -> $urlStr (${response.statusCode})');
     
     final data = _handleResponse(response, urlStr);
-    if (response.statusCode >= 200 && response.statusCode < 300) {
+    if (!isAuthEndpoint && !noCache && response.statusCode >= 200 && response.statusCode < 300) {
       _cache[urlStr] = _CacheEntry(data, DateTime.now());
     }
     return data;

@@ -1,8 +1,9 @@
 import 'dart:developer';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../utils/shared_preferences.dart';
 
-class UserManager {
+class UserManager extends ChangeNotifier {
   static final UserManager _instance = UserManager._internal();
   factory UserManager() => _instance;
   UserManager._internal();
@@ -12,19 +13,22 @@ class UserManager {
   Future<void> init() async {
     _currentUser = LocalStoragePref().getUserModel();
     log("UserManager init: $_currentUser");
+    notifyListeners();
   }
 
   Future<void> setUser(UserModel user) async {
     _currentUser = user;
     await LocalStoragePref().setUserModel(user);
+    await LocalStoragePref().setLoginBool(true);
+    notifyListeners();
   }
 
   UserModel? get currentUser => _currentUser;
 
   Future<void> clearUser() async {
     _currentUser = null;
-    await LocalStoragePref().clearKey(LocalStorageKeys.userProfile);
-    await LocalStoragePref().setLoginBool(false);
+    await LocalStoragePref().clearPrefBox();
+    notifyListeners();
   }
 
   bool get isLoggedIn => _currentUser != null;

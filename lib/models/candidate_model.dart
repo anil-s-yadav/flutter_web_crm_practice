@@ -275,9 +275,23 @@ class CandidateModel {
 
   String get formattedExpectedSalary {
     if (expectedSalary.trim().isEmpty) return '₹15,000 - ₹25,000';
-    final trimmed = expectedSalary.trim();
-    if (trimmed.contains('₹')) return trimmed;
-    return '₹$trimmed';
+    var trimmed = expectedSalary.trim().replaceAll('?', '₹');
+    if (trimmed.contains('-')) {
+      final parts = trimmed.split('-');
+      if (parts.length == 2) {
+        final p1 = parts[0].trim().replaceAll('₹', '').trim();
+        final p2 = parts[1].trim().replaceAll('₹', '').trim();
+        return '₹$p1 - ₹$p2';
+      }
+      return trimmed.startsWith('₹') ? trimmed : '₹$trimmed';
+    }
+    final numVal = int.tryParse(trimmed.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (numVal != null) {
+      final minVal = ((numVal * 0.9) / 1000).round() * 1000;
+      final maxVal = ((numVal * 1.2) / 1000).round() * 1000;
+      return '₹${minVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} - ₹${maxVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
+    }
+    return trimmed.startsWith('₹') ? trimmed : '₹$trimmed';
   }
 
   CandidateModel copyWith({

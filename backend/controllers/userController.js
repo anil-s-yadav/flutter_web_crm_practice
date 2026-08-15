@@ -106,13 +106,32 @@ const createUser = async (req, res) => {
   }
 };
 
+// @route   GET /api/users/profile
+// @desc    Get current logged in user profile
+// @access  Private
+const getCurrentUserProfile = async (req, res) => {
+  try {
+    const [users] = await pool.execute(
+      'SELECT id, name, email, role, phone, alternate_phone, active, profile_image_url, created_at FROM users WHERE id = ?',
+      [req.user.id]
+    );
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(users[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // @route   PUT /api/users/:id
 // @desc    Update user details
 // @access  Private/Admin (or self)
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, alternate_phone, role, active } = req.body;
+    const { name, email, phone, alternate_phone, role, active, password, profile_image_url } = req.body;
 
     // Check permissions
     if (req.user.role !== 'admin' && req.user.id !== id) {
@@ -151,6 +170,8 @@ const updateUser = async (req, res) => {
     let profileImageUrl = user.profile_image_url;
     if (req.file) {
       profileImageUrl = `/uploads/${req.file.filename}`;
+    } else if (profile_image_url !== undefined) {
+      profileImageUrl = profile_image_url;
     }
 
     await pool.execute(
@@ -158,7 +179,7 @@ const updateUser = async (req, res) => {
       [newName, newEmail, newPasswordHash, newPhone, newAlternatePhone, newRole, newActive, profileImageUrl, id]
     );
 
-    res.json({ message: 'User updated successfully' });
+    res.json({ message: 'User updated successfully', profile_image_url: profileImageUrl });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -189,5 +210,6 @@ module.exports = {
   getUsers,
   createUser,
   updateUser,
+  getCurrentUserProfile,
   updateFcmToken
 };

@@ -66,24 +66,15 @@
   </div>
 
   <script>
-    // Configure Flutter for optimal web performance
-    window.addEventListener('load', function () {
-      _flutter.loader.load({
-        config: {
-          // Use canvaskit renderer for smoother rendering
-          renderer: "canvaskit",
-        },
-        onEntrypointLoaded: function (engineInitializer) {
-          engineInitializer.initializeEngine().then(function (appRunner) {
-            appRunner.runApp().then(function () {
-              // Remove loading indicator once Flutter is ready
-              var loader = document.getElementById('loading');
-              if (loader) loader.remove();
-            });
-          });
-        }
-      });
+    // Remove loading indicator once Flutter view is appended to body
+    const observer = new MutationObserver(function (mutationsList, observer) {
+      if (document.querySelector('flutter-view') || document.querySelector('flt-glass-pane')) {
+        var loader = document.getElementById('loading');
+        if (loader) loader.remove();
+        observer.disconnect();
+      }
     });
+    observer.observe(document.body, { childList: true, subtree: true });
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

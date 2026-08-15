@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:practice_app/api/api_client.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_event.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/utils/extensions.dart';
@@ -114,7 +118,11 @@ class _MobileShellState extends State<MobileShell> {
           IconButton(
             icon: const Icon(Icons.logout, size: 22),
             onPressed: () async {
+              try {
+                context.read<AuthBloc>().add(LogoutRequested());
+              } catch (_) {}
               await UserManager().clearUser();
+              ApiClient.invalidateAll();
               if (context.mounted) {
                 context.go('/login');
               }

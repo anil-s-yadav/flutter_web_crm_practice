@@ -37,7 +37,6 @@ import 'package:practice_app/repositories/audit_log_repository.dart';
 
 import 'package:practice_app/repositories/user_repository.dart';
 import 'package:practice_app/blocs/user/user_bloc.dart';
-import 'package:practice_app/blocs/user/user_event.dart';
 
 import 'package:practice_app/repositories/ticket_repository.dart';
 import 'package:practice_app/blocs/ticket/ticket_bloc.dart';

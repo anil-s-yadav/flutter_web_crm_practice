@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/models/contract_model.dart';
@@ -22,7 +23,6 @@ import 'package:practice_app/blocs/audit_log/audit_log_bloc.dart';
 import 'package:practice_app/widgets/candidate_avatar.dart';
 import 'package:practice_app/utils/image_picker_helper.dart';
 import 'package:practice_app/core/default_doc_urls.dart';
-import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 
 class CandidateProfileScreen extends StatelessWidget {
   final String candidateId;
@@ -486,7 +486,7 @@ class CandidateProfileScreen extends StatelessWidget {
             candidate.status != CandidateStatus.placed)
           ElevatedButton.icon(
             onPressed: () {
-              _showBlacklistDialog(context, candidate);
+              CandidatePromotionHelper.blacklistCandidate(context, candidate);
             },
             icon: const Icon(Icons.block, size: 16),
             label: Text(
@@ -1036,21 +1036,23 @@ class CandidateProfileScreen extends StatelessWidget {
         _infoRow('Pref. Work Type', candidate.preferredWorkType!, isDark),
       if (candidate.languages.isNotEmpty)
         _infoRow('Languages', candidate.languages.join(', '), isDark),
-      if (candidate.sourcedById != null && candidate.sourcedById!.isNotEmpty)
-        _infoRow(
-          'Sourced By',
-          (candidate.sourcedByName != null &&
-                  candidate.sourcedByName!.isNotEmpty)
-              ? '${candidate.sourcedById} (${candidate.sourcedByName})'
-              : candidate.sourcedById!,
-          isDark,
-        ),
+
       _infoRow(
         'Date Added',
         DateFormat('dd MMM yyyy').format(candidate.dateAdded),
         isDark,
       ),
       _infoRow('Lead Source', candidate.source, isDark),
+      _infoRow(
+        'Added By',
+        (candidate.sourcedByName != null && candidate.sourcedByName!.isNotEmpty)
+            ? '${candidate.sourcedByName} (${candidate.sourcedById ?? ''})'
+            : ((candidate.sourcedById != null &&
+                    candidate.sourcedById!.isNotEmpty)
+                ? candidate.sourcedById!
+                : (candidate.addedBy.isNotEmpty ? candidate.addedBy : '')),
+        isDark,
+      ),
     ]);
   }
 
@@ -1218,85 +1220,6 @@ class CandidateProfileScreen extends StatelessWidget {
         ),
       ),
     ]);
-  }
-
-  void _showBlacklistDialog(BuildContext context, CandidateModel candidate) {
-    final noteController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-          title: Text(
-            'Blacklist Candidate',
-            style: GoogleFonts.poppins(
-              color: AppColors.criticalRed,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Please provide a reason for blacklisting this candidate. This action will log a permanent note.',
-                style: GoogleFonts.poppins(fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Enter blacklist reason...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.poppins(color: AppColors.grey500),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (noteController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a note before blacklisting.'),
-                    ),
-                  );
-                  return;
-                }
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.blacklisted,
-                      remarks: noteController.text.trim(),
-                    ),
-                  ),
-                );
-                Navigator.pop(ctx);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.criticalRed,
-                foregroundColor: AppColors.white,
-              ),
-              child: Text(
-                'Confirm Blacklist',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Widget _buildSection(String title, bool isDark, List<Widget> children) {

@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, createUser, updateUser, updateFcmToken } = require('../controllers/userController');
+const { getUsers, createUser, updateUser, getCurrentUserProfile, updateFcmToken } = require('../controllers/userController');
 const { authMiddleware, roleMiddleware } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // All user routes require authentication
 router.use(authMiddleware);
+
+// Current user profile
+router.get('/profile', getCurrentUserProfile);
 
 // Admin only routes
 router.get('/', roleMiddleware(['admin']), getUsers);

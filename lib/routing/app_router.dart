@@ -39,13 +39,32 @@ class AppRouter {
     return GoRouter(
       initialLocation: '/',
       redirect: (context, state) {
-        final isLoggedIn = UserManager().isLoggedIn;
+        final user = UserManager().currentUser;
+        final isLoggedIn = user != null;
         final isLoginRoute = state.matchedLocation == '/login';
 
         if (!isLoggedIn && !isLoginRoute) return '/login';
         if (isLoggedIn && isLoginRoute) return UserManager().homeRoute;
         if (isLoggedIn && state.matchedLocation == '/') {
           return UserManager().homeRoute;
+        }
+
+        if (isLoggedIn) {
+          final loc = state.matchedLocation;
+          final role = user.role;
+          
+          if (loc.startsWith('/admin') && role != UserRole.admin) {
+            return UserManager().homeRoute;
+          }
+          if (loc.startsWith('/sales') && role != UserRole.sales && role != UserRole.admin) {
+            return UserManager().homeRoute;
+          }
+          if (loc.startsWith('/sourcing') && role != UserRole.sourcing && role != UserRole.admin) {
+            return UserManager().homeRoute;
+          }
+          if (loc.startsWith('/executive') && role != UserRole.executive && role != UserRole.admin) {
+            return UserManager().homeRoute;
+          }
         }
         return null;
       },

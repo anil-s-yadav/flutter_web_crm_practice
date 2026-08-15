@@ -51,7 +51,7 @@ class UserModel {
       role: UserRoleExtension.fromString(json['role'] as String),
       phone: json['phone'] as String?,
       alternatePhone: json['alternate_phone'] as String?,
-      avatarUrl: json['profile_image_url'] as String? ?? json['avatarUrl'] as String?
+      avatarUrl: json['profile_image_url'] as String? ?? json['avatarUrl'] as String? ?? json['avatar_url'] as String?
     );
   }
 
@@ -68,6 +68,7 @@ class UserModel {
       'role': role.name,
       'phone': phone,
       'alternate_phone': alternatePhone,
+      'profile_image_url': avatarUrl,
       'avatarUrl': avatarUrl
     };
   }

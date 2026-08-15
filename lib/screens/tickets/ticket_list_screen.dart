@@ -137,56 +137,68 @@ class _TicketListScreenState extends State<TicketListScreen> {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: _buildFilterWidgets(isDark, context),
                           )
-                          : Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.successGreen.withValues(
-                                    alpha: 0.1,
+                          : SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.successGreen.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${_indianFormat.format(_filteredTickets.length)} Tickets found',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.successGreen,
+                                      ),
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${_indianFormat.format(_filteredTickets.length)} Tickets found',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.successGreen,
-                                  ),
-                                ),
+                                  const SizedBox(width: 16),
+                                  ..._buildFilterWidgetsDesktop(isDark, context),
+                                ],
                               ),
-                              const Spacer(),
-                              ..._buildFilterWidgetsDesktop(isDark, context),
-                            ],
-                          ),
+                            ),
                 ),
 
               // DataGrid
               Expanded(
-                child:
-                    MediaQuery.of(context).size.width < 800
-                        ? _buildMobileListView(_filteredTickets, isDark)
-                        : Align(
-                          alignment: Alignment.topCenter,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 10),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: SfDataGridTheme(
-                                data: SfDataGridThemeData(
-                                  headerColor:
+                  child:
+                      MediaQuery.of(context).size.width < 800
+                          ? _buildMobileListView(_filteredTickets, isDark)
+                          : Container(
+                              margin: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.darkSurface : AppColors.white,
+                                border: Border.all(
+                                  color:
                                       isDark
-                                          ? AppColors.darkSurface
-                                          : AppColors.grey50,
-                                  gridLineColor:
-                                      isDark
-                                          ? AppColors.dividerDark
-                                          : AppColors.grey200,
-                                  gridLineStrokeWidth: 1,
+                                          ? const Color(0xFF475569)
+                                          : AppColors.grey300,
+                                  width: 1.2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(7),
+                                child: SfDataGridTheme(
+                                  data: SfDataGridThemeData(
+                                    headerColor:
+                                        isDark
+                                            ? AppColors.darkSurfaceVariant
+                                            : AppColors.grey50,
+                                    gridLineColor:
+                                        isDark
+                                            ? const Color(0xFF475569)
+                                            : AppColors.grey200,
+                                    gridLineStrokeWidth: 1,
                                   rowHoverColor:
                                       isDark
                                           ? AppColors.navyBlue.withValues(
@@ -317,8 +329,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
                               ),
                             ),
                           ),
-                        ),
-              ),
+                ),
 
               // Pagination
               if (!isMobile)

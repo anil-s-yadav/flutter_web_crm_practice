@@ -268,23 +268,34 @@ class _ClientListScreenState extends State<ClientListScreen> {
               else
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 10),
+                    margin: isMobile ? EdgeInsets.zero : const EdgeInsets.all(5),
+                    decoration: isMobile
+                        ? null
+                        : BoxDecoration(
+                            color: isDark ? AppColors.darkSurface : AppColors.white,
+                            border: Border.all(
+                              color:
+                                  isDark
+                                      ? const Color(0xFF475569)
+                                      : AppColors.grey300,
+                              width: 1.2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(isMobile ? 0 : 7),
                       child:
                           isMobile
                               ? _buildMobileList(isDark)
-                              : Align(
-                                alignment: Alignment.topCenter,
-                                child: SfDataGridTheme(
+                              : SfDataGridTheme(
                                   data: SfDataGridThemeData(
                                     headerColor:
                                         isDark
-                                            ? AppColors.darkSurface
+                                            ? AppColors.darkSurfaceVariant
                                             : AppColors.grey50,
                                     gridLineColor:
                                         isDark
-                                            ? AppColors.dividerDark
+                                            ? const Color(0xFF475569)
                                             : AppColors.grey200,
                                     gridLineStrokeWidth: 1,
                                     rowHoverColor:
@@ -301,7 +312,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                     source: _clientDataSource!,
                                     allowSorting: true,
                                     allowMultiColumnSorting: false,
-                                    columnWidthMode: ColumnWidthMode.auto,
+                                    columnWidthMode: ColumnWidthMode.fill,
                                     headerRowHeight: 48,
                                     rowHeight: 56,
                                     gridLinesVisibility:
@@ -316,21 +327,21 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'sr_no',
-                                        width: 145,
+                                        minimumWidth: 130,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
                                           ),
                                           alignment: Alignment.centerLeft,
                                           child: Text(
-                                            'Sr No',
+                                            'ID',
                                             style: _headerStyle(isDark),
                                           ),
                                         ),
                                       ),
                                       GridColumn(
                                         columnName: 'date',
-                                        width: 130,
+                                        minimumWidth: 120,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -344,7 +355,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'client',
-                                        maximumWidth: 300,
+                                        minimumWidth: 200,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -358,7 +369,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'location',
-                                        width: 150,
+                                        minimumWidth: 200,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -372,7 +383,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'phone',
-                                        width: 140,
+                                        minimumWidth: 130,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -386,7 +397,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'requirement',
-                                        width: 150,
+                                        minimumWidth: 140,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -400,7 +411,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'budget',
-                                        minimumWidth: 160,
+                                        minimumWidth: 150,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -415,7 +426,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       if (widget.initialStatus == null)
                                         GridColumn(
                                           columnName: 'status',
-                                          minimumWidth: 160,
+                                          minimumWidth: 140,
                                           label: Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 16,
@@ -429,7 +440,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                         ),
                                       GridColumn(
                                         columnName: 'notes',
-                                        width: 200,
+                                        minimumWidth: 220,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -444,7 +455,6 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                     ],
                                   ),
                                 ),
-                              ),
                     ),
                   ),
                 ),
@@ -525,16 +535,15 @@ class _ClientListScreenState extends State<ClientListScreen> {
 
   Widget _buildToolbar(bool isDark, int count, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      margin: const EdgeInsets.all(6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? AppColors.dividerDark : AppColors.grey200,
-          ),
+        border: Border.all(
+          color: isDark ? const Color(0xFF475569) : AppColors.grey300,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child:
           isMobile
@@ -767,12 +776,13 @@ class _ClientListScreenState extends State<ClientListScreen> {
             ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 12),
         ..._buildFilters(isDark).map(
           (w) => Padding(padding: const EdgeInsets.only(right: 8), child: w),
         ),
+        const Spacer(),
         SizedBox(
-          width: 250,
+          width: 260,
           height: 38,
           child: TextField(
             controller: _searchController,
@@ -798,7 +808,15 @@ class _ClientListScreenState extends State<ClientListScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(
+                  color: isDark ? const Color(0xFF475569) : AppColors.grey300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: isDark ? const Color(0xFF475569) : AppColors.grey300,
+                ),
               ),
             ),
             style: GoogleFonts.poppins(fontSize: 12),

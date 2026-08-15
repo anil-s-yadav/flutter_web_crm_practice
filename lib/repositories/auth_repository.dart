@@ -1,10 +1,12 @@
 import 'package:practice_app/api/api_client.dart';
+import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/utils/shared_preferences.dart';
 
 class AuthRepository {
   Future<UserModel> login(String email, String password) async {
     try {
+      ApiClient.invalidateAll();
       final response = await ApiClient.post('/auth/login', {
         'email': email,
         'password': password,
@@ -18,15 +20,17 @@ class AuthRepository {
       final userJson = response['user'];
       await LocalStoragePref().saveUser(userJson);
 
-      // Node.js returns 'id' as String now (e.g. U_123456). Our UserModel expects 'int id'.
-      // We will need to update UserModel to use String id. For now, we will parse it carefully.
-      return UserModel.fromJson(userJson);
+      final user = UserModel.fromJson(userJson);
+      await UserManager().setUser(user);
+      return user;
     } catch (e) {
       rethrow;
     }
   }
 
   Future<void> logout() async {
+    ApiClient.invalidateAll();
+    await UserManager().clearUser();
     await LocalStoragePref().clearPrefBox();
   }
 

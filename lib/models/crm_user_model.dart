@@ -26,6 +26,7 @@ class CrmUserModel {
   final DateTime joinedDate;
   final DateTime? lastLogin;
   final String password; // stored as plain text for mock purposes
+  final String? profileImageUrl;
   final int candidatesAdded;
   final int clientsConverted;
   final int contractsClosed;
@@ -41,6 +42,7 @@ class CrmUserModel {
     required this.joinedDate,
     this.lastLogin,
     this.password = 'password123',
+    this.profileImageUrl,
     this.candidatesAdded = 0,
     this.clientsConverted = 0,
     this.contractsClosed = 0,
@@ -57,6 +59,7 @@ class CrmUserModel {
     DateTime? joinedDate,
     DateTime? lastLogin,
     String? password,
+    String? profileImageUrl,
     int? candidatesAdded,
     int? clientsConverted,
     int? contractsClosed,
@@ -72,6 +75,7 @@ class CrmUserModel {
       joinedDate: joinedDate ?? this.joinedDate,
       lastLogin: lastLogin ?? this.lastLogin,
       password: password ?? this.password,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       candidatesAdded: candidatesAdded ?? this.candidatesAdded,
       clientsConverted: clientsConverted ?? this.clientsConverted,
       contractsClosed: contractsClosed ?? this.contractsClosed,
@@ -92,6 +96,7 @@ class CrmUserModel {
       joinedDate: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      profileImageUrl: json['profile_image_url'] as String? ?? json['avatarUrl'] as String?,
     );
   }
 }

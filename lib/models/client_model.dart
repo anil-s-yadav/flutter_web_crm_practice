@@ -78,6 +78,7 @@ class ClientModel {
   final String religionPreference;
   final String expectedJoining;
   final String contractDuration;
+  final String? profileImageUrl;
 
   const ClientModel({
     required this.id,
@@ -113,6 +114,7 @@ class ClientModel {
     this.religionPreference = 'Any / No Preference',
     this.expectedJoining = 'Immediate (Within 1-2 Days)',
     this.contractDuration = '1 Year',
+    this.profileImageUrl,
   });
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
@@ -182,7 +184,9 @@ class ClientModel {
           : (json['children_count'] != null ? parseInt(json['children_count'], 0) : null),
       preferredCandidateCategory: (json['preferredCandidateCategory'] ?? json['preferred_category'] ?? 'House Maid').toString(),
       requiredSkills: parseSkills(json['requiredSkills'] ?? json['required_skills']),
-      budgetRange: (json['budgetRange'] ?? json['budget_range'] ?? '₹15,000 - ₹25,000').toString(),
+      budgetRange: (json['budgetRange'] ?? json['budget_range'] ?? '₹15,000 - ₹25,000')
+          .toString()
+          .replaceAll('?', '₹'),
       status: ClientStatusExtension.fromString((json['status'] ?? 'followUp').toString()),
       assignedEmployeeId: (json['assignedEmployeeId'] ?? json['assigned_sales_id'])?.toString(),
       assignedEmployeeName: (json['assignedEmployeeName'] ?? json['assigned_sales_name'])?.toString(),
@@ -198,6 +202,7 @@ class ClientModel {
       religionPreference: (json['religionPreference'] ?? json['religion_preference'] ?? 'Any / No Preference').toString(),
       expectedJoining: (json['expectedJoining'] ?? json['expected_joining'] ?? 'Immediate (Within 1-2 Days)').toString(),
       contractDuration: (json['contractDuration'] ?? json['contract_duration'] ?? '1 Year').toString(),
+      profileImageUrl: (json['profileImageUrl'] ?? json['profile_image_url'] ?? json['photoUrl'] ?? json['photo_url'])?.toString(),
     );
   }
 
@@ -258,6 +263,8 @@ class ClientModel {
       'expected_joining': expectedJoining,
       'contractDuration': contractDuration,
       'contract_duration': contractDuration,
+      'profile_image_url': profileImageUrl,
+      'profileImageUrl': profileImageUrl,
     };
   }
 
@@ -297,6 +304,7 @@ class ClientModel {
     String? religionPreference,
     String? expectedJoining,
     String? contractDuration,
+    String? profileImageUrl,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -332,6 +340,7 @@ class ClientModel {
       religionPreference: religionPreference ?? this.religionPreference,
       expectedJoining: expectedJoining ?? this.expectedJoining,
       contractDuration: contractDuration ?? this.contractDuration,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }
 

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:practice_app/api/api_client.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_event.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/theme/theme_provider.dart';
@@ -10,6 +14,7 @@ import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/utils/fullscreen.dart';
 import 'package:practice_app/screens/shared/notification_panel.dart';
 import 'package:practice_app/widgets/global_search_dialog.dart';
+import 'package:practice_app/widgets/user_avatar.dart';
 
 class DesktopShell extends StatefulWidget {
   final Widget child;
@@ -23,8 +28,12 @@ class DesktopShell extends StatefulWidget {
 class _DesktopShellState extends State<DesktopShell> {
   bool _sidebarExpanded = true;
 
+  UserRole get _activeRole {
+    return UserManager().currentUser?.role ?? UserRole.admin;
+  }
+
   List<_SidebarItem> get _menuItems {
-    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    final role = _activeRole;
     switch (role) {
       case UserRole.admin:
         return [
@@ -475,63 +484,68 @@ class _DesktopShellState extends State<DesktopShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.themeRef.brightness == Brightness.dark;
-    final isNarrow = context.media.width < 800;
-    final currentLocation = GoRouterState.of(context).uri.toString();
-    final user = UserManager().currentUser;
+    return ListenableBuilder(
+      listenable: UserManager(),
+      builder: (context, _) {
+        final isDark = context.themeRef.brightness == Brightness.dark;
+        final isNarrow = context.media.width < 800;
+        final currentLocation = GoRouterState.of(context).uri.toString();
+        final user = UserManager().currentUser;
 
-    String dashboardPath = '/login';
-    if (currentLocation.startsWith('/admin')) {
-      dashboardPath = '/admin';
-    } else if (currentLocation.startsWith('/sales')) {
-      dashboardPath = '/sales';
-    } else if (currentLocation.startsWith('/sourcing')) {
-      dashboardPath = '/sourcing';
-    } else if (currentLocation.startsWith('/executive')) {
-      dashboardPath = '/executive';
-    }
-
-    final bool isDashboard = currentLocation == dashboardPath;
-
-    Widget mainScaffold;
-
-    if (isNarrow) {
-      mainScaffold = Scaffold(
-        endDrawer: const NotificationPanel(),
-        appBar: _buildAppBar(context, isDark, currentLocation),
-        drawer: _buildDrawer(isDark, currentLocation, user),
-        body: widget.child,
-      );
-    } else {
-      mainScaffold = Scaffold(
-        endDrawer: const NotificationPanel(),
-        body: Row(
-          children: [
-            // Sidebar
-            _buildSidebar(isDark, currentLocation, user),
-            // Content
-            Expanded(
-              child: Column(
-                children: [
-                  _buildTopBar(isDark, currentLocation),
-                  Expanded(child: widget.child),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return PopScope(
-      canPop: isDashboard,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (!isDashboard) {
-          context.go(dashboardPath);
+        String dashboardPath = '/login';
+        if (currentLocation.startsWith('/admin')) {
+          dashboardPath = '/admin';
+        } else if (currentLocation.startsWith('/sales')) {
+          dashboardPath = '/sales';
+        } else if (currentLocation.startsWith('/sourcing')) {
+          dashboardPath = '/sourcing';
+        } else if (currentLocation.startsWith('/executive')) {
+          dashboardPath = '/executive';
         }
+
+        final bool isDashboard = currentLocation == dashboardPath;
+
+        Widget mainScaffold;
+
+        if (isNarrow) {
+          mainScaffold = Scaffold(
+            endDrawer: const NotificationPanel(),
+            appBar: _buildAppBar(context, isDark, currentLocation),
+            drawer: _buildDrawer(isDark, currentLocation, user),
+            body: widget.child,
+          );
+        } else {
+          mainScaffold = Scaffold(
+            endDrawer: const NotificationPanel(),
+            body: Row(
+              children: [
+                // Sidebar
+                _buildSidebar(isDark, currentLocation, user),
+                // Content
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildTopBar(isDark, currentLocation),
+                      Expanded(child: widget.child),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return PopScope(
+          canPop: isDashboard,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            if (!isDashboard) {
+              context.go(dashboardPath);
+            }
+          },
+          child: mainScaffold,
+        );
       },
-      child: mainScaffold,
     );
   }
 
@@ -909,17 +923,12 @@ class _DesktopShellState extends State<DesktopShell> {
                       },
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          UserAvatar(
                             radius: 18,
+                            photoUrl: user.avatarUrl,
+                            name: user.name,
                             backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-                            child: Text(
-                              user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.gold : AppColors.navyBlue,
-                              ),
-                            ),
+                            textColor: isDark ? AppColors.gold : AppColors.navyBlue,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1175,19 +1184,12 @@ class _DesktopShellState extends State<DesktopShell> {
                 ),
               ),
             ],
-            child: CircleAvatar(
+            child: UserAvatar(
               radius: 16,
+              photoUrl: UserManager().currentUser?.avatarUrl,
+              name: UserManager().currentUser?.name ?? 'User',
               backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-              child: Text(
-                UserManager().currentUser?.name.isNotEmpty == true
-                    ? UserManager().currentUser!.name[0].toUpperCase()
-                    : 'U',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.gold : AppColors.navyBlue,
-                ),
-              ),
+              textColor: isDark ? AppColors.gold : AppColors.navyBlue,
             ),
           ),
         ],
@@ -1210,7 +1212,7 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   String _getProfileRoute() {
-    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    final role = _activeRole;
     switch (role) {
       case UserRole.admin:
         return '/admin/profile';
@@ -1298,7 +1300,11 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   Future<void> _handleLogout() async {
+    try {
+      context.read<AuthBloc>().add(LogoutRequested());
+    } catch (_) {}
     await UserManager().clearUser();
+    ApiClient.invalidateAll();
 
     if (mounted) {
       context.go('/login');

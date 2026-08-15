@@ -45,15 +45,11 @@ class CandidateDataSource extends DataGridSource {
   void _buildDataGridRows() {
     _dataGridRows =
         _candidates.asMap().entries.map<DataGridRow>((entry) {
-
           final CandidateModel candidate = entry.value;
           return DataGridRow(
             cells: [
               DataGridCell<String>(columnName: 'id', value: candidate.id),
-              DataGridCell<String>(
-                columnName: 'sr_no',
-                value: 'VMS${candidate.id.padLeft(3, '0')}',
-              ),
+              DataGridCell<String>(columnName: 'sr_no', value: candidate.id),
               DataGridCell<String>(
                 columnName: 'date',
                 value: _getMostRelevantDate(candidate),
@@ -63,8 +59,13 @@ class CandidateDataSource extends DataGridSource {
                 value: candidate,
               ),
               DataGridCell<String>(
-                columnName: 'details',
-                value: '${candidate.age} yrs • ${candidate.city}',
+                columnName: 'location',
+                value:
+                    candidate.city.isNotEmpty
+                        ? candidate.city
+                        : (candidate.address.isNotEmpty
+                            ? candidate.address
+                            : 'N/A'),
               ),
               DataGridCell<String>(
                 columnName: 'category',
@@ -194,6 +195,19 @@ class CandidateDataSource extends DataGridSource {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            Text(
+                              '${candidate.age} yrs',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color:
+                                    isDark
+                                        ? AppColors.grey400
+                                        : AppColors.grey600,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
@@ -201,14 +215,33 @@ class CandidateDataSource extends DataGridSource {
                   ),
                 ),
               );
+            } else if (cell.columnName == 'location') {
+              final loc = cell.value?.toString() ?? '';
+              return Tooltip(
+                message: loc,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    loc,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color:
+                          isDark ? AppColors.white : AppColors.textPrimaryLight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              );
             } else if (cell.columnName == 'status') {
               final status = cell.value as CandidateStatus;
               return Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.only(left: 5),
                 alignment: Alignment.centerLeft,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                    horizontal: 8,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
@@ -283,6 +316,16 @@ class CandidateDataSource extends DataGridSource {
                           child: Text(
                             'Blacklist',
                             style: TextStyle(color: AppColors.criticalRed),
+                          ),
+                        ),
+                      );
+                    } else if (candidate.status == CandidateStatus.blacklisted) {
+                      items.add(
+                        const PopupMenuItem(
+                          value: 'restore_candidate',
+                          child: Text(
+                            'Restore Candidate',
+                            style: TextStyle(color: AppColors.successGreen),
                           ),
                         ),
                       );

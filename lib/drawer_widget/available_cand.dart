@@ -184,7 +184,7 @@ class CandidateDataSource extends DataGridSource {
           final Candidate c = entry.value;
           return DataGridRow(
             cells: [
-              DataGridCell(columnName: 'sr_no', value: 'VMS${c.id.toString().padLeft(3, '0')}'),
+              DataGridCell(columnName: 'sr_no', value: c.id.toString()),
               DataGridCell(columnName: 'name', value: c.name),
               DataGridCell(columnName: 'age', value: c.age),
               DataGridCell(columnName: 'mobile', value: c.mobile),

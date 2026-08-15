@@ -13,6 +13,10 @@ const getCandidates = async (req, res) => {
     let whereClause = ' WHERE 1=1';
     const params = [];
 
+    if (req.user && req.user.role === 'sourcing') {
+      whereClause += ' AND c.sourced_by_id = ?';
+      params.push(req.user.id);
+    }
     if (status) {
       whereClause += ' AND c.status = ?';
       params.push(status);
@@ -140,13 +144,13 @@ const createCandidate = async (req, res) => {
          age, address, city, state, religion, education, experience_years, languages,
          status, is_police_verified, is_medical_cleared,
          aadhaar_doc_url, pan_doc_url, passport_doc_url, police_verification_doc_url, medical_clearance_doc_url,
-         sourced_by_id, profile_image_url, source) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         sourced_by_id, profile_image_url, source, remarks) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
          age, address, city, state, religion, education, experienceYears, languages,
          status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
          aadhaarDocUrl, panDocUrl, passportDocUrl, policeVerificationDocUrl, medicalClearanceDocUrl,
-         sourcedById, profileImageUrl, source]
+         sourcedById, profileImageUrl, source, remarks || null]
       );
     } catch (sqlErr) {
       console.warn('Full doc-enabled INSERT failed, trying standard INSERT:', sqlErr.message);
@@ -156,20 +160,20 @@ const createCandidate = async (req, res) => {
           (id, full_name, phone, alternate_phone, category, expected_salary, 
            age, address, city, state, religion, education, experience_years, languages,
            status, is_police_verified, is_medical_cleared,
-           sourced_by_id, profile_image_url, source) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           sourced_by_id, profile_image_url, source, remarks) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
            age, address, city, state, religion, education, experienceYears, languages,
            status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
-           sourcedById, profileImageUrl, source]
+           sourcedById, profileImageUrl, source, remarks || null]
         );
       } catch (fallbackErr) {
         console.warn('Standard INSERT failed, executing fallback core INSERT:', fallbackErr.message);
         await pool.execute(
           `INSERT INTO candidates 
-          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url, source) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl, source]
+          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url, source, remarks) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl, source, remarks || null]
         );
       }
     }
@@ -279,6 +283,7 @@ const updateCandidate = async (req, res) => {
     const newMedicalDocUrl = req.body.medical_clearance_doc_url !== undefined ? req.body.medical_clearance_doc_url : (req.body.medicalClearanceDocUrl !== undefined ? req.body.medicalClearanceDocUrl : candidate.medical_clearance_doc_url);
     const newProfileImageUrl = req.body.photoUrl || req.body.profile_image_url || candidate.profile_image_url;
     const newSource = req.body.source !== undefined ? req.body.source : (candidate.source || 'Direct / Walk-in');
+    const newRemarks = req.body.remarks !== undefined ? req.body.remarks : candidate.remarks;
 
     // Pipeline Progression Validation:
     if (candidate.status === 'verificationPending' && (newStatus === 'medicalPending' || newStatus === 'readyToPlace')) {
@@ -306,14 +311,14 @@ const updateCandidate = async (req, res) => {
         age = ?, address = ?, city = ?, state = ?, religion = ?, education = ?, experience_years = ?, languages = ?,
         status = ?, is_police_verified = ?, is_medical_cleared = ?,
         aadhaar_doc_url = ?, pan_doc_url = ?, passport_doc_url = ?, police_verification_doc_url = ?, medical_clearance_doc_url = ?,
-        profile_image_url = ?, source = ? 
+        profile_image_url = ?, source = ?, remarks = ? 
       WHERE id = ?`,
       [
         newName, newPhone, newAlternatePhone, newCategory, newSalary,
         newAge, newAddress, newCity, newState, newReligion, newEducation, newExp, newLanguages,
         newStatus, newPoliceVerified, newMedicalCleared,
         newAadhaarDocUrl, panDocUrl, newPassportDocUrl, newPoliceDocUrl, newMedicalDocUrl,
-        newProfileImageUrl, newSource, id
+        newProfileImageUrl, newSource, newRemarks, id
       ]
     );
 

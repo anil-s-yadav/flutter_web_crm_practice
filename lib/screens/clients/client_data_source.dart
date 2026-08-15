@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
+import 'package:practice_app/widgets/user_avatar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -139,42 +140,25 @@ class ClientDataSource extends DataGridSource {
                   alignment: Alignment.centerLeft,
                   child: Row(
                     children: [
-                      CircleAvatar(
+                      UserAvatar(
+                        name: client.fullName,
+                        photoUrl: client.profileImageUrl,
                         radius: 16,
-                        backgroundColor:
-                            isDark
-                                ? AppColors.white.withValues(alpha: 0.1)
-                                : AppColors.navyBlue.withValues(alpha: 0.1),
-                        child: Text(
-                          client.fullName[0],
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color:
-                                isDark ? AppColors.white : AppColors.navyBlue,
-                          ),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              client.fullName,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    isDark
-                                        ? AppColors.white
-                                        : AppColors.textPrimaryLight,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          client.fullName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimaryLight,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -242,6 +226,43 @@ class ClientDataSource extends DataGridSource {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                ),
+              );
+            }
+
+            if (dataGridCell.columnName == 'location') {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerLeft,
+                child: Tooltip(
+                  message: dataGridCell.value.toString(),
+                  child: Text(
+                    dataGridCell.value.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              );
+            }
+
+            if (dataGridCell.columnName == 'budget') {
+              final budgetStr = dataGridCell.value.toString().replaceAll('?', '₹');
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  budgetStr,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.white : AppColors.textPrimaryLight,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               );
             }

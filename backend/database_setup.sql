@@ -1,8 +1,18 @@
 -- Verified Maids CRM Complete Database Schema
 -- Standard: For every table, `created_at` and `updated_at` MUST be the last two columns.
 
-CREATE DATABASE IF NOT EXISTS verifiedmaids_db;
-USE verifiedmaids_db;
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS tickets;
+DROP TABLE IF EXISTS replacement_suggestions;
+DROP TABLE IF EXISTS replacement_requests;
+DROP TABLE IF EXISTS executive_tasks;
+DROP TABLE IF EXISTS contracts;
+DROP TABLE IF EXISTS candidates;
+DROP TABLE IF EXISTS clients;
+DROP TABLE IF EXISTS users;
 
 -- 1. Users (Employees/Staff)
 CREATE TABLE IF NOT EXISTS users (
@@ -206,3 +216,5 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 INSERT INTO users (id, name, email, password_hash, role) 
 VALUES ('VMU0001', 'System Admin', 'admin@example.com', '$2b$10$EPbT2.iW.R4w3S5u5Z.Mme/P6Zg8CqJ.gI0jY0v9Q3lV6X2e2z2iK', 'admin')
 ON DUPLICATE KEY UPDATE id=id;
+
+SET FOREIGN_KEY_CHECKS = 1;

@@ -390,4 +390,186 @@ class CandidatePromotionHelper {
       },
     );
   }
+
+  static Future<void> blacklistCandidate(BuildContext context, CandidateModel candidate) async {
+    final noteController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+          title: Text(
+            'Blacklist Candidate',
+            style: GoogleFonts.poppins(
+              color: AppColors.criticalRed,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Please provide a reason for blacklisting this candidate. This action will log a permanent note.',
+                style: GoogleFonts.poppins(fontSize: 13, color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                style: GoogleFonts.poppins(fontSize: 14, color: isDark ? AppColors.white : AppColors.textPrimaryLight),
+                decoration: InputDecoration(
+                  hintText: 'Enter blacklist reason...',
+                  hintStyle: GoogleFonts.poppins(color: isDark ? AppColors.grey500 : AppColors.grey400),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.grey300),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(color: AppColors.grey500),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (noteController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a note before blacklisting.'),
+                      backgroundColor: AppColors.urgentAmber,
+                    ),
+                  );
+                  return;
+                }
+                final newRemarks = '${candidate.remarks ?? ''}\n[${DateTime.now().toString().split(' ')[0]}] Blacklist Reason: ${noteController.text.trim()}'.trim();
+                final updated = candidate.copyWith(
+                  status: CandidateStatus.blacklisted,
+                  remarks: newRemarks,
+                );
+                
+                context.read<CandidateBloc>().add(UpdateCandidate(updated));
+                try {
+                  context.read<AuditLogBloc>().add(
+                    LogAuditEvent(
+                      entityType: 'candidate',
+                      targetId: candidate.id,
+                      actionType: 'blacklist',
+                      description: 'Candidate blacklisted: ${noteController.text.trim()}',
+                    ),
+                  );
+                } catch (_) {}
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${candidate.fullName} has been moved to Blacklist.'),
+                    backgroundColor: AppColors.criticalRed,
+                  ),
+                );
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.criticalRed,
+                foregroundColor: AppColors.white,
+              ),
+              child: Text(
+                'Confirm Blacklist',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static Future<void> restoreFromBlacklist(BuildContext context, CandidateModel candidate) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.restore, color: AppColors.successGreen, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              'Restore Candidate',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: isDark ? AppColors.white : AppColors.navyBlue,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to restore "${candidate.fullName}" to the pipeline (Ready to Place)?',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: isDark ? AppColors.grey300 : AppColors.textPrimaryLight,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: AppColors.grey500),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.successGreen,
+              foregroundColor: AppColors.white,
+              elevation: 0,
+            ),
+            child: Text(
+              'Restore',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      final newRemarks = '${candidate.remarks ?? ''}\n[${DateTime.now().toString().split(' ')[0]}] Candidate restored to pipeline.'.trim();
+      final updated = candidate.copyWith(
+        status: CandidateStatus.readyToPlace,
+        remarks: newRemarks,
+      );
+      context.read<CandidateBloc>().add(UpdateCandidate(updated));
+      try {
+        context.read<AuditLogBloc>().add(
+          LogAuditEvent(
+            entityType: 'candidate',
+            targetId: candidate.id,
+            actionType: 'restore',
+            description: 'Candidate restored from blacklist',
+          ),
+        );
+      } catch (_) {}
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${candidate.fullName} restored to Ready to Place.'),
+          backgroundColor: AppColors.successGreen,
+        ),
+      );
+    }
+  }
 }

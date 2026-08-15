@@ -4,11 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:practice_app/auth/user_manager.dart';
+import 'package:practice_app/blocs/auth/auth_bloc.dart';
+import 'package:practice_app/blocs/auth/auth_event.dart';
 import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/theme/theme_provider.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:practice_app/api/api_client.dart';
+import 'package:practice_app/widgets/user_avatar.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -59,6 +63,25 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         TextEditingController(text: user?.alternatePhone ?? '');
 
     _checkNotificationPermission();
+    _fetchFreshProfile();
+  }
+
+  Future<void> _fetchFreshProfile() async {
+    try {
+      final res = await ApiClient.get('/users/profile', noCache: true);
+      if (res != null && res is Map<String, dynamic>) {
+        final freshUser = UserModel.fromJson(res);
+        await UserManager().setUser(freshUser);
+        if (mounted) {
+          setState(() {
+            _nameController.text = freshUser.name;
+            _emailController.text = freshUser.email;
+            _phoneController.text = freshUser.phone ?? '';
+            _altPhoneController.text = freshUser.alternatePhone ?? '';
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -150,10 +173,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           alternatePhone: _altPhoneController.text.trim(),
         );
 
+        await ApiClient.put('/users/${currentUser.id}', {
+          'name': _nameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'alternate_phone': _altPhoneController.text.trim(),
+        });
+
         await UserManager().setUser(updatedUser);
       }
-
-      await Future.delayed(const Duration(milliseconds: 300));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -182,21 +209,187 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
     setState(() => _isChangingPassword = true);
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final currentUser = UserManager().currentUser;
+      if (currentUser != null) {
+        await ApiClient.put('/users/${currentUser.id}', {
+          'password': _newPasswordController.text.trim(),
+        });
+      }
 
-    if (mounted) {
-      _currentPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
-      setState(() => _isChangingPassword = false);
+      if (mounted) {
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully!'),
-          backgroundColor: AppColors.successGreen,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully!'),
+            backgroundColor: AppColors.successGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to change password: $e'),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isChangingPassword = false);
     }
+  }
+
+  void _showEditAvatarDialog(BuildContext context) {
+    final currentUser = UserManager().currentUser;
+    final urlController = TextEditingController(text: currentUser?.avatarUrl ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final presetAvatars = [
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
+            title: Text(
+              'Update Profile Picture',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            content: SizedBox(
+              width: 460,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: UserAvatar(
+                      radius: 36,
+                      photoUrl: urlController.text.trim(),
+                      name: currentUser?.name ?? 'User',
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Profile Image URL',
+                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: urlController,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'https://images.unsplash.com/...',
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          urlController.clear();
+                          setDialogState(() {});
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Or pick from preset avatars:',
+                    style: GoogleFonts.poppins(fontSize: 12, color: isDark ? AppColors.grey400 : AppColors.grey600),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: presetAvatars.map((url) {
+                      final isSelected = urlController.text.trim() == url;
+                      return InkWell(
+                        onTap: () {
+                          urlController.text = url;
+                          setDialogState(() {});
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? AppColors.gold : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                          child: UserAvatar(
+                            radius: 18,
+                            photoUrl: url,
+                            name: 'User',
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyBlue,
+                ),
+                onPressed: () async {
+                  final newUrl = urlController.text.trim();
+                  if (currentUser != null) {
+                    try {
+                      await ApiClient.put('/users/${currentUser.id}', {
+                        'profile_image_url': newUrl,
+                      });
+                      final updatedUser = currentUser.copyWith(avatarUrl: newUrl);
+                      await UserManager().setUser(updatedUser);
+                      if (mounted) {
+                        setState(() {});
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile photo updated successfully!'),
+                            backgroundColor: AppColors.successGreen,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to update avatar: $e'),
+                            backgroundColor: AppColors.errorRed,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+                child: const Text('Save Photo'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _handleLogout() async {
@@ -231,8 +424,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           ),
     );
 
-    if (confirm == true) {
+    if (confirm == true && mounted) {
+      try {
+        context.read<AuthBloc>().add(LogoutRequested());
+      } catch (_) {}
       await UserManager().clearUser();
+      ApiClient.invalidateAll();
       if (mounted) {
         context.go('/login');
       }
@@ -355,44 +552,44 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       child: Row(
         children: [
           // Avatar
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.gold.withValues(alpha: 0.15),
-                child: Text(
-                  user?.name.isNotEmpty == true
-                      ? user!.name[0].toUpperCase()
-                      : 'U',
-                  style: GoogleFonts.poppins(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gold,
+          Tooltip(
+            message: 'Change profile picture',
+            child: InkWell(
+              onTap: () => _showEditAvatarDialog(context),
+              borderRadius: BorderRadius.circular(40),
+              child: Stack(
+                children: [
+                  UserAvatar(
+                    radius: 40,
+                    photoUrl: user?.avatarUrl,
+                    name: user?.name ?? 'User',
+                    backgroundColor: AppColors.gold.withValues(alpha: 0.15),
+                    textColor: AppColors.gold,
                   ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.gold,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          isDark ? const Color(0xFF1E2638) : AppColors.white,
-                      width: 2,
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color:
+                              isDark ? const Color(0xFF1E2638) : AppColors.white,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: AppColors.navyBlue,
+                      ),
                     ),
                   ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    size: 13,
-                    color: AppColors.navyBlue,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(width: 20),
 

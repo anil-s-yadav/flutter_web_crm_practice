@@ -10,6 +10,7 @@ import 'package:practice_app/blocs/auth/auth_bloc.dart';
 import 'package:practice_app/blocs/auth/auth_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
+import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +20,7 @@ import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/screens/candidates/candidate_data_source.dart';
 import 'package:practice_app/widgets/candidate_avatar.dart';
 import 'package:practice_app/widgets/candidate_promotion_helper.dart';
+import 'package:practice_app/core/category_constants.dart';
 
 enum CandidateDirectoryType {
   newlyAdded,
@@ -133,90 +135,12 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
         CandidatePromotionHelper.promoteToReadyToPlace(context, candidate);
         break;
       case 'blacklist':
-        _showBlacklistDialog(context, candidate);
+        CandidatePromotionHelper.blacklistCandidate(context, candidate);
+        break;
+      case 'restore_candidate':
+        CandidatePromotionHelper.restoreFromBlacklist(context, candidate);
         break;
     }
-  }
-
-  void _showBlacklistDialog(BuildContext context, CandidateModel candidate) {
-    final noteController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: isDark ? AppColors.darkSurface : AppColors.white,
-          title: Text(
-            'Blacklist Candidate',
-            style: GoogleFonts.poppins(
-              color: AppColors.criticalRed,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Please provide a reason for blacklisting this candidate. This action will log a permanent note.',
-                style: GoogleFonts.poppins(fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Enter blacklist reason...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.poppins(color: AppColors.grey500),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (noteController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a note before blacklisting.'),
-                    ),
-                  );
-                  return;
-                }
-                context.read<CandidateBloc>().add(
-                  UpdateCandidate(
-                    candidate.copyWith(
-                      status: CandidateStatus.blacklisted,
-                      remarks:
-                          '${candidate.remarks ?? ''}\nBlacklist Reason: ${noteController.text.trim()}'
-                              .trim(),
-                    ),
-                  ),
-                );
-                Navigator.pop(ctx);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.criticalRed,
-                foregroundColor: AppColors.white,
-              ),
-              child: Text(
-                'Confirm Blacklist',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -286,8 +210,11 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
                   }
                 }
                 if (_selectedCategory != null && _selectedCategory != 'All') {
-                  if (m.category.trim().toLowerCase() !=
-                      _selectedCategory!.trim().toLowerCase()) {
+                  final candCat = m.category.trim().toLowerCase();
+                  final selCat = _selectedCategory!.trim().toLowerCase();
+                  if (candCat != selCat &&
+                      !candCat.contains(selCat) &&
+                      !selCat.contains(candCat)) {
                     return false;
                   }
                 }
@@ -488,16 +415,15 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     final isMobile = context.media.width < 900;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      margin: EdgeInsets.all(6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.grey50,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? AppColors.dividerDark : AppColors.grey200,
-          ),
+        border: Border.all(
+          color: isDark ? const Color(0xFF475569) : AppColors.grey300,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child:
           isMobile
@@ -619,7 +545,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               _buildFilterDropdown(
                 value: _selectedCategory,
                 hint: 'Category',
-                items: ['All', 'Maid', 'Cook', 'Nanny', 'Caretaker'],
+                items: ['All', ...CategoryConstants.categories],
                 onChanged: (val) => setState(() => _selectedCategory = val),
                 isDark: isDark,
               ),
@@ -681,29 +607,26 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
   Widget _buildDesktopToolbar(bool isDark, int count) {
     return Row(
       children: [
-        if (!_isNewStyle) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.successGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${_indianFormat.format(count)} Candidates found',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.successGreen,
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.successGreen.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '${_indianFormat.format(count)} Candidates found',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.successGreen,
             ),
           ),
-          const Spacer(),
-        ],
-        const Spacer(),
+        ),
+        const SizedBox(width: 12),
         _buildFilterDropdown(
           value: _selectedCategory,
           hint: 'Category',
-          items: ['All', 'Maid', 'Cook', 'Nanny', 'Caretaker'],
+          items: ['All', ...CategoryConstants.categories],
           onChanged: (val) => setState(() => _selectedCategory = val),
           isDark: isDark,
         ),
@@ -764,7 +687,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
             onPressed: _clearFilters,
           ),
         ],
-        const SizedBox(width: 12),
+        const Spacer(),
         SizedBox(
           width: 260,
           height: 38,
@@ -783,17 +706,20 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
               prefixIcon: const Icon(Icons.search, size: 18),
               filled: true,
               fillColor: isDark ? AppColors.darkSurface : AppColors.white,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 0,
+              ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                  color: isDark ? const Color(0xFF475569) : AppColors.grey300,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: isDark ? AppColors.dividerDark : AppColors.grey300,
+                  color: isDark ? const Color(0xFF475569) : AppColors.grey300,
                 ),
               ),
             ),
@@ -894,16 +820,25 @@ class _CandidateGridView extends StatelessWidget {
           child: Align(
             alignment: Alignment.topCenter,
             child: Container(
-              // margin: const EdgeInsets.symmetric(horizontal: 10),
               margin: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : AppColors.white,
+                border: Border.all(
+                  color: isDark ? const Color(0xFF475569) : AppColors.grey300,
+                  width: 1.2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(7),
                 child: SfDataGridTheme(
                   data: SfDataGridThemeData(
                     headerColor:
-                        isDark ? AppColors.darkSurface : AppColors.grey50,
+                        isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.grey50,
                     gridLineColor:
-                        isDark ? AppColors.dividerDark : AppColors.grey200,
+                        isDark ? const Color(0xFF475569) : AppColors.grey200,
                     gridLineStrokeWidth: 1,
                     rowHoverColor:
                         isDark
@@ -915,7 +850,7 @@ class _CandidateGridView extends StatelessWidget {
                     source: dataSource,
                     allowSorting: true,
                     allowMultiColumnSorting: false,
-                    columnWidthMode: ColumnWidthMode.auto,
+                    columnWidthMode: ColumnWidthMode.fill,
                     gridLinesVisibility: GridLinesVisibility.both,
                     headerGridLinesVisibility: GridLinesVisibility.both,
                     columns: <GridColumn>[
@@ -926,9 +861,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'sr_no',
-                        width: 145,
+                        minimumWidth: 130,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'ID',
@@ -940,9 +875,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'date',
-                        width: 120,
+                        minimumWidth: 115,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Date',
@@ -954,9 +889,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'candidate',
-                        width: 220,
+                        minimumWidth: 200,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Candidate Name',
@@ -967,13 +902,13 @@ class _CandidateGridView extends StatelessWidget {
                         ),
                       ),
                       GridColumn(
-                        columnName: 'details',
-                        width: 150,
+                        columnName: 'location',
+                        minimumWidth: 140,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Details',
+                            'Location',
                             style: _headerStyle(isDark),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -982,9 +917,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'category',
-                        minimumWidth: 120,
+                        minimumWidth: 130,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Category',
@@ -996,9 +931,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'experience',
-                        width: 100,
+                        minimumWidth: 100,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Exp (Yrs)',
@@ -1010,9 +945,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'salary',
-                        minimumWidth: 140,
+                        minimumWidth: 170,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Expected Salary',
@@ -1026,7 +961,7 @@ class _CandidateGridView extends StatelessWidget {
                         columnName: 'education',
                         minimumWidth: 120,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Education',
@@ -1040,10 +975,10 @@ class _CandidateGridView extends StatelessWidget {
                         columnName: 'languages',
                         minimumWidth: 120,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Lang',
+                            'Languages',
                             style: _headerStyle(isDark),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1052,9 +987,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'status',
-                        width: 150,
+                        minimumWidth: 140,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Status',
@@ -1066,9 +1001,9 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'actions',
-                        width: 80,
+                        minimumWidth: 85,
                         label: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           alignment: Alignment.center,
                           child: Text(
                             'Actions',
@@ -1342,7 +1277,11 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                             value: 'rollback_newly_added',
                             child: Row(
                               children: [
-                                Icon(Icons.undo, size: 16, color: AppColors.urgentAmber),
+                                Icon(
+                                  Icons.undo,
+                                  size: 16,
+                                  color: AppColors.urgentAmber,
+                                ),
                                 SizedBox(width: 8),
                                 Text('Rollback to Newly Added'),
                               ],
@@ -1378,6 +1317,17 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                             child: Text(
                               'Blacklist',
                               style: TextStyle(color: AppColors.criticalRed),
+                            ),
+                          ),
+                        );
+                      } else if (candidate.status ==
+                          CandidateStatus.blacklisted) {
+                        items.add(
+                          const PopupMenuItem(
+                            value: 'restore_candidate',
+                            child: Text(
+                              'Restore Candidate',
+                              style: TextStyle(color: AppColors.successGreen),
                             ),
                           ),
                         );
@@ -1417,6 +1367,28 @@ class _MobileCandidateCardState extends State<_MobileCandidateCard> {
                     _buildDetailItem(
                       'Languages',
                       candidate.languages.join(', '),
+                      isDark,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildDetailItem(
+                      'Sourced By',
+                      candidate.sourcedByName != null &&
+                              candidate.sourcedByName!.isNotEmpty
+                          ? '${candidate.sourcedByName} (${candidate.sourcedById ?? 'Staff'})'
+                          : (candidate.sourcedById != null &&
+                                  candidate.sourcedById!.isNotEmpty
+                              ? candidate.sourcedById!
+                              : candidate.addedBy),
+                      isDark,
+                    ),
+                    _buildDetailItem(
+                      'Date Added',
+                      DateFormat('dd MMM yyyy').format(candidate.dateAdded),
                       isDark,
                     ),
                   ],

@@ -51,6 +51,8 @@ const login = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            alternate_phone: user.alternate_phone,
             profile_image_url: user.profile_image_url
           }
         });

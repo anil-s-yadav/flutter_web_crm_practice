@@ -7,6 +7,7 @@ import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:practice_app/widgets/user_avatar.dart';
 
 class TeamDataSource extends DataGridSource {
   final BuildContext context;
@@ -157,17 +158,12 @@ class TeamDataSource extends DataGridSource {
                 alignment: Alignment.centerLeft,
                 child: Row(
                   children: [
-                    CircleAvatar(
+                    UserAvatar(
                       radius: 16,
+                      photoUrl: user.profileImageUrl,
+                      name: user.name,
                       backgroundColor: roleColor.withValues(alpha: 0.15),
-                      child: Text(
-                        user.name.split(' ').map((n) => n[0]).take(2).join(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: roleColor,
-                        ),
-                      ),
+                      textColor: roleColor,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -190,6 +186,20 @@ class TeamDataSource extends DataGridSource {
                       ),
                     ),
                   ],
+                ),
+              );
+            } else if (columnName == 'email') {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  user.email.isNotEmpty ? user.email : '—',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? AppColors.grey300 : AppColors.navyBlue,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               );
             } else if (columnName == 'role') {
@@ -249,7 +259,7 @@ class TeamDataSource extends DataGridSource {
                   dateFormat.format(user.joinedDate),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: isDark ? AppColors.grey400 : AppColors.grey600,
+                    color: isDark ? AppColors.grey400 : AppColors.grey900,
                   ),
                 ),
               );
