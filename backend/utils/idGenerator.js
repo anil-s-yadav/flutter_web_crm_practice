@@ -66,8 +66,17 @@ async function generateInternalId(db, tableName) {
      FROM \`${tableName}\` 
      WHERE id REGEXP '^[0-9]+$'`
   );
-  const nextNum = (rows[0]?.max_num || 0) + 1;
   return String(nextNum);
+}
+
+async function generateUrgentHireId(db) {
+  const [rows] = await db.query(
+    `SELECT MAX(CAST(SUBSTRING(id, 3) AS UNSIGNED)) AS max_num 
+     FROM urgent_hires 
+     WHERE id REGEXP '^UH[0-9]+$'`
+  );
+  const nextNum = (rows[0]?.max_num || 0) + 1;
+  return `UH${String(nextNum).padStart(8, '0')}`;
 }
 
 module.exports = {
@@ -76,5 +85,7 @@ module.exports = {
   generateContractId,
   generateTicketId,
   generateUserId,
-  generateInternalId
+  generateInternalId,
+  generateUrgentHireId
 };
+

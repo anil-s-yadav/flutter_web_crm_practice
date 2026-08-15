@@ -535,8 +535,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       return;
                     }
 
-
-
                     // TODO: Implement notification dispatch using appropriate bloc/service
                     Navigator.pop(context);
 

@@ -40,16 +40,23 @@ import 'package:practice_app/blocs/user/user_bloc.dart';
 
 import 'package:practice_app/repositories/ticket_repository.dart';
 import 'package:practice_app/blocs/ticket/ticket_bloc.dart';
+import 'package:practice_app/repositories/urgent_hire_repository.dart';
+import 'package:practice_app/blocs/urgent_hire/urgent_hire_bloc.dart';
+import 'package:practice_app/blocs/urgent_hire/urgent_hire_event.dart';
+import 'package:practice_app/repositories/learning_repository.dart';
+import 'package:practice_app/blocs/learning/learning_bloc.dart';
 
 import 'package:practice_app/api/api_client.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'services/firebase_messaging_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = true;
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -85,10 +92,16 @@ void main() async {
           create: (context) => ReplacementRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
+          create: (context) => UrgentHireRepository(apiClient: ApiClient()),
+        ),
+        RepositoryProvider(
           create: (context) => UserRepository(apiClient: ApiClient()),
         ),
         RepositoryProvider(
           create: (context) => TicketRepository(apiClient: ApiClient()),
+        ),
+        RepositoryProvider(
+          create: (context) => LearningRepository(),
         ),
       ],
       child: MultiBlocProvider(
@@ -141,6 +154,12 @@ void main() async {
           ),
           BlocProvider(
             create:
+                (context) => UrgentHireBloc(
+                  repository: context.read<UrgentHireRepository>(),
+                )..add(const LoadUrgentHires()),
+          ),
+          BlocProvider(
+            create:
                 (context) =>
                     AuditLogBloc(auditLogRepository: AuditLogRepository()),
           ),
@@ -148,6 +167,12 @@ void main() async {
             create:
                 (context) => TicketBloc(
                   ticketRepository: context.read<TicketRepository>(),
+                ),
+          ),
+          BlocProvider(
+            create:
+                (context) => LearningBloc(
+                  learningRepository: context.read<LearningRepository>(),
                 ),
           ),
         ],

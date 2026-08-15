@@ -24,6 +24,9 @@ import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 
+import 'package:practice_app/auth/user_manager.dart';
+import 'package:practice_app/models/user_model.dart';
+
 class ContractListScreen extends StatefulWidget {
   final String? initialViewMode;
 
@@ -34,6 +37,10 @@ class ContractListScreen extends StatefulWidget {
 }
 
 class _ContractListScreenState extends State<ContractListScreen> {
+  String get _routePrefix {
+    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    return role == UserRole.sales ? '/sales' : '/admin';
+  }
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final bool _showFilters = false;
@@ -51,22 +58,10 @@ class _ContractListScreenState extends State<ContractListScreen> {
   void initState() {
     super.initState();
     _currentViewMode = widget.initialViewMode;
-    final contractBloc = context.read<ContractBloc>();
-    if (contractBloc.state is! ContractLoaded) {
-      contractBloc.add(LoadContracts());
-    }
-    final replacementBloc = context.read<ReplacementBloc>();
-    if (replacementBloc.state is! ReplacementLoaded) {
-      replacementBloc.add(const LoadReplacements());
-    }
-    final clientBloc = context.read<ClientBloc>();
-    if (clientBloc.state is! ClientLoaded) {
-      clientBloc.add(const LoadClients());
-    }
-    final candidateBloc = context.read<CandidateBloc>();
-    if (candidateBloc.state is! CandidateLoaded) {
-      candidateBloc.add(const LoadCandidates());
-    }
+    context.read<ContractBloc>().add(LoadContracts());
+    context.read<ReplacementBloc>().add(const LoadReplacements());
+    context.read<ClientBloc>().add(const LoadClients());
+    context.read<CandidateBloc>().add(const LoadCandidates());
   }
 
   @override
@@ -116,8 +111,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
           isDark: isDark,
           requests: _filteredRequests,
           onRowTap: (request) {
-            final routePrefix = '/admin'; // Hardcoded for now
-            context.push('$routePrefix/contracts/replacements/${request.id}');
+            context.push('$_routePrefix/contracts/replacements/${request.id}');
           },
         );
       } else {
@@ -195,12 +189,11 @@ class _ContractListScreenState extends State<ContractListScreen> {
         contracts: filteredContracts,
         viewMode: _currentViewMode,
         onRowTap: (contract) {
-          final routePrefix = '/admin'; // Hardcoded for now
-          var path = '$routePrefix/contracts/${contract.id}';
+          var path = '$_routePrefix/contracts/${contract.id}';
           if (_currentViewMode != null) {
             path += '?fromContractMode=$_currentViewMode';
           }
-          context.push(path);
+          context.go(path);
         },
       );
     } else {
@@ -1200,8 +1193,7 @@ class _ContractListScreenState extends State<ContractListScreen> {
             subtitle: Text('Old Candidate: ${r.oldCandidateName}'),
             trailing: Text(r.status.displayName),
             onTap: () {
-              final routePrefix = '/admin'; // Hardcoded for now
-              context.push('$routePrefix/contracts/replacements/${r.id}');
+              context.push('$_routePrefix/contracts/replacements/${r.id}');
             },
           ),
         );
@@ -1281,12 +1273,11 @@ class _ContractListScreenState extends State<ContractListScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () {
-              final routePrefix = '/admin'; // Hardcoded for now
-              var path = '$routePrefix/clients/${contract.clientId}';
+              var path = '$_routePrefix/clients/${contract.clientId}';
               if (_currentViewMode != null) {
                 path += '?fromContractMode=$_currentViewMode';
               }
-              context.push(path);
+              context.go(path);
             },
             child: Padding(
               padding: const EdgeInsets.all(12),

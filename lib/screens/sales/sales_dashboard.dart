@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:practice_app/theme/app_colors.dart';
@@ -24,10 +25,11 @@ class _SalesDashboardState extends State<SalesDashboard> {
   @override
   void initState() {
     super.initState();
-    final dashboardBloc = context.read<DashboardBloc>();
-    if (dashboardBloc.state is! DashboardLoaded) {
-      dashboardBloc.add(LoadSalesDashboard());
-    }
+    context.read<DashboardBloc>().add(LoadSalesDashboard());
+  }
+
+  Future<void> _refresh() async {
+    context.read<DashboardBloc>().add(LoadSalesDashboard());
   }
 
   @override
@@ -43,7 +45,20 @@ class _SalesDashboardState extends State<SalesDashboard> {
             dashboardState is DashboardInitial) {
           return const Center(child: CircularProgressIndicator());
         } else if (dashboardState is DashboardError) {
-          return Center(child: Text('Error: ${dashboardState.message}'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: ${dashboardState.message}'),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
         }
 
         final data = (dashboardState as DashboardLoaded).data;
@@ -108,20 +123,32 @@ class _SalesDashboardState extends State<SalesDashboard> {
             : <MapEntry<String, int>>[];
 
 
-        return Scaffold(
-          body: SingleChildScrollView(
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.all(isDesktop ? 24 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Sales Pipeline Visualization
-                Text(
-                  'Sales Funnel Pipeline',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.navyBlue,
-                  ),
+                // Header with refresh button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Sales Funnel Pipeline',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'Refresh live data',
+                      onPressed: _refresh,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Card(
@@ -138,25 +165,25 @@ class _SalesDashboardState extends State<SalesDashboard> {
                     child:
                         isTablet
                             ? Row(
-                              children: _buildPipelineSteps(
-                                isDark,
-                                true,
-                                followUps,
-                                interested,
-                                converted,
-                                totalPipeline,
-                              ),
-                            )
+                                children: _buildPipelineSteps(
+                                  isDark,
+                                  true,
+                                  followUps,
+                                  interested,
+                                  converted,
+                                  totalPipeline,
+                                ),
+                              )
                             : Column(
-                              children: _buildPipelineSteps(
-                                isDark,
-                                false,
-                                followUps,
-                                interested,
-                                converted,
-                                totalPipeline,
+                                children: _buildPipelineSteps(
+                                  isDark,
+                                  false,
+                                  followUps,
+                                  interested,
+                                  converted,
+                                  totalPipeline,
+                                ),
                               ),
-                            ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -401,65 +428,78 @@ class _SalesDashboardState extends State<SalesDashboard> {
   Widget _buildPipelineCard(_PipelineStep step, bool isDark) {
     final double percentage = step.total > 0 ? step.count / step.total : 0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: step.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: step.color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: step.color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+    String? route;
+    if (step.title == 'Follow Up') {
+      route = '/sales/clients/followup';
+    } else if (step.title == 'Interested') {
+      route = '/sales/clients/interested';
+    } else if (step.title == 'Converted') {
+      route = '/sales/clients/active';
+    }
+
+    return InkWell(
+      onTap: route != null ? () => context.go(route!) : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: step.color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: step.color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: step.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(step.icon, color: step.color, size: 20),
                 ),
-                child: Icon(step.icon, color: step.color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      step.title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.grey300 : AppColors.grey700,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        step.title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.grey300 : AppColors.grey700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _indianFormat.format(step.count),
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.white : AppColors.navyBlue,
+                      const SizedBox(height: 4),
+                      Text(
+                        _indianFormat.format(step.count),
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage,
-              backgroundColor:
-                  isDark ? AppColors.darkSurfaceVariant : AppColors.grey200,
-              valueColor: AlwaysStoppedAnimation<Color>(step.color),
-              minHeight: 6,
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: percentage,
+                backgroundColor:
+                    isDark ? AppColors.darkSurfaceVariant : AppColors.grey200,
+                valueColor: AlwaysStoppedAnimation<Color>(step.color),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -546,21 +586,31 @@ class _SalesDashboardState extends State<SalesDashboard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
-              Icons.phone_in_talk_outlined,
-              color: AppColors.warningOrange,
-              size: 20,
+            Row(
+              children: [
+                const Icon(
+                  Icons.phone_in_talk_outlined,
+                  color: AppColors.warningOrange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Actionable Follow-Ups',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              'Actionable Follow-Ups',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
+            if (followUps.isNotEmpty)
+              TextButton(
+                onPressed: () => context.go('/sales/clients/followup'),
+                child: const Text('View All'),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -595,6 +645,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 ),
                 color: isDark ? AppColors.darkSurface : AppColors.white,
                 child: ListTile(
+                  onTap: () => context.go('/sales/clients/${client.id}'),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.warningOrange.withValues(
                       alpha: 0.1,
@@ -615,7 +666,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                   trailing: IconButton(
                     icon: const Icon(Icons.phone_forwarded),
                     color: AppColors.successGreen,
-                    onPressed: () {},
+                    onPressed: () => context.go('/sales/clients/${client.id}'),
                   ),
                 ),
               );
@@ -634,21 +685,31 @@ class _SalesDashboardState extends State<SalesDashboard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
-              Icons.emoji_events_outlined,
-              color: AppColors.gold,
-              size: 20,
+            Row(
+              children: [
+                const Icon(
+                  Icons.emoji_events_outlined,
+                  color: AppColors.gold,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Recent Wins',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              'Recent Wins',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.white : AppColors.navyBlue,
+            if (wins.isNotEmpty)
+              TextButton(
+                onPressed: () => context.go('/sales/contracts'),
+                child: const Text('View All'),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -684,6 +745,7 @@ class _SalesDashboardState extends State<SalesDashboard> {
                 ),
                 color: isDark ? AppColors.darkSurface : AppColors.white,
                 child: ListTile(
+                  onTap: () => context.go('/sales/contracts/${win.id}'),
                   leading: CircleAvatar(
                     backgroundColor: AppColors.successGreen.withValues(
                       alpha: 0.1,

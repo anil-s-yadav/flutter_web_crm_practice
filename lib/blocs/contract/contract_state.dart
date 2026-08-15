@@ -14,11 +14,13 @@ class ContractLoading extends ContractState {}
 
 class ContractLoaded extends ContractState {
   final List<ContractModel> contracts;
+  final DateTime timestamp;
 
-  const ContractLoaded({required this.contracts});
+  ContractLoaded({required this.contracts, DateTime? timestamp})
+      : timestamp = timestamp ?? DateTime.now();
 
   @override
-  List<Object> get props => [contracts];
+  List<Object> get props => [contracts, timestamp];
 }
 
 class ContractError extends ContractState {

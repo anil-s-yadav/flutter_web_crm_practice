@@ -350,8 +350,34 @@ class ClientModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ClientModel && runtimeType == other.runtimeType && id == other.id;
+      other is ClientModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          fullName == other.fullName &&
+          status == other.status &&
+          remarks == other.remarks &&
+          phone == other.phone &&
+          altPhone == other.altPhone &&
+          email == other.email &&
+          address == other.address &&
+          city == other.city &&
+          profileImageUrl == other.profileImageUrl &&
+          renewalCount == other.renewalCount &&
+          preferredCandidateCategory == other.preferredCandidateCategory;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        fullName,
+        status,
+        remarks,
+        phone,
+        altPhone,
+        email,
+        address,
+        city,
+        profileImageUrl,
+        renewalCount,
+        preferredCandidateCategory,
+      );
 }

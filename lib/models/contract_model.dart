@@ -248,8 +248,30 @@ class ContractModel {
       identical(this, other) ||
       other is ContractModel &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          clientId == other.clientId &&
+          candidateId == other.candidateId &&
+          contractStatus == other.contractStatus &&
+          paymentStatus == other.paymentStatus &&
+          amountPaid == other.amountPaid &&
+          balanceAmount == other.balanceAmount &&
+          serviceFee == other.serviceFee &&
+          replacementsUsed == other.replacementsUsed &&
+          isReplacementUsed == other.isReplacementUsed &&
+          remarks == other.remarks;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        clientId,
+        candidateId,
+        contractStatus,
+        paymentStatus,
+        amountPaid,
+        balanceAmount,
+        serviceFee,
+        replacementsUsed,
+        isReplacementUsed,
+        remarks,
+      );
 }

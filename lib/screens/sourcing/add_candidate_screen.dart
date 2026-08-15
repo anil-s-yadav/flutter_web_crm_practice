@@ -32,6 +32,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _altPhoneController = TextEditingController();
+  final _aadhaarController = TextEditingController();
   final _ageController = TextEditingController(text: '25');
   final _addressController = TextEditingController();
   final _experienceYearsController = TextEditingController(text: '0');
@@ -82,6 +83,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _altPhoneController.dispose();
+    _aadhaarController.dispose();
     _ageController.dispose();
     _addressController.dispose();
     _experienceYearsController.dispose();
@@ -185,6 +187,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
           _altPhoneController.text.trim().isEmpty
               ? null
               : _altPhoneController.text.trim(),
+      aadhaarNumber: _aadhaarController.text.replaceAll(RegExp(r'\s+'), '').trim(),
       address: _addressController.text.trim(),
       city: _city,
       state: 'Maharashtra',
@@ -265,6 +268,7 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     _nameController.clear();
     _phoneController.clear();
     _altPhoneController.clear();
+    _aadhaarController.clear();
     _ageController.text = '25';
     _addressController.clear();
     _experienceYearsController.text = '0';
@@ -507,8 +511,28 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                             return null;
                           },
                         ),
-                        // Placeholder for symmetry if needed, or leave empty
-                        const SizedBox.shrink(),
+                        _buildTextField(
+                          label: 'Aadhaar Card Number *',
+                          hint: '12-digit UIDAI number (e.g. 543210987654)',
+                          isDark: isDark,
+                          controller: _aadhaarController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(12),
+                          ],
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Aadhaar number is required';
+                            }
+                            final clean = v.replaceAll(RegExp(r'\s+'), '').trim();
+                            if (clean.length != 12 || int.tryParse(clean) == null) {
+                              return 'Must be exactly 12 numeric digits';
+                            }
+                            return null;
+                          },
+                        ),
                       ]),
                       const SizedBox(height: 24),
                       _buildResponsiveFields(context, [
@@ -587,10 +611,6 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
                           onChanged: (v) {
                             setState(() {
                               _category = v!;
-                              final base =
-                                  CategoryConstants.baseSalaries[_category] ??
-                                  15000.0;
-                              _salaryRange = RangeValues(base, base + 8000.0);
                             });
                           },
                           isDark: isDark,
@@ -1158,9 +1178,11 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     required bool isDark,
     TextEditingController? controller,
     String? initialValue,
+    String? hint,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     void Function(String?)? onSaved,
   }) {
@@ -1182,13 +1204,15 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
           initialValue: controller == null ? initialValue : null,
           maxLength: isPhone ? 10 : maxLength,
           inputFormatters:
-              isPhone
+              inputFormatters ??
+              (isPhone
                   ? [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
                   ]
-                  : null,
+                  : null),
           decoration: InputDecoration(
+            hintText: hint,
             counterText: '',
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

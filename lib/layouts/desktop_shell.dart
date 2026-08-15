@@ -14,6 +14,7 @@ import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/utils/fullscreen.dart';
 import 'package:practice_app/screens/shared/notification_panel.dart';
 import 'package:practice_app/widgets/global_search_dialog.dart';
+import 'package:practice_app/widgets/fee_calculator_dialog.dart';
 import 'package:practice_app/widgets/user_avatar.dart';
 
 class DesktopShell extends StatefulWidget {
@@ -170,6 +171,12 @@ class _DesktopShellState extends State<DesktopShell> {
             ],
           ),
           _SidebarItem(
+            icon: Icons.flash_on_outlined,
+            activeIcon: Icons.flash_on,
+            label: 'Urgent Hires',
+            route: '/admin/urgent_hires',
+          ),
+          _SidebarItem(
             icon: Icons.history_outlined,
             activeIcon: Icons.history,
             label: 'Audit Trail',
@@ -304,6 +311,12 @@ class _DesktopShellState extends State<DesktopShell> {
             activeIcon: Icons.dashboard,
             label: 'Dashboard',
             route: '/sourcing',
+          ),
+          _SidebarItem(
+            icon: Icons.flash_on_outlined,
+            activeIcon: Icons.flash_on,
+            label: 'Urgent Hires',
+            route: '/sourcing/urgent_hires',
           ),
           _SidebarItem(
             icon: Icons.verified_outlined,
@@ -524,6 +537,7 @@ class _DesktopShellState extends State<DesktopShell> {
                 // Content
                 Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildTopBar(isDark, currentLocation),
                       Expanded(child: widget.child),
@@ -735,9 +749,10 @@ class _DesktopShellState extends State<DesktopShell> {
     bool expanded,
     bool isDark,
   ) {
-    if (item.children != null && item.children!.isNotEmpty) {
-      bool isAnyChildActive =
-          isActive ||
+    final hasChildren = item.children != null && item.children!.isNotEmpty;
+
+    if (hasChildren) {
+      final isAnyChildActive = isActive ||
           item.children!.any(
             (c) => _isRouteActive(
               c.route,
@@ -745,74 +760,212 @@ class _DesktopShellState extends State<DesktopShell> {
             ),
           );
 
+      // In Minimized / Collapsed Rail Mode: Show clean icon with floating PopupMenu
+      if (!expanded) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+            ),
+            child: PopupMenuButton<_SidebarItem>(
+              tooltip: item.label,
+              offset: const Offset(62, 0),
+              color: isDark ? AppColors.darkSurface : AppColors.white,
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                ),
+              ),
+              itemBuilder: (context) {
+                return [
+                  // Header item showing parent category name
+                  PopupMenuItem<_SidebarItem>(
+                    enabled: false,
+                    height: 36,
+                    child: Container(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: isDark
+                                ? AppColors.dividerDark
+                                : AppColors.grey200,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isAnyChildActive ? item.activeIcon : item.icon,
+                            size: 16,
+                            color: AppColors.gold,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            item.label.toUpperCase(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                              color: isDark
+                                  ? AppColors.gold
+                                  : AppColors.navyBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Child sub-routes
+                  ...item.children!.map((child) {
+                    final isChildActive = _isRouteActive(
+                      child.route,
+                      GoRouterState.of(context).uri.toString(),
+                    );
+                    return PopupMenuItem<_SidebarItem>(
+                      value: child,
+                      height: 40,
+                      child: Row(
+                        children: [
+                          Icon(
+                            isChildActive ? child.activeIcon : child.icon,
+                            size: 18,
+                            color: isChildActive
+                                ? AppColors.gold
+                                : (isDark
+                                    ? AppColors.grey400
+                                    : AppColors.grey600),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            child.label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: isChildActive
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isChildActive
+                                  ? AppColors.gold
+                                  : (isDark
+                                      ? AppColors.white
+                                      : AppColors.navyBlue),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ];
+              },
+              onSelected: (child) {
+                context.go(child.route);
+              },
+              child: Container(
+                height: 44,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: isAnyChildActive
+                      ? AppColors.gold.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: isAnyChildActive
+                      ? Border.all(
+                          color: AppColors.gold.withValues(alpha: 0.4),
+                        )
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      isAnyChildActive ? item.activeIcon : item.icon,
+                      size: 22,
+                      color: isAnyChildActive
+                          ? AppColors.gold
+                          : AppColors.grey400,
+                    ),
+                    // Small subtle dot in top-right to indicate expandable menu
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: isAnyChildActive
+                              ? AppColors.gold
+                              : AppColors.grey500,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      // In Expanded Sidebar Mode: Show clean Accordion ExpansionTile
       return Material(
         color: Colors.transparent,
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            initiallyExpanded: isAnyChildActive || expanded,
-            tilePadding: EdgeInsets.symmetric(horizontal: expanded ? 14 : 0),
+            initiallyExpanded: isAnyChildActive,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 14),
             collapsedIconColor:
                 isAnyChildActive ? AppColors.gold : AppColors.grey400,
             iconColor: AppColors.gold,
-            title:
-                expanded
-                    ? Row(
-                      children: [
-                        Icon(
-                          isAnyChildActive ? item.activeIcon : item.icon,
-                          size: 20,
-                          color:
-                              isAnyChildActive
-                                  ? AppColors.gold
-                                  : AppColors.grey400,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            item.label,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight:
-                                  isAnyChildActive
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                              color:
-                                  isAnyChildActive
-                                      ? AppColors.gold
-                                      : (isDark
-                                          ? AppColors.grey300
-                                          : AppColors.navyBlue),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    )
-                    : Icon(
-                      isAnyChildActive ? item.activeIcon : item.icon,
-                      size: 20,
-                      color:
-                          isAnyChildActive ? AppColors.gold : AppColors.grey400,
+            title: Row(
+              children: [
+                Icon(
+                  isAnyChildActive ? item.activeIcon : item.icon,
+                  size: 20,
+                  color:
+                      isAnyChildActive ? AppColors.gold : AppColors.grey400,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: isAnyChildActive
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: isAnyChildActive
+                          ? AppColors.gold
+                          : (isDark
+                              ? AppColors.grey300
+                              : AppColors.navyBlue),
                     ),
-            children:
-                expanded
-                    ? item.children!.map((child) {
-                      final isChildActive = _isRouteActive(
-                        child.route,
-                        GoRouterState.of(context).uri.toString(),
-                      );
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 24.0, bottom: 4.0),
-                        child: _buildMenuItem(
-                          child,
-                          isChildActive,
-                          expanded,
-                          isDark,
-                        ),
-                      );
-                    }).toList()
-                    : [],
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            children: item.children!.map((child) {
+              final isChildActive = _isRouteActive(
+                child.route,
+                GoRouterState.of(context).uri.toString(),
+              );
+              return Padding(
+                padding: const EdgeInsets.only(left: 24.0, bottom: 4.0),
+                child: _buildMenuItem(
+                  child,
+                  isChildActive,
+                  expanded,
+                  isDark,
+                ),
+              );
+            }).toList(),
           ),
         ),
       );
@@ -910,10 +1063,11 @@ class _DesktopShellState extends State<DesktopShell> {
           ),
         ),
       ),
-      child: expanded
-          ? Row(
-              children: [
-                Expanded(
+      child:
+          expanded
+              ? Row(
+                children: [
+                  Expanded(
                     child: InkWell(
                       onTap: () {
                         context.go(_getProfileRoute());
@@ -927,8 +1081,11 @@ class _DesktopShellState extends State<DesktopShell> {
                             radius: 18,
                             photoUrl: user.avatarUrl,
                             name: user.name,
-                            backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-                            textColor: isDark ? AppColors.gold : AppColors.navyBlue,
+                            backgroundColor: AppColors.gold.withValues(
+                              alpha: 0.2,
+                            ),
+                            textColor:
+                                isDark ? AppColors.gold : AppColors.navyBlue,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -942,7 +1099,9 @@ class _DesktopShellState extends State<DesktopShell> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color:
-                                        isDark ? AppColors.white : AppColors.navyBlue,
+                                        isDark
+                                            ? AppColors.white
+                                            : AppColors.navyBlue,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -953,8 +1112,12 @@ class _DesktopShellState extends State<DesktopShell> {
                                     fontWeight: FontWeight.w400,
                                     color:
                                         isDark
-                                            ? AppColors.gold.withValues(alpha: 0.7)
-                                            : AppColors.navyBlue.withValues(alpha: 0.7),
+                                            ? AppColors.gold.withValues(
+                                              alpha: 0.7,
+                                            )
+                                            : AppColors.navyBlue.withValues(
+                                              alpha: 0.7,
+                                            ),
                                     letterSpacing: 1,
                                   ),
                                 ),
@@ -990,8 +1153,9 @@ class _DesktopShellState extends State<DesktopShell> {
 
   Widget _buildTopBar(bool isDark, String currentLocation) {
     return Container(
+      width: double.infinity,
       height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceVariant : AppColors.white,
         border: Border(
@@ -1001,198 +1165,325 @@ class _DesktopShellState extends State<DesktopShell> {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          // Page title
-          Text(
-            _getPageTitle(currentLocation),
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.navyBlue,
-            ),
-          ),
-          const Spacer(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 980;
+          final isVeryNarrow = constraints.maxWidth < 800;
 
-          // Search bar
-          InkWell(
-            onTap: () => GlobalSearchDialog.show(context),
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 240,
-              height: 38,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurface : AppColors.grey100,
-                borderRadius: BorderRadius.circular(10),
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Page title on Far Left
+              Flexible(
+                child: Text(
+                  _getPageTitle(currentLocation),
+                  style: GoogleFonts.poppins(
+                    fontSize: isNarrow ? 16 : 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.white : AppColors.navyBlue,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              child: Row(
+
+              // Action cluster docked to Far Right
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(width: 12),
-                  Icon(Icons.search, size: 18, color: AppColors.grey500),
+                  // Search bar
+                  if (isVeryNarrow)
+                    IconButton(
+                      icon: const Icon(Icons.search, size: 20),
+                      tooltip: 'Search anything',
+                      onPressed: () => GlobalSearchDialog.show(context),
+                    )
+                  else
+                    InkWell(
+                      onTap: () => GlobalSearchDialog.show(context),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: isNarrow ? 150 : 210,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurface : AppColors.grey100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 10),
+                            Icon(Icons.search, size: 16, color: AppColors.grey500),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Search...',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.grey500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Add Client Button
+                  if (UserManager().currentUser?.role == UserRole.sales ||
+                      currentLocation.startsWith('/sales/clients') ||
+                      currentLocation.startsWith('/admin/clients'))
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: isNarrow
+                          ? Tooltip(
+                              message: 'Add Client',
+                              child: ElevatedButton(
+                                onPressed: () => context.push('/sales/add_client'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gold,
+                                  foregroundColor: AppColors.navyBlue,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: const Size(36, 36),
+                                ),
+                                child: const Icon(Icons.person_add_alt_1, size: 18),
+                              ),
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: () => context.push('/sales/add_client'),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text(
+                                'Add Client',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: AppColors.navyBlue,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                            ),
+                    ),
+
+                  // New Ticket Button
+                  if (currentLocation.startsWith('/sales/tickets') ||
+                      currentLocation.startsWith('/sourcing/tickets') ||
+                      currentLocation.startsWith('/admin/tickets'))
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: isNarrow
+                          ? Tooltip(
+                              message: 'New Ticket',
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gold,
+                                  foregroundColor: AppColors.navyBlue,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: const Size(36, 36),
+                                ),
+                                child: const Icon(Icons.add, size: 18),
+                              ),
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text(
+                                'New Ticket',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: AppColors.navyBlue,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                            ),
+                    ),
+
+                  // Fee Calculator for Sales and Admin
+                  if (UserManager().currentUser?.role == UserRole.sales ||
+                      UserManager().currentUser?.role == UserRole.admin)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Tooltip(
+                        message: 'Fee & Installment Calculator',
+                        child: isNarrow
+                            ? ElevatedButton(
+                                onPressed: () => FeeCalculatorDialog.show(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gold,
+                                  foregroundColor: AppColors.navyBlue,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: const Size(36, 36),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Icon(Icons.calculate_outlined, size: 18),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: () => FeeCalculatorDialog.show(context),
+                                icon: const Icon(Icons.calculate_outlined, size: 16),
+                                label: const Text(
+                                  'Fee Calc',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.gold,
+                                  foregroundColor: AppColors.navyBlue,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Search anything...',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppColors.grey500,
+
+                  // Theme toggle
+                  _buildThemeToggle(isDark),
+
+                  // Fullscreen toggle (only on wide screens)
+                  if (!isNarrow)
+                    IconButton(
+                      icon: Icon(
+                        Icons.fullscreen,
+                        size: 20,
+                        color: isDark ? AppColors.grey300 : AppColors.navyBlue,
+                      ),
+                      tooltip: 'Fullscreen',
+                      onPressed: toggleFullScreen,
+                    ),
+
+                  // Notifications
+                  Builder(
+                    builder: (context) {
+                      const unreadNotificationCount = 0;
+                      return Badge(
+                        isLabelVisible: unreadNotificationCount > 0,
+                        label: Text(
+                          unreadNotificationCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        backgroundColor: AppColors.errorRed,
+                        offset: const Offset(-6, 6),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            size: 20,
+                            color: isDark ? AppColors.grey300 : AppColors.navyBlue,
+                          ),
+                          tooltip: 'Notifications',
+                          onPressed: () {
+                            Scaffold.of(context).openEndDrawer();
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 4),
+
+                  // User Profile Menu Button
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'profile') {
+                        context.go(_getProfileRoute());
+                      } else if (value == 'logout') {
+                        _handleLogout();
+                      }
+                    },
+                    offset: const Offset(0, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    color: isDark ? AppColors.cardDark : AppColors.white,
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'profile',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.person_outline,
+                              size: 20,
+                              color: AppColors.gold,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'My Profile & Settings',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.logout,
+                              size: 20,
+                              color: AppColors.errorRed,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Logout',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.errorRed,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: UserAvatar(
+                        radius: 16,
+                        photoUrl: UserManager().currentUser?.avatarUrl,
+                        name: UserManager().currentUser?.name ?? 'User',
+                        backgroundColor: AppColors.gold.withValues(alpha: 0.2),
+                        textColor: isDark ? AppColors.gold : AppColors.navyBlue,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-
-          if (UserManager().currentUser?.role == UserRole.sales ||
-              currentLocation.startsWith('/sales/clients') ||
-              currentLocation.startsWith('/admin/clients'))
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () => context.push('/sales/add_client'),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Client'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-
-          if (currentLocation.startsWith('/sales/tickets') ||
-              currentLocation.startsWith('/sourcing/tickets') ||
-              currentLocation.startsWith('/admin/tickets'))
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  /* TODO: Add ticket logic */
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('New Ticket'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.navyBlue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-
-          const SizedBox(width: 24),
-
-          // Timer
-          const SizedBox(width: 8),
-
-          // Theme toggle
-          _buildThemeToggle(isDark),
-          const SizedBox(width: 4),
-
-          // Fullscreen toggle
-          IconButton(
-            icon: Icon(
-              Icons.fullscreen,
-              size: 22,
-              color: isDark ? AppColors.grey300 : AppColors.navyBlue,
-            ),
-            onPressed: toggleFullScreen,
-          ),
-          const SizedBox(width: 4),
-
-          // Notifications
-          Builder(
-            builder: (context) {
-              const unreadNotificationCount = 0;
-              return Badge(
-                isLabelVisible: unreadNotificationCount > 0,
-                label: Text(
-                  unreadNotificationCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                backgroundColor: AppColors.errorRed,
-                offset: const Offset(-8, 8),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.notifications_outlined,
-                    size: 22,
-                    color: isDark ? AppColors.grey300 : AppColors.navyBlue,
-                  ),
-                  onPressed: () {
-                    Scaffold.of(context).openEndDrawer();
-                  },
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-
-          // User Profile Menu Button
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'profile') {
-                context.go(_getProfileRoute());
-              } else if (value == 'logout') {
-                _handleLogout();
-              }
-            },
-            offset: const Offset(0, 48),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            color: isDark ? AppColors.cardDark : AppColors.white,
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                value: 'profile',
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 20, color: AppColors.gold),
-                    const SizedBox(width: 12),
-                    Text(
-                      'My Profile & Settings',
-                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem<String>(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    const Icon(Icons.logout, size: 20, color: AppColors.errorRed),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Logout',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.errorRed,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
-            child: UserAvatar(
-              radius: 16,
-              photoUrl: UserManager().currentUser?.avatarUrl,
-              name: UserManager().currentUser?.name ?? 'User',
-              backgroundColor: AppColors.gold.withValues(alpha: 0.2),
-              textColor: isDark ? AppColors.gold : AppColors.navyBlue,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1226,75 +1517,79 @@ class _DesktopShellState extends State<DesktopShell> {
   }
 
   String _getPageTitle(String location) {
-    if (location.endsWith('/profile')) return 'My Profile & Settings';
-    // Sourcing / Admin specific routes
-    if (location.endsWith('/learning')) return 'Learning Center';
-    if (location.endsWith('/add_candidate')) return 'Add Candidate';
-    if (location.endsWith('/add_client')) return 'Add Client';
-    if (location.endsWith('/candidates/ready')) return 'Ready to Place';
-    if (location.endsWith('/candidates/new')) return 'Newly Added';
-    if (location.endsWith('/candidates/verification')) {
-      return 'Verification Pending';
-    }
-    if (location.endsWith('/candidates/medical')) return 'Medical Pending';
-    if (location.endsWith('/candidates/placed')) return 'PlacedCandidates';
-    if (location.endsWith('/candidates/blacklisted')) {
-      return 'Blacklisted Candidates';
-    }
+    // Strip query parameters if present
+    final loc = location.contains('?') ? location.split('?').first : location;
 
-    // Generic sub-routes
-    if (location.endsWith('/candidates')) return 'Candidate Directory';
-    if (location.contains('/candidates/') && location.endsWith('/edit')) {
+    if (loc.endsWith('/profile')) return 'My Profile & Settings';
+    if (loc.endsWith('/learning')) return 'Learning Center';
+    if (loc.endsWith('/add_candidate')) return 'Add Candidate';
+    if (loc.endsWith('/add_client')) return 'Add Client';
+    if (loc.endsWith('/financials')) return 'Financials & Payments';
+    if (loc.endsWith('/urgent_hires')) return 'Urgent Hires';
+    if (loc.endsWith('/audit')) return 'Audit Trail';
+    if (loc.endsWith('/settings')) return 'Settings';
+
+    // Candidate specific routes
+    if (loc.endsWith('/candidates/ready')) return 'Ready to Place';
+    if (loc.endsWith('/candidates/new')) return 'Newly Added';
+    if (loc.endsWith('/candidates/verification')) return 'Verification Pending';
+    if (loc.endsWith('/candidates/medical')) return 'Medical Pending';
+    if (loc.endsWith('/candidates/placed')) return 'Placed Candidates';
+    if (loc.endsWith('/candidates/blacklisted'))
+      return 'Blacklisted Candidates';
+    if (loc.contains('/candidates/') && loc.endsWith('/edit')) {
       return 'Edit Candidate Details';
     }
-    if (location.contains('/candidates/')) return 'Candidate Profile';
-    if (location.endsWith('/clients')) return 'Clients';
-    if (location.endsWith('/clients/new')) return 'New Inquiries';
-    if (location.endsWith('/clients/followup')) return 'Follow Ups';
-    if (location.endsWith('/clients/active')) return 'Converted (Active)';
-    if (location.contains('/clients/') && location.endsWith('/edit')) {
+    if (loc.contains('/candidates/')) return 'Candidate Profile';
+    if (loc.endsWith('/candidates')) return 'Candidate Directory';
+
+    // Client specific routes
+    if (loc.endsWith('/clients/interested')) return 'Interested Clients';
+    if (loc.endsWith('/clients/not_interested')) return 'Not Interested';
+    if (loc.endsWith('/clients/followup')) return 'Follow Ups';
+    if (loc.endsWith('/clients/active')) return 'Converted (Active)';
+    if (loc.endsWith('/clients/past')) return 'Inactive / Past Clients';
+    if (loc.endsWith('/clients/new')) return 'New Inquiries';
+    if (loc.contains('/clients/') && loc.endsWith('/edit')) {
       return 'Edit Client Details';
     }
-    if (location.contains('/clients/')) return 'Client Profile';
-    if (location.endsWith('/contracts')) return 'Contracts';
-    if (location.endsWith('/tickets')) return 'Tickets';
-    if (location.contains('/tickets/')) return 'Ticket Details';
-    if (location.endsWith('/settings')) return 'Settings';
-    if (location.endsWith('/audit')) return 'Audit Trail';
+    if (loc.contains('/clients/')) return 'Client Profile';
+    if (loc.endsWith('/clients')) return 'All Clients';
 
-    // Dashboards
-    if (location == '/admin') return 'Admin Dashboard';
-    if (location == '/sales') return 'Sales Dashboard';
-    if (location == '/sourcing') return 'Sourcing Dashboard';
-    if (location == '/executive') return 'Executive Dashboard';
-    if (location == '/executive/tasks') return 'My Tasks';
-    if (location == '/executive/rewards') return 'Rewards & Bonus';
-
-    if (location.endsWith('/clients/interested')) return 'Interested Clients';
-    if (location.endsWith('/clients/not_interested')) return 'Not Interested';
-    if (location.endsWith('/clients/active')) return 'Active Clients';
-    if (location.endsWith('/clients/past')) return 'Inactive / Past Clients';
-    if (location.endsWith('/clients')) return 'All Clients';
-
-    if (location.endsWith('/contracts/active')) return 'Fresh Contracts';
-    if (location.endsWith('/contracts/renewals')) return 'Renewed Contracts';
-    if (location.contains('/contracts/replacements/')) {
+    // Contract specific routes
+    if (loc.endsWith('/contracts/active')) return 'Fresh Contracts';
+    if (loc.endsWith('/contracts/renewals')) return 'Renewed Contracts';
+    if (loc.contains('/contracts/replacements/')) {
       return 'Replacement Details';
     }
-    if (location.endsWith('/contracts/replacements')) return 'Replacements';
-    if (location.contains('/contracts/')) return 'Contract Details';
-    if (location.endsWith('/contracts')) return 'Contracts';
+    if (loc.endsWith('/contracts/replacements')) return 'Replacements';
+    if (loc.contains('/contracts/')) return 'Contract Details';
+    if (loc.endsWith('/contracts')) return 'Contracts';
 
-    if (location.endsWith('/financials')) return 'Financials & Payments';
+    // Ticket specific routes
+    if (loc.contains('/tickets/')) return 'Ticket Details';
+    if (loc.endsWith('/tickets')) return 'Tickets';
 
-    if (location == '/admin/team') return 'Team Management';
-    if (location == '/admin/team/sales') return 'Sales Team';
-    if (location == '/admin/team/sourcing') return 'Sourcing Team';
-    if (location == '/admin/team/executives') return 'Executives';
-    if (location == '/admin/team/add') return 'Add Team Member';
-    if (location.contains('/admin/team/') && location.endsWith('/edit')) {
+    // Team specific routes
+    if (loc == '/admin/team/sales') return 'Sales Team';
+    if (loc == '/admin/team/sourcing') return 'Sourcing Team';
+    if (loc == '/admin/team/executives') return 'Executives';
+    if (loc == '/admin/team/add') return 'Add Team Member';
+    if (loc.contains('/admin/team/') && loc.endsWith('/edit')) {
       return 'Edit Team Member';
     }
+    if (loc == '/admin/team') return 'Team Management';
+
+    // Executive specific routes
+    if (loc.contains('/executive/tasks/')) return 'Task Details';
+    if (loc.endsWith('/executive/tasks')) return 'My Tasks';
+    if (loc.endsWith('/executive/rewards')) return 'Rewards & Bonus';
+
+    // Dashboards
+    if (loc == '/admin') return 'Admin Dashboard';
+    if (loc == '/sales') return 'Sales Dashboard';
+    if (loc == '/sourcing') return 'Sourcing Dashboard';
+    if (loc == '/executive') return 'Executive Dashboard';
 
     return 'Dashboard';
   }

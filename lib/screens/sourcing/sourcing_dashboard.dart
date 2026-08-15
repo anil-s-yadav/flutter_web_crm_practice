@@ -10,6 +10,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_bloc.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_event.dart';
 import 'package:practice_app/blocs/dashboard/dashboard_state.dart';
+import 'package:practice_app/blocs/urgent_hire/urgent_hire_bloc.dart';
+import 'package:practice_app/blocs/urgent_hire/urgent_hire_event.dart';
+import 'package:practice_app/blocs/urgent_hire/urgent_hire_state.dart';
+import 'package:practice_app/models/urgent_hire_model.dart';
 
 class SourcingDashboard extends StatefulWidget {
   const SourcingDashboard({super.key});
@@ -24,10 +28,8 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
   @override
   void initState() {
     super.initState();
-    final dashboardBloc = context.read<DashboardBloc>();
-    if (dashboardBloc.state is! DashboardLoaded) {
-      dashboardBloc.add(LoadSourcingDashboard());
-    }
+    context.read<DashboardBloc>().add(LoadSourcingDashboard());
+    context.read<UrgentHireBloc>().add(const LoadUrgentHires());
   }
 
   @override
@@ -77,6 +79,10 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Urgent Hires from Sales
+                _buildUrgentHiresSection(context, isDark, isTablet),
+                const SizedBox(height: 20),
+
                 // Pipeline visualization
                 Text(
                   'Verification Pipeline',
@@ -501,7 +507,204 @@ class _SourcingDashboardState extends State<SourcingDashboard> {
     );
   }
 
+  Widget _buildUrgentHiresSection(
+    BuildContext context,
+    bool isDark,
+    bool isTablet,
+  ) {
+    return BlocBuilder<UrgentHireBloc, UrgentHireState>(
+      builder: (context, state) {
+        final urgentHires = state is UrgentHireLoaded
+            ? state.urgentHires
+            : <UrgentHireModel>[];
 
+        final activeRequests = urgentHires
+            .where((u) =>
+                u.status == UrgentHireStatus.pending ||
+                u.status == UrgentHireStatus.inProgress)
+            .toList();
+
+        if (activeRequests.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.criticalRed.withValues(alpha: isDark ? 0.08 : 0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.criticalRed.withValues(alpha: 0.3),
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.criticalRed.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.flash_on,
+                          color: AppColors.criticalRed,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Urgent Hiring Requests from Sales (${activeRequests.length})',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.white : AppColors.navyBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () => context.go('/sourcing/urgent_hires'),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('View All Urgent Hires'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.criticalRed,
+                      textStyle: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: activeRequests.take(4).map((req) {
+                  return Container(
+                    width: isTablet ? 300 : double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : AppColors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? AppColors.dividerDark : AppColors.grey200,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              req.id,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.gold,
+                                fontSize: 11,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: req.status == UrgentHireStatus.pending
+                                    ? AppColors.criticalRed.withValues(alpha: 0.15)
+                                    : AppColors.gold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                req.status.displayName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: req.status == UrgentHireStatus.pending
+                                      ? AppColors.criticalRed
+                                      : AppColors.gold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          req.clientName,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: isDark ? AppColors.white : AppColors.navyBlue,
+                          ),
+                        ),
+                        Text(
+                          '${req.category} • ${req.serviceType}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: isDark ? AppColors.grey300 : AppColors.grey700,
+                          ),
+                        ),
+                        if (req.budgetRange.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Budget: ${req.budgetRange}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.gold,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'By ${req.requestedByName}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: isDark
+                                    ? AppColors.grey400
+                                    : AppColors.grey600,
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  context.go('/sourcing/urgent_hires'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.criticalRed,
+                                foregroundColor: AppColors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                minimumSize: const Size(60, 28),
+                              ),
+                              child: const Text('Source Now',
+                                  style: TextStyle(fontSize: 10)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _PipelineStep {

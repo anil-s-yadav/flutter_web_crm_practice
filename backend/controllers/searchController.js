@@ -27,12 +27,17 @@ const globalSearch = async (req, res) => {
     `;
 
     // 2. Search Clients by name, phone, alternate_phone, email, id
+    const isSales = req.user && req.user.role === 'sales';
     const clientsQuery = `
       SELECT id, name, phone, alternate_phone, email, status 
       FROM clients 
-      WHERE name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR email LIKE ? OR id LIKE ?
+      WHERE (name LIKE ? OR phone LIKE ? OR alternate_phone LIKE ? OR email LIKE ? OR id LIKE ?)
+      ${isSales ? ' AND assigned_sales_id = ?' : ''}
       LIMIT 10
     `;
+    const clientsValues = isSales 
+      ? [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, req.user.id]
+      : [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
 
     // 3. Search Contracts by id, client_id, candidate_id
     const contractsQuery = `
@@ -40,9 +45,13 @@ const globalSearch = async (req, res) => {
       FROM contracts c
       LEFT JOIN clients cl ON c.client_id = cl.id
       LEFT JOIN candidates cd ON c.candidate_id = cd.id
-      WHERE c.id LIKE ? OR cl.name LIKE ? OR cd.full_name LIKE ?
+      WHERE (c.id LIKE ? OR cl.name LIKE ? OR cd.full_name LIKE ?)
+      ${isSales ? ' AND (c.created_by = ? OR cl.assigned_sales_id = ?)' : ''}
       LIMIT 10
     `;
+    const contractsValues = isSales
+      ? [searchTerm, searchTerm, searchTerm, req.user.id, req.user.id]
+      : [searchTerm, searchTerm, searchTerm];
 
     // 4. Search Team Users by name, email, phone, alternate_phone, role, id
     const usersQuery = `
@@ -70,8 +79,8 @@ const globalSearch = async (req, res) => {
       [tickets]
     ] = await Promise.all([
       pool.execute(candidatesQuery, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]),
-      pool.execute(clientsQuery, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]),
-      pool.execute(contractsQuery, [searchTerm, searchTerm, searchTerm]),
+      pool.execute(clientsQuery, clientsValues),
+      pool.execute(contractsQuery, contractsValues),
       pool.execute(usersQuery, usersValues),
       pool.execute(ticketsQuery, ticketsValues)
     ]);

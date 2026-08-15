@@ -8,7 +8,9 @@ import 'package:practice_app/blocs/auth/auth_event.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/utils/extensions.dart';
+import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/widgets/global_search_dialog.dart';
+import 'package:practice_app/widgets/fee_calculator_dialog.dart';
 
 class MobileShell extends StatefulWidget {
   final Widget child;
@@ -107,6 +109,13 @@ class _MobileShellState extends State<MobileShell> {
           ],
         ),
         actions: [
+          if (UserManager().currentUser?.role == UserRole.sales ||
+              UserManager().currentUser?.role == UserRole.admin)
+            IconButton(
+              icon: const Icon(Icons.calculate_outlined, size: 22),
+              tooltip: 'Salary & Fee Calculator',
+              onPressed: () => FeeCalculatorDialog.show(context),
+            ),
           IconButton(
             icon: const Icon(Icons.search, size: 22),
             onPressed: () => GlobalSearchDialog.show(context),

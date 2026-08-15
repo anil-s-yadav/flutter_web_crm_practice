@@ -32,6 +32,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
   // Form fields
   String _name = '';
   String _phone = '';
+  String _aadhaarNumber = '';
   int _age = 0;
   String _city = '';
   String _address = '';
@@ -70,6 +71,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           _candidate = found!;
           _name = _candidate.fullName;
           _phone = _candidate.phone;
+          _aadhaarNumber = _candidate.aadhaarNumber ?? '';
           _age = _candidate.age;
           _city = _candidate.city;
           _address = _candidate.address;
@@ -206,6 +208,9 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
       List<String> changes = [];
       if (_name != _candidate.fullName) changes.add('Name');
       if (_phone != _candidate.phone) changes.add('Phone');
+      if (_aadhaarNumber != (_candidate.aadhaarNumber ?? '')) {
+        changes.add('Aadhaar Number');
+      }
       if (_age != _candidate.age) changes.add('Age');
       if (_city != _candidate.city || _address != _candidate.address) {
         changes.add('Address');
@@ -243,6 +248,7 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
         fullName: _name,
         age: _age,
         phone: _phone,
+        aadhaarNumber: _aadhaarNumber.replaceAll(RegExp(r'\s+'), '').trim(),
         address: _address,
         city: _city,
         category: _category,
@@ -386,6 +392,32 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
                                           ? 'Enter exactly 10 digits'
                                           : null,
                               onSaved: (v) => _phone = v!,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTextField(
+                              label: 'Aadhaar Card Number *',
+                              hint: '12-digit UIDAI number',
+                              isDark: isDark,
+                              initialValue: _aadhaarNumber,
+                              keyboardType: TextInputType.number,
+                              maxLength: 12,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(12),
+                              ],
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Aadhaar is required';
+                                }
+                                final clean = v.replaceAll(RegExp(r'\s+'), '').trim();
+                                if (clean.length != 12 || int.tryParse(clean) == null) {
+                                  return 'Must be 12 digits';
+                                }
+                                return null;
+                              },
+                              onSaved: (v) => _aadhaarNumber = v ?? '',
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -889,9 +921,11 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
     required String label,
     required bool isDark,
     String? initialValue,
+    String? hint,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     void Function(String?)? onSaved,
   }) {
@@ -912,13 +946,15 @@ class _EditCandidateScreenState extends State<EditCandidateScreen> {
           initialValue: initialValue,
           maxLength: isPhone ? 10 : maxLength,
           inputFormatters:
-              isPhone
+              inputFormatters ??
+              (isPhone
                   ? [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
                   ]
-                  : null,
+                  : null),
           decoration: InputDecoration(
+            hintText: hint,
             counterText: '',
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,

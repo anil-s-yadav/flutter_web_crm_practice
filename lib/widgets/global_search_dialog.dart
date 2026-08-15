@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:practice_app/auth/user_manager.dart';
+import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/repositories/search_repository.dart';
 import 'package:practice_app/theme/app_colors.dart';
 
@@ -78,7 +80,8 @@ class _GlobalSearchDialogState extends State<GlobalSearchDialog> {
 
   void _navigateToTarget(String type, Map<String, dynamic> item) {
     Navigator.pop(context);
-    final routePrefix = '/admin'; // default prefix
+    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    final routePrefix = (role == UserRole.sales) ? '/sales' : (role == UserRole.sourcing ? '/sourcing' : (role == UserRole.executive ? '/executive' : '/admin'));
 
     switch (type) {
       case 'candidate':

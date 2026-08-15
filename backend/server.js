@@ -40,6 +40,8 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/audit-logs', require('./routes/auditLogRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
+app.use('/api/urgent-hires', require('./routes/urgentHireRoutes'));
+app.use('/api/learnings', require('./routes/learningRoutes'));
 // ---------------------------------
 
 // Error Handling Middleware

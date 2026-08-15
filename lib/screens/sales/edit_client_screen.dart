@@ -76,6 +76,20 @@ class _EditClientScreenState extends State<EditClientScreen> {
     if (clientState is ClientLoaded) {
       try {
         final found = clientState.clients.firstWhere((c) => c.id == widget.clientId);
+        if (found.status != ClientStatus.followUp) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Client requirements can only be edited for leads in Follow Up status.'),
+                  backgroundColor: AppColors.urgentAmber,
+                ),
+              );
+              context.pop();
+            }
+          });
+          return;
+        }
         setState(() {
           _client = found;
           _fullName = found.fullName;

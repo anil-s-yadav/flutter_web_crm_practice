@@ -50,6 +50,7 @@ class CandidateModel {
   final int age;
   final String phone;
   final String? altPhone;
+  final String? aadhaarNumber;
   final String photoUrl;
   final String address;
   final String city;
@@ -98,6 +99,7 @@ class CandidateModel {
     required this.age,
     required this.phone,
     this.altPhone,
+    this.aadhaarNumber,
     required this.address,
     required this.city,
     required this.state,
@@ -166,6 +168,7 @@ class CandidateModel {
       age: json['age'] ?? 25,
       phone: json['phone'] ?? '',
       altPhone: json['altPhone'] ?? json['alternate_phone'],
+      aadhaarNumber: json['aadhaarNumber'] ?? json['aadhaar_number'],
       address: json['address'] ?? '',
       city: json['city'] ?? '',
       state: json['state'] ?? '',
@@ -220,6 +223,8 @@ class CandidateModel {
       'phone': phone,
       'alternate_phone': altPhone,
       'altPhone': altPhone,
+      'aadhaar_number': aadhaarNumber,
+      'aadhaarNumber': aadhaarNumber,
       'address': address,
       'city': city,
       'state': state,
@@ -273,6 +278,24 @@ class CandidateModel {
 
   String toJsonString() => jsonEncode(toJson());
 
+  String get formattedAadhaar {
+    if (aadhaarNumber == null || aadhaarNumber!.isEmpty) return 'Not Provided';
+    final digits = aadhaarNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length == 12) {
+      return '${digits.substring(0, 4)} ${digits.substring(4, 8)} ${digits.substring(8, 12)}';
+    }
+    return aadhaarNumber!;
+  }
+
+  String get maskedAadhaar {
+    if (aadhaarNumber == null || aadhaarNumber!.isEmpty) return 'Not Provided';
+    final digits = aadhaarNumber!.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length == 12) {
+      return 'XXXX XXXX ${digits.substring(8, 12)}';
+    }
+    return aadhaarNumber!;
+  }
+
   String get formattedExpectedSalary {
     if (expectedSalary.trim().isEmpty) return '₹15,000 - ₹25,000';
     var trimmed = expectedSalary.trim().replaceAll('?', '₹');
@@ -300,6 +323,7 @@ class CandidateModel {
     int? age,
     String? phone,
     String? altPhone,
+    String? aadhaarNumber,
     String? address,
     String? city,
     String? state,
@@ -338,6 +362,7 @@ class CandidateModel {
       age: age ?? this.age,
       phone: phone ?? this.phone,
       altPhone: altPhone ?? this.altPhone,
+      aadhaarNumber: aadhaarNumber ?? this.aadhaarNumber,
       address: address ?? this.address,
       city: city ?? this.city,
       state: state ?? this.state,
@@ -383,6 +408,7 @@ class CandidateModel {
       age: age,
       phone: phone,
       altPhone: altPhone,
+      aadhaarNumber: aadhaarNumber,
       address: address,
       city: city,
       state: state,
@@ -426,8 +452,32 @@ class CandidateModel {
       identical(this, other) ||
       other is CandidateModel &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          fullName == other.fullName &&
+          aadhaarNumber == other.aadhaarNumber &&
+          status == other.status &&
+          remarks == other.remarks &&
+          phone == other.phone &&
+          category == other.category &&
+          city == other.city &&
+          photoUrl == other.photoUrl &&
+          isPoliceVerified == other.isPoliceVerified &&
+          isMedicalCleared == other.isMedicalCleared &&
+          currentPlacementId == other.currentPlacementId;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        fullName,
+        aadhaarNumber,
+        status,
+        remarks,
+        phone,
+        category,
+        city,
+        photoUrl,
+        isPoliceVerified,
+        isMedicalCleared,
+        currentPlacementId,
+      );
 }

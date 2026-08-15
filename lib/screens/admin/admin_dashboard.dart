@@ -23,14 +23,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   void initState() {
     super.initState();
-    final dashboardBloc = context.read<DashboardBloc>();
-    if (dashboardBloc.state is! DashboardLoaded) {
-      dashboardBloc.add(LoadAdminDashboard());
-    }
-    final auditBloc = context.read<AuditLogBloc>();
-    if (auditBloc.state is! AuditLogLoaded) {
-      auditBloc.add(const LoadAuditLogs());
-    }
+    context.read<DashboardBloc>().add(LoadAdminDashboard());
+    context.read<AuditLogBloc>().add(const LoadAuditLogs());
   }
 
   String _formatCurrency(double value) {

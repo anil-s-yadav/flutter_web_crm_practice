@@ -92,6 +92,7 @@ const createCandidate = async (req, res) => {
     const fullName = req.body.full_name || req.body.fullName;
     const phone = req.body.phone;
     const altPhone = req.body.alternate_phone || req.body.altPhone;
+    const rawAadhaar = req.body.aadhaar_number || req.body.aadhaarNumber;
     const category = req.body.category;
     const expectedSalary = req.body.expected_salary || req.body.expectedSalary;
     const age = req.body.age || null;
@@ -109,6 +110,17 @@ const createCandidate = async (req, res) => {
 
     if (!fullName || !phone) {
       return res.status(400).json({ message: 'Name and phone are required' });
+    }
+
+    const cleanAadhaar = rawAadhaar ? String(rawAadhaar).replace(/\s+/g, '').trim() : null;
+    if (cleanAadhaar) {
+      if (!/^\d{12}$/.test(cleanAadhaar)) {
+        return res.status(400).json({ message: 'Aadhaar number must be exactly 12 numeric digits.' });
+      }
+      const [aadhaarRows] = await pool.execute('SELECT id, full_name FROM candidates WHERE aadhaar_number = ?', [cleanAadhaar]);
+      if (aadhaarRows.length > 0) {
+        return res.status(409).json({ message: `Aadhaar number ${cleanAadhaar} is already registered with candidate ${aadhaarRows[0].full_name} (${aadhaarRows[0].id}).` });
+      }
     }
 
     const isUnique = await isPhoneGloballyUnique(phone);
@@ -140,40 +152,40 @@ const createCandidate = async (req, res) => {
     try {
       await pool.execute(
         `INSERT INTO candidates 
-        (id, full_name, phone, alternate_phone, category, expected_salary, 
+        (id, full_name, phone, alternate_phone, aadhaar_number, category, expected_salary, 
          age, address, city, state, religion, education, experience_years, languages,
          status, is_police_verified, is_medical_cleared,
          aadhaar_doc_url, pan_doc_url, passport_doc_url, police_verification_doc_url, medical_clearance_doc_url,
          sourced_by_id, profile_image_url, source, remarks) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [candidateId, fullName, phone, altPhone || null, cleanAadhaar, category || null, expectedSalary || null,
          age, address, city, state, religion, education, experienceYears, languages,
          status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
          aadhaarDocUrl, panDocUrl, passportDocUrl, policeVerificationDocUrl, medicalClearanceDocUrl,
-         sourcedById, profileImageUrl, source, remarks || null]
+         sourcedById, profileImageUrl, source, req.body.remarks || null]
       );
     } catch (sqlErr) {
       console.warn('Full doc-enabled INSERT failed, trying standard INSERT:', sqlErr.message);
       try {
         await pool.execute(
           `INSERT INTO candidates 
-          (id, full_name, phone, alternate_phone, category, expected_salary, 
+          (id, full_name, phone, alternate_phone, aadhaar_number, category, expected_salary, 
            age, address, city, state, religion, education, experience_years, languages,
            status, is_police_verified, is_medical_cleared,
            sourced_by_id, profile_image_url, source, remarks) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, cleanAadhaar, category || null, expectedSalary || null,
            age, address, city, state, religion, education, experienceYears, languages,
            status, isPoliceVerified ? 1 : 0, isMedicalCleared ? 1 : 0,
-           sourcedById, profileImageUrl, source, remarks || null]
+           sourcedById, profileImageUrl, source, req.body.remarks || null]
         );
       } catch (fallbackErr) {
         console.warn('Standard INSERT failed, executing fallback core INSERT:', fallbackErr.message);
         await pool.execute(
           `INSERT INTO candidates 
-          (id, full_name, phone, alternate_phone, category, expected_salary, sourced_by_id, profile_image_url, source, remarks) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [candidateId, fullName, phone, altPhone || null, category || null, expectedSalary || null, sourcedById, profileImageUrl, source, remarks || null]
+          (id, full_name, phone, alternate_phone, aadhaar_number, category, expected_salary, sourced_by_id, profile_image_url, source, remarks) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, fullName, phone, altPhone || null, cleanAadhaar, category || null, expectedSalary || null, sourcedById, profileImageUrl, source, req.body.remarks || null]
         );
       }
     }
@@ -298,6 +310,19 @@ const updateCandidate = async (req, res) => {
       }
     }
 
+    const newRawAadhaar = req.body.aadhaar_number !== undefined ? req.body.aadhaar_number : (req.body.aadhaarNumber !== undefined ? req.body.aadhaarNumber : candidate.aadhaar_number);
+    const newAadhaar = newRawAadhaar ? String(newRawAadhaar).replace(/\s+/g, '').trim() : null;
+
+    if (newAadhaar && newAadhaar !== candidate.aadhaar_number) {
+      if (!/^\d{12}$/.test(newAadhaar)) {
+        return res.status(400).json({ message: 'Aadhaar number must be exactly 12 numeric digits.' });
+      }
+      const [aadhaarRows] = await pool.execute('SELECT id, full_name FROM candidates WHERE aadhaar_number = ? AND id != ?', [newAadhaar, id]);
+      if (aadhaarRows.length > 0) {
+        return res.status(409).json({ message: `Aadhaar number ${newAadhaar} is already registered with candidate ${aadhaarRows[0].full_name} (${aadhaarRows[0].id}).` });
+      }
+    }
+
     if (newPhone && newPhone !== candidate.phone) {
       const isUnique = await isPhoneGloballyUnique(newPhone, id);
       if (!isUnique) {
@@ -307,14 +332,14 @@ const updateCandidate = async (req, res) => {
 
     await pool.execute(
       `UPDATE candidates SET 
-        full_name = ?, phone = ?, alternate_phone = ?, category = ?, expected_salary = ?, 
+        full_name = ?, phone = ?, alternate_phone = ?, aadhaar_number = ?, category = ?, expected_salary = ?, 
         age = ?, address = ?, city = ?, state = ?, religion = ?, education = ?, experience_years = ?, languages = ?,
         status = ?, is_police_verified = ?, is_medical_cleared = ?,
         aadhaar_doc_url = ?, pan_doc_url = ?, passport_doc_url = ?, police_verification_doc_url = ?, medical_clearance_doc_url = ?,
         profile_image_url = ?, source = ?, remarks = ? 
       WHERE id = ?`,
       [
-        newName, newPhone, newAlternatePhone, newCategory, newSalary,
+        newName, newPhone, newAlternatePhone, newAadhaar, newCategory, newSalary,
         newAge, newAddress, newCity, newState, newReligion, newEducation, newExp, newLanguages,
         newStatus, newPoliceVerified, newMedicalCleared,
         newAadhaarDocUrl, panDocUrl, newPassportDocUrl, newPoliceDocUrl, newMedicalDocUrl,

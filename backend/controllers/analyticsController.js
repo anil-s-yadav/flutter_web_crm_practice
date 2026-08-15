@@ -145,23 +145,23 @@ const getSalesAnalytics = async (req, res) => {
     const salesId = req.user.id;
     const { thisMonthStart, prevMonthStart, prevMonthEndStr } = getDateBoundaries();
 
-    // Build WHERE clause: admin sees all, sales user sees only assigned
+    // Build WHERE clause: admin sees all, sales user sees ONLY their assigned clients
     const salesFilter = isAdmin ? '' : ' AND assigned_sales_id = ?';
     const salesParams = isAdmin ? [] : [salesId];
     const salesJoinFilter = isAdmin ? '' : ' AND cl.assigned_sales_id = ?';
 
     // Client counts by status
     const [followUpRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status = 'followUp'${salesFilter}`, salesParams
+      `SELECT COUNT(*) as count FROM clients WHERE status IN ('followUp', 'lead') ${salesFilter}`, salesParams
     );
     const [interestedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status = 'lead'${salesFilter}`, salesParams
+      `SELECT COUNT(*) as count FROM clients WHERE status = 'interested' ${salesFilter}`, salesParams
     );
     const [notInterestedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status = 'inactive'${salesFilter}`, salesParams
+      `SELECT COUNT(*) as count FROM clients WHERE status IN ('notInterested', 'inactive') ${salesFilter}`, salesParams
     );
     const [convertedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status = 'converted'${salesFilter}`, salesParams
+      `SELECT COUNT(*) as count FROM clients WHERE status IN ('converted', 'active') ${salesFilter}`, salesParams
     );
 
     const followUps = Number(followUpRes[0].count);
@@ -203,6 +203,50 @@ const getSalesAnalytics = async (req, res) => {
       [prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]
     );
 
+    // Actionable follow-up clients list
+    const [followUpClientsRows] = await pool.execute(`
+      SELECT c.*, u.name AS assigned_sales_name 
+      FROM clients c 
+      LEFT JOIN users u ON c.assigned_sales_id = u.id 
+      WHERE c.status IN ('followUp', 'lead') ${isAdmin ? '' : ' AND c.assigned_sales_id = ?'}
+      ORDER BY c.inquiry_date ASC, c.created_at DESC 
+      LIMIT 10
+    `, salesParams);
+
+    // Recent top wins / contracts
+    const [topWinsRows] = await pool.execute(`
+      SELECT c.*, cl.name AS client_name, cd.full_name AS candidate_name
+      FROM contracts c
+      LEFT JOIN clients cl ON c.client_id = cl.id
+      LEFT JOIN candidates cd ON c.candidate_id = cd.id
+      WHERE 1=1 ${salesJoinFilter}
+      ORDER BY c.created_at DESC
+      LIMIT 5
+    `, salesParams);
+
+    // Top driving categories
+    let [categoryRows] = await pool.execute(`
+      SELECT COALESCE(cl.preferred_category, 'House Maid') as category, COUNT(*) as count
+      FROM contracts c
+      JOIN clients cl ON c.client_id = cl.id
+      WHERE 1=1 ${salesJoinFilter}
+      GROUP BY cl.preferred_category
+      ORDER BY count DESC
+      LIMIT 5
+    `, salesParams);
+
+    if (categoryRows.length === 0) {
+      const [clientCategoryRows] = await pool.execute(`
+        SELECT COALESCE(preferred_category, 'House Maid') as category, COUNT(*) as count
+        FROM clients
+        WHERE 1=1 ${salesFilter}
+        GROUP BY preferred_category
+        ORDER BY count DESC
+        LIMIT 5
+      `, salesParams);
+      categoryRows = clientCategoryRows;
+    }
+
     res.json({
       clients: {
         followUps: followUps,
@@ -225,10 +269,10 @@ const getSalesAnalytics = async (req, res) => {
         lastMonth: Number(inquiriesLastMonth[0].count),
       },
       recent: {
-        followUpClients: [],
-        topWins: [],
+        followUpClients: followUpClientsRows,
+        topWins: topWinsRows,
       },
-      categories: [],
+      categories: categoryRows.map(r => ({ category: r.category, count: Number(r.count) })),
     });
   } catch (err) {
     console.error('getSalesAnalytics error:', err);
@@ -309,14 +353,20 @@ const getSourcingAnalytics = async (req, res) => {
     const [readyMedicalRes] = await pool.execute(
       `SELECT COUNT(*) as count FROM candidates WHERE status = 'readyToPlace' AND is_medical_cleared = TRUE${ownerFilterAnd}`, ownerParams
     );
-    const [readyNoMedicalRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM candidates WHERE status = 'readyToPlace' AND is_medical_cleared = FALSE${ownerFilterAnd}`, ownerParams
+    // Urgent Hires from Sales
+    const [urgentHiresRes] = await pool.execute(
+      "SELECT COUNT(*) as count FROM urgent_hires WHERE status = 'pending'"
+    );
+    const [recentUrgentHires] = await pool.execute(
+      "SELECT * FROM urgent_hires WHERE status IN ('pending', 'in_progress') ORDER BY created_at DESC LIMIT 5"
     );
 
     res.json({
       myCandidates: Number(myCandidatesRes[0].count),
       activePipeline: activePipeline,
       urgentReplacements: Number(replacementsRes[0].count),
+      urgentHiresPending: Number(urgentHiresRes[0].count),
+      urgentHires: recentUrgentHires,
       addedThisMonth: Number(addedThisMonth[0].count),
       addedLastMonth: Number(addedLastMonth[0].count),
       readyNoMedical: Number(readyNoMedicalRes[0].count),
@@ -329,11 +379,12 @@ const getSourcingAnalytics = async (req, res) => {
       },
       urgent: {
         totalPending: Number(replacementsRes[0].count),
+        urgentHiresPending: Number(urgentHiresRes[0].count),
         highPriority: 0,
         dueToday: 0,
       },
       recent: {
-        urgentRequests: [],
+        urgentRequests: recentUrgentHires,
         newCandidates: [],
       },
     });

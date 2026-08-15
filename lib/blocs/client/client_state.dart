@@ -14,11 +14,13 @@ class ClientLoading extends ClientState {}
 
 class ClientLoaded extends ClientState {
   final List<ClientModel> clients;
+  final DateTime timestamp;
 
-  const ClientLoaded({required this.clients});
+  ClientLoaded({required this.clients, DateTime? timestamp})
+      : timestamp = timestamp ?? DateTime.now();
 
   @override
-  List<Object> get props => [clients];
+  List<Object> get props => [clients, timestamp];
 }
 
 class ClientError extends ClientState {

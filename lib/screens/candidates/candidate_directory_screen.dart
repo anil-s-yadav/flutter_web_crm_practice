@@ -104,7 +104,7 @@ class _CandidateDirectoryScreenState extends State<CandidateDirectoryScreen> {
     if (role == UserRole.admin) routePrefix = '/admin';
     if (role == UserRole.sales) routePrefix = '/sales';
 
-    context.push(
+    context.go(
       '$routePrefix/candidates/${candidate.id}?from=${widget.type.name}',
     );
   }
@@ -889,7 +889,7 @@ class _CandidateGridView extends StatelessWidget {
                       ),
                       GridColumn(
                         columnName: 'candidate',
-                        minimumWidth: 200,
+                        minimumWidth: 270,
                         label: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           alignment: Alignment.centerLeft,

@@ -14,6 +14,8 @@ import 'package:practice_app/blocs/client/client_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/utils/extensions.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
+import 'package:practice_app/auth/user_manager.dart';
+import 'package:practice_app/models/user_model.dart';
 import 'package:practice_app/screens/clients/client_data_source.dart';
 
 class ClientListScreen extends StatefulWidget {
@@ -26,6 +28,10 @@ class ClientListScreen extends StatefulWidget {
 }
 
 class _ClientListScreenState extends State<ClientListScreen> {
+  String get _routePrefix {
+    final role = UserManager().currentUser?.role ?? UserRole.admin;
+    return role == UserRole.sales ? '/sales' : '/admin';
+  }
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   ClientStatus? _selectedStatus;
@@ -44,10 +50,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
   void initState() {
     super.initState();
     _selectedStatus = widget.initialStatus;
-    final clientBloc = context.read<ClientBloc>();
-    if (clientBloc.state is! ClientLoaded) {
-      clientBloc.add(LoadClients());
-    }
+    context.read<ClientBloc>().add(LoadClients());
   }
 
   @override
@@ -125,14 +128,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
         isDark: isDark,
         clients: _filteredClients,
         onRowTap: (client) {
-          final routePrefix =
-              '/admin'; // Assuming admin or we can pass role down, but for now hardcode or get from authbloc
-
-          var path = '$routePrefix/clients/${client.id}';
+          var path = '$_routePrefix/clients/${client.id}';
           if (widget.initialStatus != null) {
             path += '?from=${widget.initialStatus!.name}';
           }
-          context.push(path);
+          context.go(path);
         },
         showStatus: widget.initialStatus == null,
         isConvertedTab: isConverted,
@@ -355,7 +355,7 @@ class _ClientListScreenState extends State<ClientListScreen> {
                                       ),
                                       GridColumn(
                                         columnName: 'client',
-                                        minimumWidth: 200,
+                                        minimumWidth: 270,
                                         label: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -861,13 +861,11 @@ class _ClientListScreenState extends State<ClientListScreen> {
             break;
         }
 
-        final routePrefix = '/admin'; // Hardcoded for now
-
         return _MobileClientCard(
           client: client,
           statusColor: statusColor,
           isDark: isDark,
-          routePrefix: routePrefix,
+          routePrefix: _routePrefix,
           initialStatusName: widget.initialStatus?.name,
           isConvertedTab: widget.initialStatus == ClientStatus.converted || _selectedStatus == ClientStatus.converted,
         );
@@ -1156,7 +1154,7 @@ class _MobileClientCardState extends State<_MobileClientCard> {
                           if (widget.initialStatusName != null) {
                             path += '?from=${widget.initialStatusName}';
                           }
-                          context.push(path);
+                          context.go(path);
                         },
                       ),
                     ),

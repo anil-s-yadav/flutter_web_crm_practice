@@ -25,6 +25,7 @@ import 'package:practice_app/blocs/replacement/replacement_event.dart';
 import 'package:practice_app/models/replacement_request_model.dart';
 import 'package:practice_app/blocs/task/task_bloc.dart';
 import 'package:practice_app/blocs/task/task_event.dart';
+import 'package:practice_app/widgets/contract_receipt_dialog.dart';
 
 class ContractDetailScreen extends StatefulWidget {
   final String contractId;
@@ -568,6 +569,21 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
               side: const BorderSide(color: AppColors.urgentAmber),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
+          ),
+        ),
+        ElevatedButton.icon(
+          onPressed: () => ContractReceiptDialog.show(context, contract),
+          icon: const Icon(Icons.receipt_long),
+          label: Text(
+            contract.amountPaid >= contract.serviceFee && contract.serviceFee > 0
+                ? 'Tax Invoice & Receipt'
+                : 'Payment Receipt / Settle Installments',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.successGreen,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
         ElevatedButton.icon(

@@ -13,6 +13,12 @@ const getClients = async (req, res) => {
     let whereClause = ' WHERE 1=1';
     const params = [];
 
+    // Role-based scoping: Sales reps only see their own assigned clients
+    if (req.user && req.user.role === 'sales') {
+      whereClause += ' AND c.assigned_sales_id = ?';
+      params.push(req.user.id);
+    }
+
     if (status) {
       whereClause += ' AND c.status = ?';
       params.push(status);

@@ -1022,6 +1022,7 @@ class CandidateProfileScreen extends StatelessWidget {
       _infoRow('Phone', candidate.phone, isDark),
       if (candidate.altPhone != null)
         _infoRow('Alt Phone', candidate.altPhone!, isDark),
+      _infoRow('Aadhaar No.', candidate.formattedAadhaar, isDark),
       _infoRow('Address', candidate.address, isDark),
       _infoRow('City', '${candidate.city}, ${candidate.state}', isDark),
       _infoRow('Religion', candidate.religion, isDark),

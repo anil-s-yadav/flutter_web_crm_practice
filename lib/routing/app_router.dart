@@ -31,6 +31,7 @@ import 'package:practice_app/screens/sourcing/add_candidate_screen.dart';
 import 'package:practice_app/screens/candidates/edit_candidate_screen.dart';
 import 'package:practice_app/screens/sales/edit_client_screen.dart';
 import 'package:practice_app/screens/sales/financials_screen.dart';
+import 'package:practice_app/screens/sourcing/urgent_hires_screen.dart';
 import 'package:practice_app/models/client_model.dart';
 import 'package:practice_app/models/user_model.dart';
 
@@ -179,6 +180,10 @@ class AppRouter {
             GoRoute(
               path: '/admin/audit',
               builder: (context, state) => const AdminAuditTrailScreen(),
+            ),
+            GoRoute(
+              path: '/admin/urgent_hires',
+              builder: (context, state) => const UrgentHiresScreen(),
             ),
             GoRoute(
               path: '/admin/clients/:id',
@@ -427,6 +432,10 @@ class AppRouter {
             GoRoute(
               path: '/sourcing/replacements',
               builder: (context, state) => const UrgentReplacementsScreen(),
+            ),
+            GoRoute(
+              path: '/sourcing/urgent_hires',
+              builder: (context, state) => const UrgentHiresScreen(),
             ),
             GoRoute(
               path: '/sourcing/candidates/ready',

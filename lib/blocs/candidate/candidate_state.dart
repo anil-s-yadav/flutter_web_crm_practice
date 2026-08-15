@@ -14,11 +14,13 @@ class CandidateLoading extends CandidateState {}
 
 class CandidateLoaded extends CandidateState {
   final List<CandidateModel> candidates;
+  final DateTime timestamp;
 
-  const CandidateLoaded({required this.candidates});
+  CandidateLoaded({required this.candidates, DateTime? timestamp})
+      : timestamp = timestamp ?? DateTime.now();
 
   @override
-  List<Object> get props => [candidates];
+  List<Object> get props => [candidates, timestamp];
 }
 
 class CandidateError extends CandidateState {

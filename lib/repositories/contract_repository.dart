@@ -21,7 +21,7 @@ class ContractRepository {
         ? '/api/contracts'
         : '/api/contracts?${queryParams.join('&')}';
 
-    final response = await ApiClient.get(endpoint);
+    final response = await ApiClient.get(endpoint, noCache: true);
 
     if (response is List) {
       return response.map((json) {

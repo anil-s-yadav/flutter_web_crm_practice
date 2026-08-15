@@ -12,21 +12,27 @@ const getContracts = async (req, res) => {
     let whereClause = ' WHERE 1=1';
     const params = [];
 
+    // Role-based scoping: Sales reps only see contracts for their assigned clients or created by them
+    if (req.user && req.user.role === 'sales') {
+      whereClause += ' AND (c.created_by = ? OR c.client_id IN (SELECT id FROM clients WHERE assigned_sales_id = ?))';
+      params.push(req.user.id, req.user.id);
+    }
+
     if (status) {
-      whereClause += ' AND status = ?';
+      whereClause += ' AND c.status = ?';
       params.push(status);
     }
     if (client_id) {
-      whereClause += ' AND client_id = ?';
+      whereClause += ' AND c.client_id = ?';
       params.push(client_id);
     }
     if (candidate_id) {
-      whereClause += ' AND candidate_id = ?';
+      whereClause += ' AND c.candidate_id = ?';
       params.push(candidate_id);
     }
     const searchTerm = search || q;
     if (searchTerm) {
-      whereClause += ' AND (id LIKE ? OR client_id LIKE ? OR candidate_id LIKE ?)';
+      whereClause += ' AND (c.id LIKE ? OR c.client_id LIKE ? OR c.candidate_id LIKE ?)';
       const s = `%${searchTerm.trim()}%`;
       params.push(s, s, s);
     }
@@ -36,10 +42,10 @@ const getContracts = async (req, res) => {
       const limitNum = parseInt(limit, 10) || 20;
       const offset = (pageNum - 1) * limitNum;
 
-      const countSql = `SELECT COUNT(*) as total FROM contracts${whereClause}`;
+      const countSql = `SELECT COUNT(*) as total FROM contracts c${whereClause}`;
       const [[{ total }]] = await pool.execute(countSql, params);
 
-      const dataSql = `SELECT * FROM contracts${whereClause} ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+      const dataSql = `SELECT c.*, cl.name as client_name, cd.full_name as candidate_name FROM contracts c LEFT JOIN clients cl ON c.client_id = cl.id LEFT JOIN candidates cd ON c.candidate_id = cd.id${whereClause} ORDER BY c.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
       const [contracts] = await pool.execute(dataSql, params);
 
       return res.json({
@@ -53,7 +59,7 @@ const getContracts = async (req, res) => {
       });
     }
 
-    const [contracts] = await pool.execute(`SELECT * FROM contracts${whereClause} ORDER BY created_at DESC`, params);
+    const [contracts] = await pool.execute(`SELECT c.*, cl.name as client_name, cd.full_name as candidate_name FROM contracts c LEFT JOIN clients cl ON c.client_id = cl.id LEFT JOIN candidates cd ON c.candidate_id = cd.id${whereClause} ORDER BY c.created_at DESC`, params);
     res.json(contracts);
   } catch (err) {
     console.error(err);
@@ -90,12 +96,15 @@ const createContract = async (req, res) => {
         ? req.body.id
         : await generateContractId(connection);
 
+      const amountPaid = req.body.amount_paid !== undefined ? req.body.amount_paid : (req.body.amountPaid || 0);
+      const contractStatus = req.body.status || req.body.contractStatus || 'active';
+
       // 1. Insert contract
       await connection.execute(
         `INSERT INTO contracts 
-        (id, client_id, candidate_id, start_date, guarantee_end_date, contract_end_date, total_fee, created_by) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [contractId, client_id, candidate_id, start_date, guarantee_end_date, contract_end_date, total_fee, createdBy]
+        (id, client_id, candidate_id, start_date, guarantee_end_date, contract_end_date, total_fee, amount_paid, status, created_by) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [contractId, client_id, candidate_id, start_date, guarantee_end_date, contract_end_date, total_fee, amountPaid, contractStatus, createdBy]
       );
 
       // 2. Update client status to converted
@@ -120,6 +129,75 @@ const createContract = async (req, res) => {
       throw dbErr;
     }
 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @route   PUT /api/contracts/:id
+// @desc    Update full contract details (amount_paid, status, etc.)
+// @access  Private
+const updateContract = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      amount_paid,
+      amountPaid,
+      status,
+      contractStatus,
+      total_fee,
+      serviceFee
+    } = req.body;
+
+    const paid = amount_paid !== undefined ? amount_paid : (amountPaid !== undefined ? amountPaid : null);
+    const stat = status || contractStatus || null;
+    const fee = total_fee !== undefined ? total_fee : (serviceFee !== undefined ? serviceFee : null);
+
+    const updates = [];
+    const params = [];
+
+    if (paid !== null) {
+      updates.push('amount_paid = ?');
+      params.push(paid);
+    }
+    if (stat !== null) {
+      updates.push('status = ?');
+      params.push(stat);
+    }
+    if (fee !== null) {
+      updates.push('total_fee = ?');
+      params.push(fee);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: 'No valid update fields provided' });
+    }
+
+    params.push(id);
+    await pool.execute(
+      `UPDATE contracts SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    const [rows] = await pool.execute(
+      `SELECT c.*, cl.name as client_name, cd.full_name as candidate_name 
+       FROM contracts c 
+       LEFT JOIN clients cl ON c.client_id = cl.id 
+       LEFT JOIN candidates cd ON c.candidate_id = cd.id 
+       WHERE c.id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Contract not found' });
+    }
+
+    if (req.user && req.user.id) {
+      await logAction('contract', id, 'updated', `Contract ${id} updated (paid: ${paid}, status: ${stat})`, req.user.id);
+    }
+
+    res.json(rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -152,5 +230,6 @@ const recordPayment = async (req, res) => {
 module.exports = {
   getContracts,
   createContract,
+  updateContract,
   recordPayment
 };
