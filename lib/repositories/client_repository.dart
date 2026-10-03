@@ -21,7 +21,7 @@ class ClientRepository {
         ? '/api/clients'
         : '/api/clients?${queryParams.join('&')}';
 
-    final response = await ApiClient.get(endpoint, noCache: true);
+    final response = await ApiClient.get(endpoint);
 
     if (response is List) {
       return response.map((json) {

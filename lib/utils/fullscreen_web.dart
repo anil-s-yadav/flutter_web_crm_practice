@@ -1,9 +1,9 @@
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 void toggleFullScreen() {
-  if (html.document.fullscreenElement != null) {
-    html.document.exitFullscreen();
+  if (web.document.fullscreenElement != null) {
+    web.document.exitFullscreen();
   } else {
-    html.document.documentElement?.requestFullscreen();
+    web.document.documentElement?.requestFullscreen();
   }
 }

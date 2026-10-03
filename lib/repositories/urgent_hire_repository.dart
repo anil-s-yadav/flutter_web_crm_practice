@@ -31,7 +31,7 @@ class UrgentHireRepository {
         ? '/api/urgent-hires'
         : '/api/urgent-hires?${queryParams.join('&')}';
 
-    final response = await ApiClient.get(endpoint, noCache: true);
+    final response = await ApiClient.get(endpoint);
 
     if (response is List) {
       return response.map((json) {

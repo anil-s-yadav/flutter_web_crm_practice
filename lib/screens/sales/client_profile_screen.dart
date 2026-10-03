@@ -60,8 +60,28 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     final isDark = context.themeRef.brightness == Brightness.dark;
 
     return BlocBuilder<ClientBloc, ClientState>(
+      buildWhen: (prev, curr) {
+        if (prev is ClientLoaded && curr is ClientLoaded) {
+          final prevClient = prev.clients.where((c) => c.id == widget.clientId).firstOrNull;
+          final currClient = curr.clients.where((c) => c.id == widget.clientId).firstOrNull;
+          return prevClient != currClient;
+        }
+        return true;
+      },
       builder: (context, clientState) {
         return BlocBuilder<ContractBloc, ContractState>(
+          buildWhen: (prev, curr) {
+            if (prev is ContractLoaded && curr is ContractLoaded) {
+              final prevContracts = prev.contracts.where((c) => c.clientId == widget.clientId).toList();
+              final currContracts = curr.contracts.where((c) => c.clientId == widget.clientId).toList();
+              if (prevContracts.length != currContracts.length) return true;
+              for (int i = 0; i < prevContracts.length; i++) {
+                if (prevContracts[i] != currContracts[i]) return true;
+              }
+              return false;
+            }
+            return true;
+          },
           builder: (context, contractState) {
             return BlocBuilder<CandidateBloc, CandidateState>(
               builder: (context, candidateState) {
@@ -785,7 +805,9 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ],
         );
       },
-    );
+    ).then((_) {
+      noteController.dispose();
+    });
   }
 
   Future<void> _showAddNoteDialog(
@@ -940,7 +962,9 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ],
         );
       },
-    );
+    ).then((_) {
+      noteController.dispose();
+    });
   }
 
   Widget _buildLoyaltyCard(
@@ -2420,7 +2444,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                             ),
                             const SizedBox(height: 6),
                             DropdownButtonFormField<String>(
-                              value: paymentMode,
+                              initialValue: paymentMode,
                               items:
                                   [
                                     'UPI / Online',
@@ -2591,7 +2615,10 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           );
         },
       ),
-    );
+    ).then((_) {
+      paymentCtrl.dispose();
+      notesCtrl.dispose();
+    });
   }
 
   void _showChangeCandidateModal(
@@ -3032,7 +3059,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: paymentMode,
+                    initialValue: paymentMode,
                     items:
                         [
                           'UPI / Online',
@@ -3150,7 +3177,10 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           );
         },
       ),
-    );
+    ).then((_) {
+      notesCtrl.dispose();
+      amountCtrl.dispose();
+    });
   }
 
   void _showExtendGuaranteeModal(
@@ -3337,7 +3367,9 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      reasonCtrl.dispose();
+    });
   }
 
   void _showMarkJobLeftModal(
@@ -5451,7 +5483,7 @@ class _RequestMaidDialogState extends State<_RequestMaidDialog> {
         ),
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: effectiveItems
               .map((item) => DropdownMenuItem(
                     value: item,

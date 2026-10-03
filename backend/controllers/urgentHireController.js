@@ -154,12 +154,11 @@ const createUrgentHire = async (req, res) => {
 
     // Log to Audit Logs
     await logAction(
-      requestedById,
-      requestedByName,
-      'create',
       'urgent_hire',
       urgentHireId,
-      `Urgent Hiring Request created for ${client_name} (${category}, ${service_type || '24 Hours'}). Priority: ${priority || 'urgent'}`
+      'create',
+      `Urgent Hiring Request created for ${client_name} (${category}, ${service_type || '24 Hours'}). Priority: ${priority || 'urgent'}`,
+      requestedById
     );
 
     const [created] = await pool.execute('SELECT * FROM urgent_hires WHERE id = ?', [urgentHireId]);
@@ -212,12 +211,11 @@ const updateUrgentHireStatus = async (req, res) => {
 
     // Audit log
     await logAction(
-      req.user?.id || null,
-      req.user?.name || 'System',
-      'update',
       'urgent_hire',
       id,
-      `Urgent hiring request status updated to "${status}" for ${current.client_name}`
+      'update',
+      `Urgent hiring request status updated to "${status}" for ${current.client_name}`,
+      req.user?.id || null
     );
 
     const [updated] = await pool.execute('SELECT * FROM urgent_hires WHERE id = ?', [id]);

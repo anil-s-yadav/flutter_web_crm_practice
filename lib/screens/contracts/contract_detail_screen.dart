@@ -722,6 +722,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
     );
 
+    reasonController.dispose();
+
     if (reason != null && reason.isNotEmpty) {
       final now = DateTime.now();
       final request = ReplacementRequestModel(

@@ -45,17 +45,23 @@ const getAdminAnalytics = async (req, res) => {
     pipeline.prevMonth = Number(candPrevMonth[0].count);
 
     // --- Clients ---
-    const [clientsTotal] = await pool.execute('SELECT COUNT(*) as count FROM clients');
-    const [clientsLead] = await pool.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'lead'");
-    const [clientsFollowUp] = await pool.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'followUp'");
-    const [clientsConverted] = await pool.execute("SELECT COUNT(*) as count FROM clients WHERE status = 'converted'");
-    const [clientsThisMonth] = await pool.execute(
-      'SELECT COUNT(*) as count FROM clients WHERE created_at >= ?', [thisMonthStart]
-    );
-    const [clientsPrevMonth] = await pool.execute(
-      'SELECT COUNT(*) as count FROM clients WHERE created_at >= ? AND created_at <= ?',
-      [prevMonthStart, prevMonthEndStr + ' 23:59:59']
-    );
+    const [clientStats] = await pool.execute(`
+      SELECT 
+        COUNT(*) as count_total,
+        COUNT(CASE WHEN status = 'lead' THEN 1 END) as count_lead,
+        COUNT(CASE WHEN status = 'followUp' THEN 1 END) as count_followUp,
+        COUNT(CASE WHEN status = 'converted' THEN 1 END) as count_converted,
+        COUNT(CASE WHEN created_at >= ? THEN 1 END) as count_this_month,
+        COUNT(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 END) as count_prev_month
+      FROM clients
+    `, [thisMonthStart, prevMonthStart, prevMonthEndStr + ' 23:59:59']);
+    
+    const clientsTotal = [{ count: clientStats[0].count_total }];
+    const clientsLead = [{ count: clientStats[0].count_lead }];
+    const clientsFollowUp = [{ count: clientStats[0].count_followUp }];
+    const clientsConverted = [{ count: clientStats[0].count_converted }];
+    const clientsThisMonth = [{ count: clientStats[0].count_this_month }];
+    const clientsPrevMonth = [{ count: clientStats[0].count_prev_month }];
 
     // --- Revenue ---
     const [revenueAll] = await pool.execute(
@@ -71,20 +77,24 @@ const getAdminAnalytics = async (req, res) => {
     const totalFee = Number(revenueAll[0].total_fee);
     const totalCollected = Number(revenueAll[0].collected);
 
-    // --- Contracts by status ---
-    const [contractsActive] = await pool.execute("SELECT COUNT(*) as count FROM contracts WHERE status = 'active'");
-    const [contractsRenewed] = await pool.execute('SELECT COUNT(*) as count FROM contracts WHERE is_renewal = TRUE');
-    const [contractsExpired] = await pool.execute("SELECT COUNT(*) as count FROM contracts WHERE status = 'expired'");
+    // --- Contracts by status & Placements (contracts created) by month ---
+    const [contractStats] = await pool.execute(`
+      SELECT 
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+        COUNT(CASE WHEN is_renewal = TRUE THEN 1 END) as renewed,
+        COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired,
+        COUNT(CASE WHEN created_at >= ? THEN 1 END) as this_month,
+        COUNT(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 END) as prev_month,
+        COUNT(*) as total
+      FROM contracts
+    `, [thisMonthStart, prevMonthStart, prevMonthEndStr + ' 23:59:59']);
 
-    // --- Placements (contracts created) by month ---
-    const [placementsThisMonth] = await pool.execute(
-      'SELECT COUNT(*) as count FROM contracts WHERE created_at >= ?', [thisMonthStart]
-    );
-    const [placementsPrevMonth] = await pool.execute(
-      'SELECT COUNT(*) as count FROM contracts WHERE created_at >= ? AND created_at <= ?',
-      [prevMonthStart, prevMonthEndStr + ' 23:59:59']
-    );
-    const [placementsTotal] = await pool.execute('SELECT COUNT(*) as count FROM contracts');
+    const contractsActive = [{ count: contractStats[0].active }];
+    const contractsRenewed = [{ count: contractStats[0].renewed }];
+    const contractsExpired = [{ count: contractStats[0].expired }];
+    const placementsThisMonth = [{ count: contractStats[0].this_month }];
+    const placementsPrevMonth = [{ count: contractStats[0].prev_month }];
+    const placementsTotal = [{ count: contractStats[0].total }];
 
     // --- Replacements ---
     const [replacementsPending] = await pool.execute(
@@ -151,57 +161,53 @@ const getSalesAnalytics = async (req, res) => {
     const salesJoinFilter = isAdmin ? '' : ' AND cl.assigned_sales_id = ?';
 
     // Client counts by status
-    const [followUpRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status IN ('followUp', 'lead') ${salesFilter}`, salesParams
-    );
-    const [interestedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status = 'interested' ${salesFilter}`, salesParams
-    );
-    const [notInterestedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status IN ('notInterested', 'inactive') ${salesFilter}`, salesParams
-    );
-    const [convertedRes] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE status IN ('converted', 'active') ${salesFilter}`, salesParams
-    );
+    const [clientStats] = await pool.execute(`
+      SELECT 
+        COUNT(CASE WHEN status IN ('followUp', 'lead') THEN 1 END) as followUp,
+        COUNT(CASE WHEN status = 'interested' THEN 1 END) as interested,
+        COUNT(CASE WHEN status IN ('notInterested', 'inactive') THEN 1 END) as notInterested,
+        COUNT(CASE WHEN status IN ('converted', 'active') THEN 1 END) as converted
+      FROM clients
+      WHERE 1=1 ${salesFilter}
+    `, salesParams);
 
-    const followUps = Number(followUpRes[0].count);
-    const interested = Number(interestedRes[0].count);
-    const notInterested = Number(notInterestedRes[0].count);
-    const converted = Number(convertedRes[0].count);
+    const followUps = Number(clientStats[0].followUp);
+    const interested = Number(clientStats[0].interested);
+    const notInterested = Number(clientStats[0].notInterested);
+    const converted = Number(clientStats[0].converted);
 
     // Revenue this month / last month
-    const [revenueThisMonth] = await pool.execute(`
-      SELECT COALESCE(SUM(c.amount_paid), 0) as collected
+    const [revenueStats] = await pool.execute(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN c.created_at >= ? THEN c.amount_paid ELSE 0 END), 0) as thisMonth,
+        COALESCE(SUM(CASE WHEN c.created_at >= ? AND c.created_at <= ? THEN c.amount_paid ELSE 0 END), 0) as lastMonth
       FROM contracts c JOIN clients cl ON c.client_id = cl.id
-      WHERE c.created_at >= ?${salesJoinFilter}
-    `, [thisMonthStart, ...salesParams]);
-    const [revenueLastMonth] = await pool.execute(`
-      SELECT COALESCE(SUM(c.amount_paid), 0) as collected
-      FROM contracts c JOIN clients cl ON c.client_id = cl.id
-      WHERE c.created_at >= ? AND c.created_at <= ?${salesJoinFilter}
-    `, [prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]);
+      WHERE 1=1 ${salesJoinFilter}
+    `, [thisMonthStart, prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]);
+    const revenueThisMonth = [{ collected: revenueStats[0].thisMonth }];
+    const revenueLastMonth = [{ collected: revenueStats[0].lastMonth }];
 
     // Contract counts this month / last month
-    const [contractsThisMonth] = await pool.execute(`
-      SELECT COUNT(*) as count
+    const [contractCountStats] = await pool.execute(`
+      SELECT 
+        COUNT(CASE WHEN c.created_at >= ? THEN 1 END) as thisMonth,
+        COUNT(CASE WHEN c.created_at >= ? AND c.created_at <= ? THEN 1 END) as lastMonth
       FROM contracts c JOIN clients cl ON c.client_id = cl.id
-      WHERE c.created_at >= ?${salesJoinFilter}
-    `, [thisMonthStart, ...salesParams]);
-    const [contractsLastMonth] = await pool.execute(`
-      SELECT COUNT(*) as count
-      FROM contracts c JOIN clients cl ON c.client_id = cl.id
-      WHERE c.created_at >= ? AND c.created_at <= ?${salesJoinFilter}
-    `, [prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]);
+      WHERE 1=1 ${salesJoinFilter}
+    `, [thisMonthStart, prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]);
+    const contractsThisMonth = [{ count: contractCountStats[0].thisMonth }];
+    const contractsLastMonth = [{ count: contractCountStats[0].lastMonth }];
 
     // Inquiries (clients created) this month / last month
-    const [inquiriesThisMonth] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE created_at >= ?${salesFilter}`,
-      [thisMonthStart, ...salesParams]
-    );
-    const [inquiriesLastMonth] = await pool.execute(
-      `SELECT COUNT(*) as count FROM clients WHERE created_at >= ? AND created_at <= ?${salesFilter}`,
-      [prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]
-    );
+    const [inquiryStats] = await pool.execute(`
+      SELECT 
+        COUNT(CASE WHEN created_at >= ? THEN 1 END) as thisMonth,
+        COUNT(CASE WHEN created_at >= ? AND created_at <= ? THEN 1 END) as lastMonth
+      FROM clients
+      WHERE 1=1 ${salesFilter}
+    `, [thisMonthStart, prevMonthStart, prevMonthEndStr + ' 23:59:59', ...salesParams]);
+    const inquiriesThisMonth = [{ count: inquiryStats[0].thisMonth }];
+    const inquiriesLastMonth = [{ count: inquiryStats[0].lastMonth }];
 
     // Actionable follow-up clients list
     const [followUpClientsRows] = await pool.execute(`

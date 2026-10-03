@@ -66,6 +66,7 @@ async function generateInternalId(db, tableName) {
      FROM \`${tableName}\` 
      WHERE id REGEXP '^[0-9]+$'`
   );
+  const nextNum = (rows[0]?.max_num || 0) + 1;
   return String(nextNum);
 }
 

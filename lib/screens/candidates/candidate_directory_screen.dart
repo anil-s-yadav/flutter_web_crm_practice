@@ -19,7 +19,6 @@ import 'package:practice_app/blocs/candidate/candidate_event.dart';
 import 'package:practice_app/blocs/candidate/candidate_state.dart';
 import 'package:practice_app/screens/candidates/candidate_data_source.dart';
 import 'package:practice_app/widgets/candidate_avatar.dart';
-import 'package:practice_app/widgets/candidate_promotion_helper.dart';
 import 'package:practice_app/core/category_constants.dart';
 
 enum CandidateDirectoryType {

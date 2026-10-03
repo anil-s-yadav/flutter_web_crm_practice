@@ -23,9 +23,9 @@ const getTasks = async (req, res) => {
     }
     const searchTerm = search || q;
     if (searchTerm) {
-      whereClause += ' AND (id LIKE ? OR task_type LIKE ? OR client_name LIKE ? OR address LIKE ?)';
+      whereClause += ' AND (id LIKE ? OR type LIKE ?)';
       const s = `%${searchTerm.trim()}%`;
-      params.push(s, s, s, s);
+      params.push(s, s);
     }
 
     if (page || limit) {

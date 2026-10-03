@@ -21,9 +21,9 @@ const getReplacements = async (req, res) => {
     }
     const searchTerm = search || q;
     if (searchTerm) {
-      whereClause += ' AND (id LIKE ? OR client_name LIKE ? OR original_candidate_name LIKE ? OR reason LIKE ?)';
+      whereClause += ' AND (id LIKE ? OR reason LIKE ?)';
       const s = `%${searchTerm.trim()}%`;
-      params.push(s, s, s, s);
+      params.push(s, s);
     }
 
     if (page || limit) {
@@ -41,7 +41,7 @@ const getReplacements = async (req, res) => {
         const [suggestions] = await pool.execute(
           `SELECT c.* FROM candidates c 
            JOIN replacement_suggestions rs ON c.id = rs.candidate_id 
-           WHERE rs.replacement_request_id = ?`,
+           WHERE rs.request_id = ?`,
           [reqObj.id]
         );
         reqObj.suggestedCandidates = suggestions;

@@ -7,10 +7,6 @@ const authMiddleware = (req, res, next) => {
   const validApiKey = process.env.API_KEY || 'crm-secure-key-2026';
 
   if (!authHeader) {
-    if (apiKey === validApiKey) {
-      req.user = { id: 'U001', role: 'admin', name: 'CRM Admin' };
-      return next();
-    }
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
@@ -23,10 +19,6 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    if (apiKey === validApiKey) {
-      req.user = { id: 'U001', role: 'admin', name: 'CRM Admin' };
-      return next();
-    }
     res.status(401).json({ message: 'Token is not valid' });
   }
 };

@@ -19,10 +19,8 @@ import 'package:practice_app/blocs/replacement/replacement_state.dart';
 import 'package:practice_app/theme/app_colors.dart';
 import 'package:practice_app/blocs/client/client_bloc.dart';
 import 'package:practice_app/blocs/client/client_event.dart';
-import 'package:practice_app/blocs/client/client_state.dart';
 import 'package:practice_app/blocs/candidate/candidate_bloc.dart';
 import 'package:practice_app/blocs/candidate/candidate_event.dart';
-import 'package:practice_app/blocs/candidate/candidate_state.dart';
 
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/models/user_model.dart';
@@ -211,15 +209,11 @@ class _ContractListScreenState extends State<ContractListScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return BlocBuilder<ClientBloc, ClientState>(
-      builder: (context, clientState) {
-        return BlocBuilder<CandidateBloc, CandidateState>(
-          builder: (context, candidateState) {
-            return BlocBuilder<ReplacementBloc, ReplacementState>(
-              builder: (context, replacementState) {
-                return BlocBuilder<ContractBloc, ContractState>(
-                  builder: (context, contractState) {
-                    if ((contractState is ContractInitial ||
+    return BlocBuilder<ReplacementBloc, ReplacementState>(
+      builder: (context, replacementState) {
+        return BlocBuilder<ContractBloc, ContractState>(
+          builder: (context, contractState) {
+            if ((contractState is ContractInitial ||
                             contractState is ContractLoading) ||
                         (_currentViewMode == 'replacements' &&
                             (replacementState is ReplacementInitial ||
@@ -1082,10 +1076,6 @@ class _ContractListScreenState extends State<ContractListScreen> {
                 );
               },
             );
-          },
-        );
-      },
-    );
   }
 
   Widget _buildReplacementsGrid(bool isDark) {

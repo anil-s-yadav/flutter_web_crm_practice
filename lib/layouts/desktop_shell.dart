@@ -1535,8 +1535,9 @@ class _DesktopShellState extends State<DesktopShell> {
     if (loc.endsWith('/candidates/verification')) return 'Verification Pending';
     if (loc.endsWith('/candidates/medical')) return 'Medical Pending';
     if (loc.endsWith('/candidates/placed')) return 'Placed Candidates';
-    if (loc.endsWith('/candidates/blacklisted'))
+    if (loc.endsWith('/candidates/blacklisted')) {
       return 'Blacklisted Candidates';
+    }
     if (loc.contains('/candidates/') && loc.endsWith('/edit')) {
       return 'Edit Candidate Details';
     }

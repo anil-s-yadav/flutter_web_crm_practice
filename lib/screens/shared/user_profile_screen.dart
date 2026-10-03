@@ -363,13 +363,17 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       await UserManager().setUser(updatedUser);
                       if (mounted) {
                         setState(() {});
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Profile photo updated successfully!'),
-                            backgroundColor: AppColors.successGreen,
-                          ),
-                        );
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile photo updated successfully!'),
+                              backgroundColor: AppColors.successGreen,
+                            ),
+                          );
+                        }
                       }
                     } catch (e) {
                       if (mounted) {

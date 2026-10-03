@@ -33,25 +33,4 @@ class InvoiceModel {
     required this.dueDate,
     required this.status,
   });
-
-  factory InvoiceModel.mock(
-    String id,
-    String clientName,
-    String candidateName,
-    double amount,
-    int daysAgo,
-    InvoiceStatus status,
-  ) {
-    final now = DateTime.now();
-    return InvoiceModel(
-      id: id,
-      clientId: 'CLI001',
-      clientName: clientName,
-      candidateName: candidateName,
-      amount: amount,
-      date: now.subtract(Duration(days: daysAgo)),
-      dueDate: now.subtract(Duration(days: daysAgo - 15)), // 15 day terms
-      status: status,
-    );
-  }
 }

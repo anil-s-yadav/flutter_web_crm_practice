@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:practice_app/api/api_client.dart';
 import 'package:practice_app/auth/user_manager.dart';
 import 'package:practice_app/models/user_model.dart';
@@ -40,7 +41,7 @@ class AuthRepository {
         'token': fcmToken,
       });
     } catch (e) {
-      print('Failed to update FCM token: $e');
+      debugPrint('Failed to update FCM token: $e');
     }
   }
 }

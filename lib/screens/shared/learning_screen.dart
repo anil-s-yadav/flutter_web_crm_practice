@@ -857,6 +857,12 @@ class _LearningScreenState extends State<LearningScreen> {
           );
         },
       ),
-    );
+    ).then((_) {
+      titleController.dispose();
+      subtitleController.dispose();
+      englishScriptController.dispose();
+      hindiScriptController.dispose();
+      tipController.dispose();
+    });
   }
 }

@@ -41,6 +41,13 @@ class _TicketListScreenState extends State<TicketListScreen> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debouncer.dispose();
+    super.dispose();
+  }
+
   void _loadData() {
     context.read<TicketBloc>().add(
       LoadTickets(

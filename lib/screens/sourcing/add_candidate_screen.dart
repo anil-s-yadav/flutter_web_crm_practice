@@ -74,7 +74,8 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
   String? _medicalDocUrl;
   String? _medicalFileName;
 
-  bool _hasPhoto = false;
+
+
   Uint8List? _photoBytes;
   String _photoUrl = '';
 
@@ -116,7 +117,6 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
         setState(() {
           _photoBytes = picked.bytes;
           _photoUrl = picked.base64DataUrl;
-          _hasPhoto = true;
         });
       }
     } catch (e) {
@@ -128,46 +128,8 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
     }
   }
 
-  Future<void> _enterPhotoUrl() async {
-    final controller = TextEditingController(
-      text: _photoUrl.startsWith('data:') ? '' : _photoUrl,
-    );
-    final url = await showDialog<String>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text(
-              'Enter Photo URL',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-            ),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Image URL',
-                hintText: 'https://example.com/photo.jpg',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-    );
 
-    if (url != null && url.isNotEmpty) {
-      setState(() {
-        _photoBytes = null;
-        _photoUrl = url;
-        _hasPhoto = true;
-      });
-    }
-  }
+
 
   Future<void> _addCandidate() async {
     if (!_formKey.currentState!.validate()) return;
@@ -304,7 +266,6 @@ class _AddCandidateScreenState extends State<AddCandidateScreen> {
       _medicalFileName = null;
 
       // Reset photo
-      _hasPhoto = false;
       _photoBytes = null;
       _photoUrl = '';
     });
